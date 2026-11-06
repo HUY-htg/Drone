@@ -410,7 +410,7 @@ td.an-bad{color:var(--bad);font-weight:600}
   .view{height:min(76vh,480px)}
   .top-state{min-width:0;flex-basis:100%;order:3}
   .ph-note{margin-left:0;flex-basis:100%}
-  .view .ph .seg{margin-left:auto}
+  .view .ph #zoomSeg{margin-left:auto}
   .ov-hint{display:none}
   .stick{width:92px;height:92px}
   .ov-wind{left:10px;right:auto;top:10px;padding:5px 8px;gap:8px;max-width:calc(100% - 150px)}
@@ -575,13 +575,14 @@ td.an-bad{color:var(--bad);font-weight:600}
     <!-- 3D -->
     <section class="panel view" aria-labelledby="h3d">
       <div class="ph"><span class="code">3D</span><h2 id="h3d">Đô thị &amp; Nhà máy sản xuất</h2>
-        <div class="seg" role="group" aria-label="Góc camera" id="camSeg" style="margin-left:auto">
+        <div class="seg" role="group" aria-label="Thu phóng" id="zoomSeg" style="margin-left:auto"><button data-zoom="in" aria-label="Phóng to" title="Phóng to (phím +)">+</button><button data-zoom="out" aria-label="Thu nhỏ" title="Thu nhỏ (phím −)">−</button></div>
+        <div class="seg" role="group" aria-label="Góc camera" id="camSeg">
           <button data-cam="orbit" aria-pressed="true">Quỹ đạo</button><button data-cam="follow">Bám đuôi</button><button data-cam="top">Bản đồ quy hoạch</button>
         </div>
       </div>
       <div class="stage" id="stage">
         <canvas id="gl" aria-label="Cảnh 3D đô thị và nhà máy của drone chở hàng"></canvas>
-        <div class="ov ov-hint" id="hint">Kéo: xoay · cuộn: zoom · click mặt đất: đặt điểm giao hàng (tự động sinh quỹ đạo né cao ốc)</div>
+        <div class="ov ov-hint" id="hint">Kéo: xoay · cuộn chuột, chụm 2 ngón hoặc +/−: thu phóng · click mặt đất: đặt điểm giao hàng</div>
         <div class="ov ov-hud" id="hud">
           <span>ALT</span><b id="hudAlt">0.0 m</b>
           <span>GS</span><b id="hudGs">0.0 m/s</b>
@@ -2226,8 +2227,8 @@ $('#btnClear').addEventListener('click', () => { Sim.setDestinations([], true); 
 $('#btnDemo').addEventListener('click', startDemo);
 $('#wpMode').addEventListener('change', e => {
   $('#hint').textContent = e.target.checked
-    ? 'Kéo: xoay · cuộn: zoom · click mặt đất: đặt điểm giao hàng (tự động sinh quỹ đạo né cao ốc)'
-    : 'Kéo: xoay · cuộn/chụm: zoom';
+    ? 'Kéo: xoay · cuộn chuột, chụm 2 ngón hoặc +/−: thu phóng · click mặt đất: đặt điểm giao hàng'
+    : 'Kéo: xoay · cuộn chuột, chụm 2 ngón hoặc +/−: thu phóng';
 });
 function addWaypointAt(e, n){
   if (Sim.destinations.length >= 10){ addLog('rej', 'Tối đa 10 điểm giao hàng chính', '', Sim.S.t); return; }
@@ -2970,7 +2971,9 @@ function init3D(){
   const cityMeshes = [];
   const bufferGroup = new THREE.Group(); scene.add(bufferGroup);
 
+  const obsGroups = [];
   Sim.obstacles.forEach((o, idx) => {
+    const firstChild = scene.children.length;
     const w = o.rx * 2, d = o.ry * 2, h = o.h;
     if (o.kind === 'factory'){
       const m = new THREE.MeshLambertMaterial({ color:0x607080 });
@@ -2997,6 +3000,7 @@ function init3D(){
       hvac.position.copy(toV(o.e + (idx%2?1:-1)*1.2, o.n, h + 1.0)); scene.add(hvac);
       cityMeshes.push({ mesh:b, kind:'building', mat });
     }
+    obsGroups[idx] = scene.children.slice(firstChild);
   });
 
   function rebuildSafetyBuffers(){
@@ -3228,46 +3232,64 @@ function init3D(){
     if (mode === 'top' && cam.dist < 42) cam.dist = 48;
   }
   $$('#camSeg button').forEach(b => b.addEventListener('click', () => setCam(b.dataset.cam)));
-  // Distance along `dir` from `from` before the view ray enters a building (stops 1 m short)
-  function clearCamDist(from, dir, maxD){
-    for (let s = 1.0; s <= maxD; s += 0.5){
-      const e = from.x + dir.x*s, u = from.y + dir.y*s, n = -(from.z + dir.z*s);
-      for (let i = 0; i < Sim.obstacles.length; i++){
-        const o = Sim.obstacles[i];
-        if (u < o.h + 0.8 && Math.abs(e - o.e) < o.rx + 0.4 && Math.abs(n - o.n) < o.ry + 0.4) return Math.max(2.5, s - 1.0);
-      }
+  // Does the segment a→b (ENU) pass through the box? (slab test)
+  function segBox(a, b, lo, hi){
+    let t0 = 0, t1 = 1;
+    for (let k = 0; k < 3; k++){
+      const d = b[k] - a[k];
+      if (Math.abs(d) < 1e-9){ if (a[k] < lo[k] || a[k] > hi[k]) return false; continue; }
+      let ta = (lo[k] - a[k]) / d, tb = (hi[k] - a[k]) / d;
+      if (ta > tb){ const x = ta; ta = tb; tb = x; }
+      t0 = Math.max(t0, ta); t1 = Math.min(t1, tb);
+      if (t0 > t1) return false;
     }
-    return maxD;
+    return true;
   }
-  let camDistNow = null;
-  function smoothCamDist(want, dt){
-    if (camDistNow == null) camDistNow = want;
-    camDistNow += (want - camDistNow) * (want < camDistNow ? 0.45 : 1 - Math.exp(-dt*2.5));
-    return camDistNow;
+  // Towers that sit between the camera and the drone turn see-through, so zoom is never limited
+  const faded = [];
+  function fadeOccluders(){
+    const c = camera.position, t = cam.tgt;
+    const A = [t.x, -t.z, t.y], Bc = [c.x, -c.z, c.y];
+    Sim.obstacles.forEach((o, i) => {
+      const hit = segBox(A, Bc, [o.e - o.rx - 0.4, o.n - o.ry - 0.4, 0], [o.e + o.rx + 0.4, o.n + o.ry + 0.4, o.h + 2.5]);
+      if (hit === !!faded[i]) return;
+      faded[i] = hit;
+      (obsGroups[i] || []).forEach(m => {
+        if (!m.material) return;
+        m.material.transparent = hit; m.material.opacity = hit ? 0.16 : 1; m.material.depthWrite = !hit; m.material.needsUpdate = true;
+      });
+    });
   }
   function updateCamera(dt){
     const S = Sim.S, dp = toV(S.pos[0], S.pos[1], S.pos[2]);
     const a = 1 - Math.exp(-dt*5);
     if (cam.mode === 'orbit'){
       cam.tgt.lerp(dp.clone().add(new THREE.Vector3(0, 0.5, 0)), a);
-      const dir = new THREE.Vector3(Math.cos(cam.el)*Math.cos(cam.az), Math.sin(cam.el), Math.cos(cam.el)*Math.sin(cam.az));
-      const d = smoothCamDist(clearCamDist(cam.tgt, dir, cam.dist), dt);
-      camera.position.copy(cam.tgt).addScaledVector(dir, d); camera.up.set(0, 1, 0); camera.lookAt(cam.tgt);
+      const off = new THREE.Vector3(Math.cos(cam.el)*Math.cos(cam.az), Math.sin(cam.el), Math.cos(cam.el)*Math.sin(cam.az)).multiplyScalar(cam.dist);
+      camera.position.copy(cam.tgt).add(off); camera.up.set(0, 1, 0); camera.lookAt(cam.tgt);
     } else if (cam.mode === 'follow'){
       const ps = S.att[2], fwd = new THREE.Vector3(Math.cos(ps), 0, -Math.sin(ps));
       const want = dp.clone().addScaledVector(fwd, -cam.dist*0.65).add(new THREE.Vector3(0, cam.dist*0.28 + 1.2, 0));
       if (want.y < 0.8) want.y = 0.8;
       cam.pos.lerp(want, 1 - Math.exp(-dt*3.5)); cam.tgt.lerp(dp.clone().add(new THREE.Vector3(0, 0.5, 0)), a);
-      const fdir = cam.pos.clone().sub(cam.tgt), flen = fdir.length() || 1; fdir.multiplyScalar(1 / flen);
-      const fd = smoothCamDist(clearCamDist(cam.tgt, fdir, flen), dt);
-      camera.position.copy(cam.tgt).addScaledVector(fdir, fd); camera.up.set(0, 1, 0); camera.lookAt(cam.tgt);
+      camera.position.copy(cam.pos); camera.up.set(0, 1, 0); camera.lookAt(cam.tgt);
     } else {
       cam.tgt.lerp(dp, a);
       camera.position.set(cam.tgt.x, cam.tgt.y + cam.dist*1.5 + 8, cam.tgt.z + 0.001);
       camera.up.set(0, 0, -1); camera.lookAt(cam.tgt);
     }
     if (cam.mode !== 'follow') cam.pos.copy(camera.position);
+    fadeOccluders();
   }
+  // zoom: wheel / pinch, the +/− buttons and the + − keys all change the same distance
+  function zoomBy(f){ cam.dist = clamp(cam.dist * f, 3.0, 200); }
+  $$('#zoomSeg button').forEach(b => b.addEventListener('click', () => zoomBy(b.dataset.zoom === 'in' ? 0.8 : 1.25)));
+  addEventListener('keydown', e => {
+    if (e.target.closest && e.target.closest('input,select,textarea')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd'){ zoomBy(0.85); e.preventDefault(); }
+    else if (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract'){ zoomBy(1 / 0.85); e.preventDefault(); }
+  });
 
   // Pointer: orbit drag, pinch, click-to-add destination
   const pts = new Map(); let downAt = null, moved = 0, pinch0 = 0, dist0 = 0;
