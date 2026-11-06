@@ -30,6 +30,7 @@ img{max-width:100%}
   --scene-sky:#cfdbe6; --scene-ground:#b5bec4; --scene-grid:#8b969e; --scene-grid2:#a3adb5;
   --pl-0:#86b6ef; --pl-1:#5598e7; --pl-2:#2a78d6; --pl-3:#1c5cab; --pl-4:#104281; --wd-0:#f2a07a; --wd-1:#e0602c; --wd-2:#9c3d17;
   --st-takeoff:#2a78d6; --st-hover:#eb6834; --st-mission:#1baf7a; --st-rtl:#6250d6; --st-landing:#008300; --st-manual:#e87ba4; --st-ground:#a3adb6; --st-armed:#6c7781;
+  --osd-fg:#ffffff; --osd-bg:rgba(8,14,20,.55); --osd-rec:#ff5a52; --osd-warn:#ffc44d;
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -427,6 +428,72 @@ td.an-bad{color:var(--bad);font-weight:600}
   .ov-wind .wind-sub.over{display:block}
   .ov-banner{top:auto;bottom:118px;font-size:12px;padding:4px 9px}
 }
+
+/* panel visibility */
+.lay{position:relative}
+.lay-btn{display:inline-flex;align-items:center;gap:6px}
+.lay-btn svg{width:14px;height:14px}
+.lay-btn b{font-family:var(--f-mono);font-size:11px;font-weight:600;color:var(--muted)}
+.lay-btn[aria-expanded="true"]{border-color:var(--fg)}
+.lay-menu{position:fixed;z-index:60;width:248px;max-width:calc(100vw - 16px);background:var(--panel);border:1px solid var(--line-2);border-radius:6px;box-shadow:0 10px 28px rgba(0,0,0,.18);padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
+.lay-h{margin:0;font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lay-list{display:flex;flex-direction:column;gap:2px}
+.lay-list .chk{padding:4px 2px;border-radius:3px}
+.lay-list .chk:hover{background:var(--panel-2)}
+.lay-list .chk.fixed{color:var(--muted);cursor:default}
+.lay-acts{display:flex;gap:6px}
+.lay-acts .btn{flex:1}
+.lay-k{margin:0;font-size:11.5px;color:var(--muted)}
+.ph-hide{order:99;border:1px solid transparent;background:transparent;color:var(--muted);border-radius:3px;width:24px;height:22px;display:inline-grid;place-items:center;padding:0;flex:none}
+.ph-hide:hover{color:var(--fg);border-color:var(--line-2);background:var(--panel-2)}
+.ph-hide svg{width:12px;height:12px}
+@media (max-width:760px){ .ph-hide{order:0;margin-left:auto} }
+
+/* drone camera: picture-in-picture, OSD, gimbal controls */
+.pip{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:clamp(150px,30%,300px);aspect-ratio:16/9;padding:0;background:transparent;border:2px solid var(--fg);border-radius:4px;box-shadow:0 6px 18px rgba(0,0,0,.3);cursor:pointer}
+.pip:hover{border-color:var(--accent)}
+.pip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pip-lab,.pip-sw{position:absolute;top:4px;font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--osd-fg);background:var(--osd-bg);border-radius:2px;padding:1px 5px;pointer-events:none}
+.pip-lab{left:4px}.pip-sw{right:4px}
+.pip-rec{color:var(--osd-rec)}
+.osd{position:absolute;inset:0;pointer-events:none;color:var(--osd-fg);font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums}
+.osd-c{background:var(--osd-bg);border-radius:3px;padding:3px 8px;white-space:nowrap}
+.osd-top,.osd-sub{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:6px}
+.osd-top{top:10px}.osd-sub{top:38px}
+.osd-rec{color:var(--osd-rec);font-weight:600}
+.osd-warn{color:var(--osd-warn)}
+.osd-l,.osd-r{position:absolute;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px}
+.osd-l{left:12px}.osd-r{right:12px;align-items:flex-end}
+.osd-v{display:flex;flex-direction:column;line-height:1.15}
+.osd-r .osd-v{align-items:flex-end}
+.osd-v span{font-size:9.5px;letter-spacing:.1em;opacity:.8}
+.osd-v b{font-size:15px;font-weight:600}
+.osd-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.osd-svg line,.osd-svg circle,.osd-svg path{stroke:var(--osd-fg);fill:none;vector-effect:non-scaling-stroke}
+.osd-svg .sh{stroke:var(--osd-bg);stroke-width:4}
+.osd-svg .hz{stroke-width:1.5;stroke-dasharray:10 6}
+.stage.fpv #gl{cursor:crosshair}
+.stage.fpv .ov-hint,.stage.fpv .ov-hud,.stage.fpv .ov-wind{display:none!important}
+.stage.fpv .ov-banner{top:68px}
+.cam-foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:7px 12px;border-top:1px solid var(--line)}
+.cam-t{font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.cam-g{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:12.5px}
+.cam-g output{font-family:var(--f-mono);font-size:12px;min-width:76px;text-align:center}
+.btn.mini{padding:2px 7px;font-size:11.5px;line-height:1.4;white-space:nowrap}
+.cam-foot .sub{margin-left:auto}
+@media (max-width:760px){
+  .wide-only,.pip-sw{display:none}
+  .view{height:auto}
+  .view .stage{flex:none;height:min(64vh,420px)}
+  .pip{width:calc(100% - 232px);min-width:112px;max-width:190px}
+  .osd{font-size:11px}
+  .osd-c{padding:2px 6px}
+  .osd-v b{font-size:13px}
+  .osd-v.nar-hide{display:none}
+  .stage.fpv .ov-banner{top:auto}
+  .osd-sub{top:36px}
+  .cam-foot .sub{display:none}
+}
 @media (prefers-reduced-motion: reduce){
   *{transition:none!important}
 }
@@ -454,7 +521,16 @@ td.an-bad{color:var(--bad);font-weight:600}
     </div>
     <div class="top-meta">
       <a class="src-link" href="https://github.com/HUY-htg/Drone" target="_blank" rel="noopener">Mã nguồn ↗</a>
-      <a class="src-link" href="#analysis">Kết quả gió &amp; tải ↓</a>
+      <div class="lay">
+        <button class="btn lay-btn" id="layBtn" aria-expanded="false" aria-controls="layMenu" title="Ẩn hoặc hiện các bảng dashboard (phím H)"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M5.5 2.5v11M10.5 2.5v11"/></svg>Bảng <b id="layCount">5/5</b></button>
+        <div class="lay-menu" id="layMenu" role="dialog" aria-label="Chọn bảng hiển thị" hidden>
+          <p class="lay-h">Hiện các bảng</p>
+          <div class="lay-list" id="layList"></div>
+          <div class="lay-acts"><button class="btn" id="layFocus">Chỉ xem 3D</button><button class="btn" id="layAll">Hiện tất cả</button></div>
+          <p class="lay-k"><kbd>H</kbd> ẩn hoặc hiện nhanh mọi bảng. Khung 3D luôn hiện.</p>
+        </div>
+      </div>
+            <a class="src-link" href="#analysis">Kết quả gió &amp; tải ↓</a>
       <div class="meta"><span>Hàng</span><b id="metaCargo">1.5 kg</b></div>
       <div class="meta"><span>T+</span><b id="metaTime">00:00</b></div>
       <div class="meta"><span>Pin</span><b id="metaBat">100%</b></div>
@@ -546,6 +622,7 @@ td.an-bad{color:var(--bad);font-weight:600}
           <div class="keys" style="margin-top:8px">
             <span><kbd>W</kbd> <kbd>S</kbd> / <kbd>A</kbd> <kbd>D</kbd></span><span>Tiến lùi / Sang trái phải</span>
             <span><kbd>Q</kbd> <kbd>E</kbd> / <kbd>R</kbd> <kbd>F</kbd></span><span>Xoay mũi / Lên xuống</span>
+            <span><kbd>C</kbd> / <kbd>H</kbd></span><span>Camera drone / Ẩn hiện mọi bảng</span>
           </div>
         </div>
 
@@ -585,7 +662,7 @@ td.an-bad{color:var(--bad);font-weight:600}
       <div class="ph"><span class="code">3D</span><h2 id="h3d">Đô thị &amp; Nhà máy sản xuất</h2>
         <div class="seg" role="group" aria-label="Thu phóng" id="zoomSeg" style="margin-left:auto"><button data-zoom="in" aria-label="Phóng to" title="Phóng to (phím +)">+</button><button data-zoom="out" aria-label="Thu nhỏ" title="Thu nhỏ (phím −)">−</button></div>
         <div class="seg" role="group" aria-label="Góc camera" id="camSeg">
-          <button data-cam="orbit" aria-pressed="true">Quỹ đạo</button><button data-cam="follow">Bám đuôi</button><button data-cam="top">Bản đồ quy hoạch</button>
+          <button data-cam="orbit" aria-pressed="true">Quỹ đạo</button><button data-cam="follow">Bám đuôi</button><button data-cam="top">Bản đồ<span class="wide-only"> quy hoạch</span></button><button data-cam="fpv" title="Góc nhìn camera gắn trên drone (phím C)">Camera<span class="wide-only"> drone</span></button>
         </div>
       </div>
       <div class="stage" id="stage">
@@ -620,6 +697,17 @@ td.an-bad{color:var(--bad);font-weight:600}
         </div>
         <div class="ov ov-banner" id="banner" hidden></div>
         <div class="ov ov-err" id="glErr" hidden>Trình duyệt không khởi tạo được WebGL nên cảnh 3D không hiển thị. Mô phỏng, dashboard và máy trạng thái vẫn chạy bình thường.</div>
+        <button class="pip" id="pip" type="button" aria-label="Camera drone thu nhỏ: bấm để xem toàn khung"><span class="pip-lab" id="pipLab">CAMERA DRONE</span><span class="pip-sw" id="pipSw" aria-hidden="true">⤢ phóng to</span></button>
+        <div class="osd" id="osd" hidden aria-hidden="true">
+          <svg class="osd-svg" id="osdSvg">
+            <line class="sh" id="osdHz1s"/><line class="sh" id="osdHz2s"/><line class="hz" id="osdHz1"/><line class="hz" id="osdHz2"/>
+            <g id="osdX"><circle class="sh" r="13"/><path class="sh" d="M-24 0h-10M24 0h10M0 -24v-10M0 24v10"/><circle r="13" stroke-width="1.5"/><path d="M-24 0h-10M24 0h10M0 -24v-10M0 24v10" stroke-width="1.5"/><circle r="1.6" fill="currentColor" stroke-width="1"/></g>
+          </svg>
+          <div class="osd-top"><span class="osd-c" id="osdRec"></span><span class="osd-c" id="osdState"></span><span class="osd-c" id="osdBat"></span></div>
+          <div class="osd-sub"><span class="osd-c" id="osdHdg"></span><span class="osd-c" id="osdGim"></span></div>
+          <div class="osd-l"><div class="osd-c osd-v"><span>ĐỘ CAO</span><b id="osdAlt"></b></div><div class="osd-c osd-v nar-hide"><span>LÊN/XUỐNG</span><b id="osdVs"></b></div></div>
+          <div class="osd-r"><div class="osd-c osd-v"><span>TỐC ĐỘ</span><b id="osdGs"></b></div><div class="osd-c osd-v"><span>CÁCH NHÀ MÁY</span><b id="osdHome"></b></div><div class="osd-c osd-v nar-hide"><span>GIÓ</span><b id="osdWind"></b></div></div>
+        </div>
         <div class="stick stick-l" id="stickL" role="application" aria-label="Cần trái: ga lên xuống, xoay mũi"><span class="stick-lab">GA · XOAY</span><span class="knob"></span></div>
         <div class="stick stick-r" id="stickR" role="application" aria-label="Cần phải: tiến lùi, sang ngang"><span class="stick-lab">TIẾN · NGANG</span><span class="knob"></span></div>
       </div>
@@ -629,6 +717,19 @@ td.an-bad{color:var(--bad);font-weight:600}
         <label class="chk"><input type="checkbox" id="optSp" checked> Điểm đặt</label>
         <button class="linkbtn" id="clearTrail">Xoá vệt</button>
         <span class="sub">Home (0,0) = NHÀ MÁY · Hub A/B/C = Trạm nhận hàng</span>
+      </div>
+      <div class="cam-foot" role="group" aria-label="Camera drone">
+        <span class="cam-t">Camera</span>
+        <label class="chk"><input type="checkbox" id="optPip" checked> Cửa sổ nhỏ</label>
+        <span class="cam-g">Gimbal
+          <button class="btn mini" data-tilt="up" aria-label="Ngẩng camera lên 10°">▲</button><output id="oGim">−15° · 0°</output><button class="btn mini" data-tilt="down" aria-label="Chúc camera xuống 10°">▼</button>
+          <button class="btn mini" data-tilt="nadir" title="Camera nhìn thẳng xuống đất, dùng khi thả hàng">Nhìn xuống</button>
+          <button class="btn mini" data-tilt="reset" title="Gimbal −15°, hướng theo mũi, zoom 1×">Mặc định</button>
+        </span>
+        <div class="seg" role="group" aria-label="Zoom camera" id="czSeg"><button data-cz="1" aria-pressed="true">1×</button><button data-cz="2">2×</button><button data-cz="4">4×</button></div>
+        <label class="chk"><input type="checkbox" id="optStab" checked> Ổn định gimbal</label>
+        <label class="chk" title="Vẽ tuyến bay và điểm giao hàng chồng lên hình camera"><input type="checkbox" id="optAR" checked> AR tuyến bay</label>
+        <span class="sub" id="camHelp">Toàn khung: kéo = xoay gimbal · cuộn = zoom · nhấp đúp = mặc định</span>
       </div>
     </section>
 
@@ -2415,7 +2516,7 @@ $('#pAdapt').addEventListener('change', e => {
 });
 
 function drawAdaptCompass(){
-  const c = $('#adWind'); if (!c) return;
+  const c = $('#adWind'); if (!c || !c.clientWidth || !c.clientHeight) return;
   const [ctx, w, h] = fitCanvas(c), S = Sim.S, E = S.est;
   const cx = w/2, cy = h/2, R = Math.min(w, h)/2 - 12;
   ctx.clearRect(0, 0, w, h);
@@ -2524,6 +2625,7 @@ function fitCanvas(c){
 }
 const adi = $('#adi'), tape = $('#tape'), chart = $('#chart');
 function drawADI(){
+  if (!adi.clientWidth || !adi.clientHeight) return;
   const [ctx, w, h] = fitCanvas(adi); const S = Sim.S;
   const r = Math.min(w, h)/2 - 2, cx = w/2, cy = h/2, roll = S.att[0], pitch = -S.att[1]*DEG, ppd = r/32;
   ctx.clearRect(0, 0, w, h);
@@ -2557,6 +2659,7 @@ function drawADI(){
   ctx.strokeStyle = TK['line-2']; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
 }
 function drawTape(){
+  if (!tape.clientWidth || !tape.clientHeight) return;
   const [ctx, w, h] = fitCanvas(tape); const S = Sim.S, hd = hdgOf(S.att[2]), ppd = 3;
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = TK['panel-2']; ctx.fillRect(0, 0, w, h);
@@ -2594,6 +2697,7 @@ $$('#chartSeg button').forEach(b => b.addEventListener('click', () => {
 renderLegend();
 function niceStep(range){ const raw = range/3, p = Math.pow(10, Math.floor(Math.log10(raw))), n = raw/p; return (n < 1.5 ? 1 : n < 3.5 ? 2 : n < 7.5 ? 5 : 10)*p; }
 function drawChart(){
+  if (!chart.clientWidth || !chart.clientHeight) return;
   const [ctx, w, h] = fitCanvas(chart); const def = CHARTS[chartTab];
   ctx.clearRect(0, 0, w, h);
   const padL = 34, padR = 6, padT = 6, padB = 16, pw = w - padL - padR, phh = h - padT - padB;
@@ -3152,6 +3256,13 @@ function init3D(){
   const lidarLens = new THREE.Mesh(new THREE.CylinderGeometry(0.038*k, 0.038*k, 0.016*k, 18), new THREE.MeshBasicMaterial({ color:0x0b7ba0 }));
   lidarTurret.add(lidarLens);
 
+  // Gimbal camera under the nose (lens looks along +x of the airframe)
+  const CAM_MOUNT = new THREE.Vector3(0.15*k, 0.086*k, 0);
+  const gimbalYoke = new THREE.Mesh(new THREE.BoxGeometry(0.014*k, 0.024*k, 0.03*k), darkM); gimbalYoke.position.set(0.15*k, 0.113*k, 0); drone.add(gimbalYoke);
+  const gimbalBall = new THREE.Group(); gimbalBall.position.copy(CAM_MOUNT); drone.add(gimbalBall);
+  gimbalBall.add(new THREE.Mesh(new THREE.SphereGeometry(0.026*k, 18, 14), plateM));
+  const lensRing = new THREE.Mesh(new THREE.CylinderGeometry(0.014*k, 0.014*k, 0.012*k, 18), accM); lensRing.rotation.z = Math.PI/2; lensRing.position.x = 0.022*k; gimbalBall.add(lensRing);
+  const lensGlass = new THREE.Mesh(new THREE.CircleGeometry(0.0105*k, 18), new THREE.MeshBasicMaterial({ color:0x0a1822 })); lensGlass.rotation.y = Math.PI/2; lensGlass.position.x = 0.0285*k; gimbalBall.add(lensGlass);
   const ledM = new THREE.MeshBasicMaterial({ color:0x7a8590 });
   const led = new THREE.Mesh(new THREE.SphereGeometry(0.014*k, 10, 8), ledM); led.position.set(0.05*k, yFrame + 0.06*k, 0); drone.add(led);
 
@@ -3328,7 +3439,9 @@ function init3D(){
   // Camera modes: Orbit, Follow, Top-down Urban Planning View
   const cam = { mode:'orbit', az:0.85, el:0.44, dist:22.0, tgt:new THREE.Vector3(0, 2.5, 0), pos:new THREE.Vector3() };
   function setCam(mode){
-    cam.mode = mode; camera.up.set(0, 1, 0);
+    if (mode !== 'fpv' && cam.mode === 'fpv'){ camera.fov = 50; camera.updateProjectionMatrix(); }
+    if (mode !== 'fpv') GB.ext = mode;
+    cam.mode = mode; camera.up.set(0, 1, 0); camModeChanged();
     $$('#camSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cam === mode)));
     if (mode === 'top' && cam.dist < 42) cam.dist = 48;
   }
@@ -3374,6 +3487,10 @@ function init3D(){
       if (want.y < 0.8) want.y = 0.8;
       cam.pos.lerp(want, 1 - Math.exp(-dt*3.5)); cam.tgt.lerp(dp.clone().add(new THREE.Vector3(0, 0.5, 0)), a);
       camera.position.copy(cam.pos); camera.up.set(0, 1, 0); camera.lookAt(cam.tgt);
+    } else if (cam.mode === 'fpv'){
+      camera.position.copy(droneCam.position); camera.quaternion.copy(droneCam.quaternion);
+      const f = camFov(camera.aspect, GB.zoom); if (Math.abs(camera.fov - f) > 1e-3){ camera.fov = f; camera.updateProjectionMatrix(); }
+      cam.tgt.copy(dp);
     } else {
       cam.tgt.lerp(dp, a);
       camera.position.set(cam.tgt.x, cam.tgt.y + cam.dist*1.5 + 8, cam.tgt.z + 0.001);
@@ -3383,7 +3500,7 @@ function init3D(){
     fadeOccluders();
   }
   // zoom: wheel / pinch, the +/− buttons and the + − keys all change the same distance
-  function zoomBy(f){ cam.dist = clamp(cam.dist * f, 3.0, 200); }
+  function zoomBy(f){ if (cam.mode === 'fpv') setZoom(GB.zoom / f); else cam.dist = clamp(cam.dist * f, 3.0, 200); }
   $$('#zoomSeg button').forEach(b => b.addEventListener('click', () => zoomBy(b.dataset.zoom === 'in' ? 0.8 : 1.25)));
   addEventListener('keydown', e => {
     if (e.target.closest && e.target.closest('input,select,textarea')) return;
@@ -3398,7 +3515,7 @@ function init3D(){
     if (e.button !== undefined && e.button !== 0) return;
     canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
     if (pts.size === 1){ downAt = { x:e.clientX, y:e.clientY }; moved = 0; }
-    if (pts.size === 2){ const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a.x-b.x, a.y-b.y); dist0 = cam.dist; }
+    if (pts.size === 2){ const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a.x-b.x, a.y-b.y); dist0 = cam.dist; GB.zoom0 = GB.zoom; }
     canvas.classList.add('drag');
   });
   canvas.addEventListener('pointermove', e => {
@@ -3407,13 +3524,14 @@ function init3D(){
     pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
     if (pts.size === 1){
       moved += Math.abs(dx) + Math.abs(dy);
-      if (moved > 6){
+      if (moved > 6 && cam.mode === 'fpv') gimbalDrag(dx, dy);
+      else if (moved > 6){
         if (cam.mode === 'follow'){ setCam('orbit'); const off = camera.position.clone().sub(cam.tgt); cam.az = Math.atan2(off.z, off.x); cam.el = Math.asin(clamp(off.y/off.length(), -1, 1)); }
         if (cam.mode === 'orbit'){ cam.az += dx*0.008; cam.el = clamp(cam.el + dy*0.006, 0.05, 1.5); }
       }
     } else if (pts.size === 2){
       const [a, b] = [...pts.values()]; const pd = Math.hypot(a.x-b.x, a.y-b.y);
-      if (pinch0 > 0) cam.dist = clamp(dist0*pinch0/pd, 3.0, 200); moved = 99;
+      if (pinch0 > 0){ if (cam.mode === 'fpv') setZoom(GB.zoom0 * pd / pinch0); else cam.dist = clamp(dist0*pinch0/pd, 3.0, 200); } moved = 99;
     }
   });
   const endPtr = e => {
@@ -3425,7 +3543,7 @@ function init3D(){
     if (!pts.size){ canvas.classList.remove('drag'); downAt = null; }
   };
   canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
-  canvas.addEventListener('wheel', e => { e.preventDefault(); cam.dist = clamp(cam.dist*Math.exp(e.deltaY*0.0012), 3.0, 200); }, { passive:false });
+  canvas.addEventListener('wheel', e => { e.preventDefault(); if (cam.mode === 'fpv') setZoom(GB.zoom * Math.exp(-e.deltaY*0.0012)); else cam.dist = clamp(cam.dist*Math.exp(e.deltaY*0.0012), 3.0, 200); }, { passive:false });
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3();
   function groundAt(cx, cy){
@@ -3533,9 +3651,165 @@ function init3D(){
       treeCrowns.forEach(tc => { tc.pivot.rotation.set(0, 0, 0); });
     }
 
-    updateCamera(dt);
-    renderer.render(scene, camera);
+    camRender(dt);
   }
+
+
+  /* ---------- gimbal camera: pose, full view, picture-in-picture, OSD ---------- */
+  const D2R = Math.PI / 180;
+  const GB = { tilt:-15, pan:0, tiltT:-15, panT:0, zoom:1, zoom0:1, stab:true, ar:true, pip:true, ext:'orbit' };
+  const CAM_V = 56 * D2R, CAM_H = 2 * Math.atan(Math.tan(CAM_V / 2) * 16 / 9);
+  const droneCam = new THREE.PerspectiveCamera(56, 16/9, 0.05, 800);
+  const mapCam = new THREE.PerspectiveCamera(50, 16/9, 1, 900);
+  // field of view for a frame of this aspect: keep the 16:9 sensor width, never taller than 75°
+  function camFov(aspect, zoom){
+    const tv = Math.max(Math.tan(CAM_V / 2), Math.min(Math.tan(CAM_H / 2) / aspect, Math.tan(37.5 * D2R)));
+    return 2 * Math.atan(tv / zoom) / D2R;
+  }
+  const qA = new THREE.Quaternion(), qB = new THREE.Quaternion(), qC = new THREE.Quaternion(), vA = new THREE.Vector3(), vB = new THREE.Vector3();
+  const Y = new THREE.Vector3(0, 1, 0), X = new THREE.Vector3(1, 0, 0);
+  const qLensFwd = new THREE.Quaternion().setFromAxisAngle(Y, -Math.PI / 2);   // camera −Z → airframe +X
+  function gimbalPose(dt){
+    const S = Sim.S, sl = 120 * dt;   // gimbal motors slew at 120°/s
+    GB.tilt += clamp(GB.tiltT - GB.tilt, -sl, sl); GB.pan += clamp(GB.panT - GB.pan, -sl, sl);
+    if (GB.stab) qA.setFromAxisAngle(Y, S.att[2] + GB.pan * D2R);   // stabilised: only follows the heading
+    else qA.copy(drone.quaternion).multiply(qB.setFromAxisAngle(Y, GB.pan * D2R));   // hard-mounted: rolls and pitches with the airframe
+    qA.multiply(qLensFwd).multiply(qB.setFromAxisAngle(X, GB.tilt * D2R));
+    droneCam.quaternion.copy(qA);
+    vA.copy(CAM_MOUNT).applyQuaternion(drone.quaternion).add(drone.position);
+    droneCam.position.copy(vA).add(vB.set(0, 0, -0.07).applyQuaternion(qA));
+    droneCam.updateMatrixWorld();
+    // the ball on the model turns the same way (its lens points along local +X)
+    qC.copy(drone.quaternion).invert().multiply(qA).multiply(qB.setFromAxisAngle(Y, Math.PI / 2));
+    gimbalBall.quaternion.copy(qC);
+  }
+  // what a real camera sees: no airframe in front of the lens, no sensor overlays, towers solid again
+  const lensAt = new THREE.Vector3();
+  function asCamera(draw, at){
+    lensAt.copy(at);
+    const off = [], hide = o => { if (o.visible){ o.visible = false; off.push(o); } };
+    drone.children.forEach(c => { if (c !== cargoGroup) hide(c); });
+    hide(lidarGroup); hide(bufferGroup); hide(spMark);
+    if (!GB.ar){ hide(wpGroup); hide(rtlGroup); hide(trail); }
+    else wpGroup.children.forEach(o => { if (o.isMesh && o.position.distanceTo(lensAt) < 4) hide(o); });
+    const solid = [];
+    faded.forEach((f, i) => { if (f) (obsGroups[i] || []).forEach(m => { if (m.material){ solid.push(m.material); m.material.opacity = 1; m.material.depthWrite = true; } }); });
+    draw();
+    solid.forEach(m => { m.opacity = 0.16; m.depthWrite = false; });
+    off.forEach(o => { o.visible = true; });
+  }
+  // heading marker drawn only in the small map
+  const mapArrow = new THREE.Group(); mapArrow.visible = false; scene.add(mapArrow);
+  const arrowShape = new THREE.Shape(); arrowShape.moveTo(2.6, 0); arrowShape.lineTo(-1.4, 1.5); arrowShape.lineTo(-0.6, 0); arrowShape.lineTo(-1.4, -1.5); arrowShape.closePath();
+  const arrowMat = new THREE.MeshBasicMaterial({ color:0xe2891a, depthTest:false, transparent:true, opacity:0.95 });
+  const arrowMesh = new THREE.Mesh(new THREE.ShapeGeometry(arrowShape), arrowMat); arrowMesh.rotation.x = -Math.PI / 2; arrowMesh.renderOrder = 30; mapArrow.add(arrowMesh);
+
+  const pipEl = $('#pip'), osdEl = $('#osd'), sizeV = new THREE.Vector2();
+  function camModeChanged(){
+    const fpv = cam.mode === 'fpv';
+    stage.classList.toggle('fpv', fpv); osdEl.hidden = !fpv; $('#camHelp').hidden = !fpv;
+    $('#pipLab').innerHTML = fpv ? 'BẢN ĐỒ<span class="wide-only"> · BẮC LÊN TRÊN</span>' : 'CAMERA DRONE';
+    $('#pipSw').textContent = fpv ? '⤢ góc ngoài' : '⤢ phóng to';
+    pipEl.setAttribute('aria-label', fpv ? 'Bản đồ thu nhỏ: bấm để quay lại góc nhìn ngoài' : 'Camera drone thu nhỏ: bấm để xem toàn khung');
+  }
+  function setZoom(z){
+    GB.zoom = clamp(z, 1, 6);
+    $$('#czSeg button').forEach(b => b.setAttribute('aria-pressed', String(Math.abs(+b.dataset.cz - GB.zoom) < 0.05)));
+  }
+  function gimbalDrag(dx, dy){
+    GB.tiltT = GB.tilt = clamp(GB.tilt + dy * 0.22 / GB.zoom, -90, 20);
+    GB.panT = GB.pan = clamp(GB.pan - dx * 0.22 / GB.zoom, -120, 120);
+  }
+  function gimbalReset(){ GB.tiltT = -15; GB.panT = 0; setZoom(1); }
+  pipEl.addEventListener('click', () => setCam(cam.mode === 'fpv' ? GB.ext : 'fpv'));
+  canvas.addEventListener('dblclick', e => { if (cam.mode === 'fpv'){ e.preventDefault(); gimbalReset(); } });
+  $$('[data-tilt]').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.tilt;
+    if (k === 'up') GB.tiltT = Math.min(20, Math.round(GB.tiltT / 5) * 5 + 10);
+    else if (k === 'down') GB.tiltT = Math.max(-90, Math.round(GB.tiltT / 5) * 5 - 10);
+    else if (k === 'nadir'){ GB.tiltT = -90; GB.panT = 0; }
+    else gimbalReset();
+  }));
+  $$('#czSeg button').forEach(b => b.addEventListener('click', () => setZoom(+b.dataset.cz)));
+  $('#optPip').addEventListener('change', e => { GB.pip = e.target.checked; pipEl.hidden = !GB.pip; });
+  $('#optStab').addEventListener('change', e => { GB.stab = e.target.checked; });
+  $('#optAR').addEventListener('change', e => { GB.ar = e.target.checked; });
+  addEventListener('keydown', e => {
+    if (e.target.closest && e.target.closest('input,select,textarea')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey || e.code !== 'KeyC') return;
+    setCam(cam.mode === 'fpv' ? GB.ext : 'fpv');
+  });
+
+  const dirVN = b => ['B', 'ĐB', 'Đ', 'ĐN', 'N', 'TN', 'T', 'TB'][Math.round(b / 45) % 8];
+  const bearing = yaw => ((90 - yaw / D2R) % 360 + 360) % 360;
+  const osdTxt = {};
+  function osdSet(id, txt, cls){
+    if (osdTxt[id] === txt + (cls || '')) return;
+    osdTxt[id] = txt + (cls || '');
+    const el = $('#' + id); el.textContent = txt; if (cls !== undefined) el.className = 'osd-c ' + cls;
+  }
+  function osdLine(id, x1, y1, x2, y2){ const l = $('#' + id); l.setAttribute('x1', x1); l.setAttribute('y1', y1); l.setAttribute('x2', x2); l.setAttribute('y2', y2); }
+  function osdUpdate(W, H){
+    const S = Sim.S, w = S.windNow, ws = Math.hypot(w[0], w[1]), soc = S.soc * 100;
+    const rec = REC.cur ? '● REC ' + mmss(S.t - REC.cur.t0) : '○ CHỜ GHI';
+    osdSet('osdRec', rec, REC.cur ? 'osd-rec' : '');
+    osdSet('osdState', S.state);
+    osdSet('osdBat', 'PIN ' + Math.round(soc) + '%', soc < 25 ? 'osd-warn' : '');
+    const hd = bearing(S.att[2]), cb = bearing(S.att[2] + GB.pan * D2R);
+    osdSet('osdHdg', 'MŨI ' + pad3(Math.round(hd) % 360) + '° ' + dirVN(hd) + (Math.abs(GB.pan) > 0.5 ? ' · CAMERA ' + pad3(Math.round(cb) % 360) + '°' : ''));
+    osdSet('osdGim', 'GIMBAL ' + (GB.tilt > 0 ? '+' : '') + Math.round(GB.tilt) + '° · ' + (GB.zoom < 1.05 ? '1' : GB.zoom.toFixed(1).replace('.0', '')) + '×' + (GB.stab ? '' : ' · GẮN CỨNG'));
+    osdSet('osdAlt', S.pos[2].toFixed(1) + ' m');
+    osdSet('osdVs', (S.vel[2] >= 0 ? '+' : '') + S.vel[2].toFixed(1) + ' m/s');
+    osdSet('osdGs', Math.hypot(S.vel[0], S.vel[1]).toFixed(1) + ' m/s');
+    osdSet('osdHome', Math.hypot(S.pos[0], S.pos[1]).toFixed(0) + ' m');
+    osdSet('osdWind', ws < 0.3 ? 'lặng' : ws.toFixed(1) + ' từ ' + pad3(Math.round(((Math.atan2(w[0], w[1]) / D2R) + 180 + 360) % 360)) + '°');
+    $('#osdX').setAttribute('transform', 'translate(' + (W / 2) + ',' + (H / 2) + ')');
+    // horizon: directions level with the lens project onto the horizon line
+    const f = vA.set(0, 0, -1).applyQuaternion(camera.quaternion); f.y = 0;
+    let ok = f.lengthSq() > 1e-4, p1, p2;
+    if (ok){
+      f.normalize(); const r = vB.set(-f.z, 0, f.x);
+      p1 = camera.position.clone().addScaledVector(f, 400).addScaledVector(r, 120).project(camera);
+      p2 = camera.position.clone().addScaledVector(f, 400).addScaledVector(r, -120).project(camera);
+      ok = p1.z < 1 && p2.z < 1 && Math.abs(p2.x - p1.x) > 1e-4;
+    }
+    const ids = ['osdHz1', 'osdHz2', 'osdHz1s', 'osdHz2s'];
+    if (!ok){ ids.forEach(id => osdLine(id, 0, 0, 0, 0)); return; }
+    const X1 = (p1.x + 1) / 2 * W, Y1 = (1 - p1.y) / 2 * H, X2 = (p2.x + 1) / 2 * W, Y2 = (1 - p2.y) / 2 * H;
+    const yAt = x => Y1 + (Y2 - Y1) * (x - X1) / (X2 - X1);
+    const seg = (a, b) => [a * W, yAt(a * W), b * W, yAt(b * W)];
+    const L = seg(0.12, 0.42), R = seg(0.58, 0.88);
+    osdLine('osdHz1', ...L); osdLine('osdHz1s', ...L); osdLine('osdHz2', ...R); osdLine('osdHz2s', ...R);
+  }
+  let gimShown = '';
+  function camRender(dt){
+    gimbalPose(dt);
+    updateCamera(dt);
+    renderer.getSize(sizeV);
+    const W = sizeV.x, H = sizeV.y, fpv = cam.mode === 'fpv';
+    if (fpv) asCamera(() => renderer.render(scene, camera), camera.position); else renderer.render(scene, camera);
+    if (fpv) osdUpdate(W, H);
+    const g = (GB.tiltT > 0 ? '+' : GB.tiltT < 0 ? '−' : '') + Math.abs(Math.round(GB.tiltT)) + '° · ' + (Math.round(GB.panT) > 0 ? '+' : Math.round(GB.panT) < 0 ? '−' : '') + Math.abs(Math.round(GB.panT)) + '°';
+    if (g !== gimShown){ gimShown = g; $('#oGim').textContent = g; }
+    if (!GB.pip || pipEl.hidden) return;
+    const pr = pipEl.getBoundingClientRect(), sr = canvas.getBoundingClientRect();
+    const x = pr.left - sr.left + 2, y = sr.bottom - pr.bottom + 2, w = pr.width - 4, h = pr.height - 4;
+    if (w < 20 || h < 12) return;
+    renderer.setScissorTest(true); renderer.setScissor(x, y, w, h); renderer.setViewport(x, y, w, h);
+    if (fpv){
+      const d = drone.position;
+      mapCam.aspect = w / h; mapCam.updateProjectionMatrix();
+      mapCam.position.set(d.x, d.y + 46, d.z + 0.001); mapCam.up.set(0, 0, -1); mapCam.lookAt(d);
+      mapArrow.position.set(d.x, d.y + 0.6, d.z); mapArrow.rotation.y = Sim.S.att[2]; mapArrow.visible = true; arrowMat.color.set(TK.accent);
+      renderer.render(scene, mapCam);
+      mapArrow.visible = false;
+    } else {
+      droneCam.aspect = w / h; droneCam.fov = camFov(droneCam.aspect, GB.zoom); droneCam.updateProjectionMatrix();
+      asCamera(() => renderer.render(scene, droneCam), droneCam.position);
+    }
+    renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H);
+  }
+  camModeChanged();
 
   applyTheme();
   return { render, rebuildMission, clearTrail, applyTheme };
@@ -4398,6 +4672,7 @@ function anTables(A){
 function anOpen(e){
   const tr = e.target.closest('tr[data-f]'); if (!tr) return;
   const f = REC.flights.find(x => x.id === +tr.dataset.f); if (!f) return;
+  showPanel('rp');
   REC.sel = f; rpRefreshSelect(); rpIdx = null; rpRender(); rpJump(+tr.dataset.t);
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   $('#report').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block:'start' });
@@ -4427,6 +4702,87 @@ function anVisible(){ const r = $('#analysis').getBoundingClientRect(); return r
 new ResizeObserver(() => { if (AN.data) anRender(true); }).observe($('#anBody'));
 anRender();
 
+
+/* ---------- panel visibility: every dashboard can be hidden, the 3D view always stays ---------- */
+const LAY_KEYS = ['fn', 'dash', 'sm', 'an', 'rp'];
+const LAY = { hidden:new Set(), before:null };
+try { (JSON.parse(localStorage.getItem('ucds-hidden') || '[]') || []).forEach(k => { if (LAY_KEYS.includes(k)) LAY.hidden.add(k); }); } catch (e){}
+const layEl = k => $('.grid > .panel.' + k);
+const layName = k => { const h = layEl(k) && layEl(k).querySelector('h2'); return h ? h.textContent.trim() : k; };
+const mqMid = matchMedia('(max-width:1240px)'), mqNarrow = matchMedia('(max-width:760px)');
+function layApply(){
+  const vis = k => !LAY.hidden.has(k), grid = $('.grid');
+  let cols, rows;
+  if (!mqMid.matches){
+    const top = [vis('fn') && 'fn', 'view', vis('dash') && 'dash'].filter(Boolean);
+    cols = top.map(a => a === 'fn' ? '320px' : a === 'dash' ? '340px' : 'minmax(0,1fr)');
+    rows = [top].concat(['sm', 'an', 'rp'].filter(vis).map(a => top.map(() => a)));
+  } else if (!mqNarrow.matches){
+    cols = ['minmax(0,1fr)', 'minmax(0,1fr)'];
+    const pair = ['fn', 'dash'].filter(vis);
+    rows = [['view', 'view']].concat(pair.length === 2 ? [pair] : pair.map(a => [a, a]), ['sm', 'an', 'rp'].filter(vis).map(a => [a, a]));
+  } else {
+    cols = ['minmax(0,1fr)'];
+    rows = [['view']].concat(LAY_KEYS.filter(vis).map(a => [a]));
+  }
+  grid.style.gridTemplateColumns = cols.join(' ');
+  grid.style.gridTemplateAreas = rows.map(r => '"' + r.join(' ') + '"').join(' ');
+  LAY_KEYS.forEach(k => { const el = layEl(k); if (el) el.hidden = LAY.hidden.has(k); });
+  $$('#layList input').forEach(i => { i.checked = !LAY.hidden.has(i.value); });
+  $('#layCount').textContent = (LAY_KEYS.length - LAY.hidden.size) + '/' + LAY_KEYS.length;
+  try { localStorage.setItem('ucds-hidden', JSON.stringify([...LAY.hidden])); } catch (e){}
+}
+function hidePanel(k){ LAY.hidden.add(k); LAY.before = null; layApply(); }
+function showPanel(k){ if (!LAY.hidden.has(k)) return; LAY.hidden.delete(k); LAY.before = null; layApply(); }
+function layAll(on){
+  if (on){ LAY.hidden.clear(); LAY.before = null; }
+  else { LAY.before = new Set(LAY.hidden); LAY_KEYS.forEach(k => LAY.hidden.add(k)); }
+  layApply();
+}
+// one × per panel header
+LAY_KEYS.forEach(k => {
+  const el = layEl(k), ph = el && el.querySelector('.ph'); if (!ph) return;
+  const b = document.createElement('button');
+  b.className = 'ph-hide'; b.type = 'button'; b.title = 'Ẩn bảng này (mở lại ở nút Bảng trên đầu trang)';
+  b.setAttribute('aria-label', 'Ẩn bảng ' + layName(k));
+  b.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true" stroke="currentColor" stroke-width="1.6"><path d="M2 2l8 8M10 2l-8 8"/></svg>';
+  b.addEventListener('click', () => hidePanel(k));
+  ph.querySelector('h2').after(b);
+});
+$('#layList').innerHTML = '<label class="chk fixed"><input type="checkbox" checked disabled> Khung 3D</label>' +
+  LAY_KEYS.map(k => '<label class="chk"><input type="checkbox" value="' + k + '"> ' + layName(k) + '</label>').join('');
+$$('#layList input[value]').forEach(i => i.addEventListener('change', () => { i.checked ? LAY.hidden.delete(i.value) : LAY.hidden.add(i.value); LAY.before = null; layApply(); }));
+function layOpen(open){
+  const m = $('#layMenu'), b = $('#layBtn');
+  m.hidden = !open; b.setAttribute('aria-expanded', String(open));
+  if (!open) return;
+  const r = b.getBoundingClientRect(), w = m.offsetWidth;
+  m.style.top = Math.round(r.bottom + 6) + 'px';
+  m.style.left = Math.round(Math.max(8, Math.min(innerWidth - w - 8, r.right - w))) + 'px';
+}
+$('#layBtn').addEventListener('click', () => layOpen($('#layMenu').hidden));
+$('#layFocus').addEventListener('click', () => layAll(false));
+$('#layAll').addEventListener('click', () => layAll(true));
+document.addEventListener('pointerdown', e => { if (!$('#layMenu').hidden && !e.target.closest('.lay')) layOpen(false); });
+addEventListener('scroll', () => { if ($('#layMenu').hidden) return; const r = $('#layBtn').getBoundingClientRect(); layOpen(r.bottom > 0 && r.top < innerHeight); }, { passive:true });
+addEventListener('resize', () => { if (!$('#layMenu').hidden) layOpen(false); });
+addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#layMenu').hidden){ layOpen(false); $('#layBtn').focus(); return; }
+  if (e.target.closest && e.target.closest('input,select,textarea')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey || e.code !== 'KeyH') return;
+  if (LAY.hidden.size === LAY_KEYS.length){ LAY.hidden = LAY.before && LAY.before.size < LAY_KEYS.length ? LAY.before : new Set(); LAY.before = null; layApply(); }
+  else layAll(false);
+});
+// links, toasts and table rows that jump to a hidden panel open it first
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href^="#"]'); if (!a) return;
+  const el = document.querySelector(a.getAttribute('href'));
+  const k = el && LAY_KEYS.find(x => el.classList.contains(x)); if (k) showPanel(k);
+}, true);
+$('#rpToastGo').addEventListener('click', () => { const t = $('#rpToastGo').dataset.target || 'report'; showPanel(t === 'analysis' ? 'an' : 'rp'); }, true);
+mqMid.addEventListener('change', layApply); mqNarrow.addEventListener('change', layApply);
+layApply();
+
 /* ---------- main loop ---------- */
 updateCargoSpecUI();
 updateWindHudUI();
@@ -4436,6 +4792,10 @@ addLog('info', 'Sẵn sàng tại Nhà Máy Sản Xuất (0,0). Kiện hàng 1.5
 const DT = 1/250;
 let last = performance.now(), accT = 0, lastDom = 0;
 function frame(now){
+  try { frameBody(now); } catch (err){ if (!frame.errs){ frame.errs = 1; console.error('Khung hình:', err); } }
+  requestAnimationFrame(frame);
+}
+function frameBody(now){
   const fdt = Math.min(0.1, (now - last)/1000); last = now;
   updateSticks(fdt);
   demoTick();
@@ -4450,7 +4810,6 @@ function frame(now){
   if (now - lastDom > 100){ lastDom = now; updateDom(); }
   if (REC.cur && REC.sel === REC.cur && now - rpLastDraw > 500){ rpLastDraw = now; if (rpVisible()) rpRender(); }
   if (REC.cur && now - AN.lastDraw > 1000){ AN.lastDraw = now; anRender(); }
-  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 })();

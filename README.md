@@ -13,7 +13,7 @@ Mô phỏng drone chở hàng trong đô thị, chạy hoàn toàn trên trình 
 | **Chức năng** (Điều hành giao hàng) | Lệnh ARM, DISARM, TAKEOFF, LAND, HOLD, MANUAL, MISSION, RTL, KILL. Chỉnh khối lượng hàng, khoảng cách an toàn, tuyến giao hàng (Hub A/B/C, liên trạm, hoặc click mặt đất), tham số bay, gió và các tình huống lỗi. |
 | **Máy trạng thái** | 10 trạng thái, sơ đồ tô sáng trạng thái hiện tại và lần chuyển gần nhất, danh sách lệnh hợp lệ, nhật ký sự kiện. |
 | **Dashboard** | ALT, V/S, GS, HDG, khoảng cách về nhà máy, khoảng cách vật cản; chân trời nhân tạo, băng hướng mũi; pin 6S (điện áp, dòng, mAh, thời gian còn lại); RPM 4 động cơ; biểu đồ 30 giây; setpoint của bộ điều khiển. |
-| **3D** (Three.js) | Khu đô thị có cao ốc, nhà máy, đường phố, cây và đèn đường; quỹ đạo giao hàng, điểm né, đường thẳng bị chắn (nét đứt đỏ), tuyến RTL (nét đứt xanh), tia Lidar, vùng đệm an toàn, vệt bay và luồng gió. Có 3 góc camera; thu phóng bằng cuộn chuột, chụm 2 ngón, nút + / − hoặc phím + / −. Tòa nhà nằm giữa camera và drone tự làm mờ để không che drone. |
+| **3D** (Three.js) | Khu đô thị có cao ốc, nhà máy, đường phố, cây và đèn đường; quỹ đạo giao hàng, điểm né, đường thẳng bị chắn (nét đứt đỏ), tuyến RTL (nét đứt xanh), tia Lidar, vùng đệm an toàn, vệt bay và luồng gió. Có 3 góc nhìn ngoài và góc nhìn **camera trên drone**; thu phóng bằng cuộn chuột, chụm 2 ngón, nút + / − hoặc phím + / −. Tòa nhà nằm giữa camera và drone tự làm mờ để không che drone. |
 
 ## Cách dùng
 
@@ -29,6 +29,37 @@ Cách nhanh nhất để xem toàn bộ chu trình là bấm **Chạy Demo Giao 
 | `R` `F` | Lên / xuống |
 
 Đang HOVER mà chạm cần hoặc phím thì drone tự chuyển sang MANUAL. Buông cần thì drone phanh lại rồi giữ vị trí.
+
+Hai phím sau dùng được ở mọi trạng thái:
+
+| Phím | Tác dụng |
+|---|---|
+| `C` | Bật / tắt góc nhìn camera trên drone |
+| `H` | Ẩn mọi bảng dashboard để chỉ xem 3D; bấm lại để hiện lại |
+
+### Ẩn và hiện các bảng
+
+Nút **Bảng** trên đầu trang mở danh sách các bảng: Điều hành giao hàng, Telemetry, Máy trạng thái, Kết quả bay thử, Báo cáo hành trình. Bỏ chọn để ẩn, chọn để hiện lại. **Chỉ xem 3D** ẩn tất cả, khung 3D giãn ra toàn bộ chiều rộng. Mỗi bảng cũng có nút × ở góc tiêu đề. Trình duyệt nhớ lựa chọn cho lần mở sau.
+
+Bảng bị ẩn mà bạn bấm liên kết tới nó (ví dụ "Kết quả gió & tải ↓", nút "Xem kết quả" khi bay thử xong) thì bảng tự hiện lại.
+
+### Camera trên drone
+
+Drone mang một camera gimbal treo dưới mũi. Người điều khiển xem được hình từ camera theo hai cách:
+
+- **Cửa sổ nhỏ** ở giữa đáy khung 3D, hiện hình camera trong khi bạn xem drone từ bên ngoài. Bấm vào cửa sổ để phóng to.
+- **Camera drone** (nút trên khung 3D hoặc phím `C`): hình camera chiếm toàn khung. Màn hình hiển thị đè lên hình (OSD) gồm REC và thời gian ghi, trạng thái, pin, hướng mũi, góc gimbal, độ cao, tốc độ lên/xuống, tốc độ, khoảng cách về nhà máy, gió, tâm ngắm và đường chân trời. Lúc này cửa sổ nhỏ chuyển thành bản đồ nhìn từ trên xuống (bắc lên trên) có mũi tên chỉ hướng drone. Bấm bản đồ để quay lại góc nhìn ngoài.
+
+Điều khiển camera nằm ở hàng **Camera** dưới khung 3D:
+
+- **Gimbal ▲ ▼** chỉnh góc ngẩng/chúc từ +20° đến −90°, mỗi lần 10°. **Nhìn xuống** chúc thẳng −90° để canh bãi thả hàng. **Mặc định** về −15°, hướng theo mũi, zoom 1×.
+- **Zoom 1× 2× 4×**. Ở chế độ toàn khung còn có thể cuộn chuột hoặc chụm 2 ngón (1× đến 6×). Kéo chuột để xoay gimbal: kéo dọc để ngẩng/chúc, kéo ngang để quay trái/phải tới ±120°. Nhấp đúp để về mặc định.
+- **Ổn định gimbal**: bật thì hình luôn cân bằng, chỉ quay theo hướng mũi. Tắt thì camera gắn cứng vào khung, hình nghiêng theo drone; khi gió mạnh sẽ thấy rõ drone phải nghiêng vào gió.
+- **AR tuyến bay**: vẽ tuyến bay, điểm giao hàng và vệt bay chồng lên hình camera.
+
+Hình camera không có tia Lidar, vùng đệm hay thân drone. Tòa nhà luôn hiện đặc trong hình camera, kể cả khi đang được làm mờ ở góc nhìn ngoài.
+
+![Góc nhìn camera trên drone với OSD và bản đồ thu nhỏ](docs/camera.png)
 
 ## Kết quả bay thử: gió và tải trọng thay đổi thì drone ra sao
 
@@ -153,7 +184,7 @@ Bộ kiểm thử bay các tuyến Hub A, B, C và liên trạm, bay ở tốc �
 ```
 index.html               Toàn bộ ứng dụng: HTML, CSS, lõi mô phỏng (script#sim-core) và giao diện
 tests/run-scenarios.js   Kiểm thử lõi mô phỏng bằng Node
-docs/                    Ảnh chụp màn hình (giao diện, kết quả gió × tải, báo cáo hành trình, điều khiển thích nghi)
+docs/                    Ảnh chụp màn hình (giao diện, camera trên drone, kết quả gió × tải, báo cáo hành trình, điều khiển thích nghi)
 ```
 
 ## Giấy phép
