@@ -28,6 +28,7 @@ img{max-width:100%}
   --bad:#c4302a; --bad-soft:rgba(196,48,42,.12); --on-bad:#ffffff;
   --ov:rgba(250,251,252,.88);
   --scene-sky:#cfdbe6; --scene-ground:#b5bec4; --scene-grid:#8b969e; --scene-grid2:#a3adb5;
+  --st-takeoff:#2a78d6; --st-hover:#eb6834; --st-mission:#1baf7a; --st-rtl:#6250d6; --st-landing:#008300; --st-manual:#e87ba4; --st-ground:#a3adb6; --st-armed:#6c7781;
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -43,6 +44,7 @@ img{max-width:100%}
     --bad:#f0605a; --bad-soft:rgba(240,96,90,.15); --on-bad:#1a0605;
     --ov:rgba(20,28,35,.88);
     --scene-sky:#0d151d; --scene-ground:#161d24; --scene-grid:#2d3b47; --scene-grid2:#1f2933;
+    --st-takeoff:#3987e5; --st-hover:#d95926; --st-mission:#199e70; --st-rtl:#9085e9; --st-landing:#008300; --st-manual:#d55181; --st-ground:#47525c; --st-armed:#7d8893;
     color-scheme:dark;
   }
 }
@@ -56,6 +58,7 @@ img{max-width:100%}
   --bad:#f0605a; --bad-soft:rgba(240,96,90,.15); --on-bad:#1a0605;
   --ov:rgba(20,28,35,.88);
   --scene-sky:#0d151d; --scene-ground:#161d24; --scene-grid:#2d3b47; --scene-grid2:#1f2933;
+  --st-takeoff:#3987e5; --st-hover:#d95926; --st-mission:#199e70; --st-rtl:#9085e9; --st-landing:#008300; --st-manual:#d55181; --st-ground:#47525c; --st-armed:#7d8893;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -93,8 +96,8 @@ h1{font-family:var(--f-display);font-weight:700;font-size:23px;letter-spacing:.0
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--panel)}
 
 /* grid */
-.grid{display:grid;gap:12px;grid-template-columns:320px minmax(0,1fr) 340px;grid-template-areas:"fn view dash" "sm sm sm"}
-.fn{grid-area:fn}.view{grid-area:view}.dash{grid-area:dash}.sm{grid-area:sm}
+.grid{display:grid;gap:12px;grid-template-columns:320px minmax(0,1fr) 340px;grid-template-areas:"fn view dash" "sm sm sm" "rp rp rp"}
+.fn{grid-area:fn}.view{grid-area:view}.dash{grid-area:dash}.sm{grid-area:sm}.rp{grid-area:rp}
 .fn,.view,.dash{height:clamp(620px,calc(100vh - 110px),900px)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;min-width:0;min-height:0}
 .scroll{overflow-y:auto;flex:1;min-height:0}
@@ -283,8 +286,61 @@ table.ctl thead th:first-child{text-align:left}
 .ah{fill:var(--line-2)}
 .ah-on{fill:var(--accent)}
 
+
+/* post-flight report */
+.rp-tools{margin-left:auto;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.rp-empty{padding:16px 14px;color:var(--muted);font-size:13px}
+.rp-empty p{margin:0;max-width:72ch}
+.rp-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:14px}
+.rp-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.rp-tile{background:var(--panel);padding:8px 10px 7px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.rp-tile .k{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.13em;color:var(--muted);text-transform:uppercase}
+.rp-tile .v{font-family:var(--f-mono);font-size:17px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-tile .s{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-tile.good .v{color:var(--good)}.rp-tile.warn .v{color:var(--warn)}.rp-tile.bad .v{color:var(--bad)}
+.rp-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px;align-items:start}
+.rp-main figure{margin:0;min-width:0}
+.rp-cap{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline}
+.rp-cap .sub{text-transform:none;letter-spacing:0;font-family:var(--f-body);font-size:11.5px}
+.rp-map{width:100%;max-width:100%;aspect-ratio:1/1;display:block;border:1px solid var(--line);border-radius:4px;cursor:crosshair;touch-action:none}
+.rp-legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--muted);margin-top:7px}
+.rp-legend span{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:11px}
+.rp-legend i{display:inline-block;width:16px;height:0;border-top:3px solid;border-radius:2px}
+.rp-legend i.dash{border-top:2px dashed var(--fg);opacity:.6}
+.rp-dia{display:inline-block;width:8px;height:8px;background:var(--accent);transform:rotate(45deg)}
+.rp-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.rp-side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.rp-tl{width:100%;height:430px;display:block;cursor:crosshair;touch-action:pan-y}
+.rp-scrub{display:flex;flex-direction:column;gap:6px;padding:8px 10px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px}
+.rp-scrub input{width:100%;accent-color:var(--accent);margin:0}
+.rp-read{display:flex;flex-wrap:wrap;gap:4px 14px;font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums;align-items:center}
+.rp-read b{font-weight:500}.rp-read .k{color:var(--muted)}
+.rp-st{display:inline-flex;align-items:center;gap:5px}
+.rp-st i,.rp-ft i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.rp-cols{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:16px}
+.rp-cols h3{margin-bottom:6px}
+.rp-d{display:grid;grid-template-columns:10px 74px minmax(0,1fr) 84px;gap:8px;align-items:center;font-size:12px;padding:3px 0;font-family:var(--f-mono)}
+.rp-d>i{width:10px;height:10px;border-radius:2px}
+.rp-d .bar{height:8px;background:var(--panel-2);border-radius:2px;overflow:hidden}
+.rp-d .bar span{display:block;height:100%;border-radius:0 2px 2px 0}
+.rp-d .t{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.rp-tablewrap{max-height:250px;overflow:auto;border:1px solid var(--line);border-radius:4px}
+table.rp-trt{width:100%;border-collapse:collapse;font-size:12px}
+table.rp-trt th{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:4px 6px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+table.rp-trt td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+table.rp-trt td:first-child{font-family:var(--f-mono);color:var(--muted);white-space:nowrap}
+table.rp-trt td.rp-ft{font-family:var(--f-mono);white-space:nowrap}
+table.rp-trt tbody tr{cursor:pointer}
+table.rp-trt tbody tr:hover td{background:var(--panel-2)}
+.toast{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;align-items:center;gap:10px;max-width:min(460px,calc(100vw - 32px));padding:10px 10px 10px 14px;background:var(--panel);border:1px solid var(--line-2);border-radius:6px;box-shadow:0 8px 28px rgba(0,0,0,.22);font-size:13px}
+.toast span{flex:1;min-width:0}
+.toast-x{border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;padding:2px 6px;border-radius:3px}
+.toast-x:hover{color:var(--fg);background:var(--panel-2)}
+@media (max-width:1240px){ .rp-main{grid-template-columns:minmax(0,1fr)} .rp-map{max-width:620px} }
+@media (max-width:760px){ .rp-cols{grid-template-columns:minmax(0,1fr)} .rp-tl{height:400px} .rp-tools{margin-left:0} }
 @media (max-width:1240px){
-  .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"view view" "fn dash" "sm sm"}
+  .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"view view" "fn dash" "sm sm" "rp rp"}
   .fn,.dash{height:auto}
   .view{height:clamp(460px,65vh,680px)}
   .scroll{overflow:visible}
@@ -294,7 +350,7 @@ table.ctl thead th:first-child{text-align:left}
   .sm-dia{border-right:0;border-bottom:1px solid var(--line)}
 }
 @media (max-width:760px){
-  .grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"view" "fn" "dash" "sm"}
+  .grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"view" "fn" "dash" "sm" "rp"}
   .view{height:min(76vh,480px)}
   .top-state{min-width:0;flex-basis:100%;order:3}
   .ph-note{margin-left:0;flex-basis:100%}
@@ -589,7 +645,53 @@ table.ctl thead th:first-child{text-align:left}
         </div>
       </div>
     </section>
+    <!-- REPORT -->
+    <section class="panel rp" id="report" aria-labelledby="hRp">
+      <div class="ph"><span class="code">RPT</span><h2 id="hRp">Báo cáo hành trình</h2>
+        <span class="pill s-idle" id="rpStatus">CHƯA CÓ</span>
+        <div class="rp-tools">
+          <label for="rpSel" class="sr">Chọn chuyến bay</label>
+          <select id="rpSel"></select>
+          <button class="btn" id="rpCsv">Tải dữ liệu CSV</button>
+          <button class="btn" id="rpPng">Lưu ảnh quỹ đạo</button>
+        </div>
+      </div>
+      <div class="rp-empty" id="rpEmpty">
+        <p><b>Chưa có chuyến bay nào được ghi.</b> Bấm <b>Chạy Demo Giao Hàng</b>, hoặc ARM rồi TAKEOFF. Báo cáo cập nhật ngay trong lúc bay và chốt lại khi drone hạ cánh: quỹ đạo thực tế so với tuyến dự kiến, trạng thái theo thời gian, độ cao, tốc độ, pin và khoảng cách tới tòa nhà.</p>
+      </div>
+      <div class="rp-body" id="rpBody" hidden>
+        <div class="rp-tiles" id="rpTiles"></div>
+        <div class="rp-main">
+          <figure>
+            <figcaption class="rp-cap">Quỹ đạo nhìn từ trên xuống <span class="sub">màu đường bay theo trạng thái · ô xám đậm = nhà cao</span></figcaption>
+            <canvas id="rpMap" class="rp-map" role="img" aria-label="Bản đồ quỹ đạo chuyến bay nhìn từ trên xuống"></canvas>
+            <div class="rp-legend" id="rpLegend"></div>
+          </figure>
+          <div class="rp-side">
+            <figure>
+              <figcaption class="rp-cap">Diễn biến theo thời gian <span class="sub">rê chuột lên biểu đồ hoặc bản đồ, hoặc kéo thanh tua, để xem lại từng thời điểm</span></figcaption>
+              <canvas id="rpTl" class="rp-tl" role="img" aria-label="Dải trạng thái và biểu đồ độ cao, tốc độ, pin, khoảng cách tới tòa nhà theo thời gian"></canvas>
+            </figure>
+            <div class="rp-scrub">
+              <input type="range" id="rpScrub" min="0" max="1" value="1" aria-label="Tua lại chuyến bay">
+              <div class="rp-read" id="rpRead"></div>
+            </div>
+            <div class="rp-cols">
+              <div><h3>Thời gian ở mỗi trạng thái</h3><div id="rpDur"></div></div>
+              <div><h3>Các lần chuyển trạng thái</h3>
+                <div class="rp-tablewrap"><table class="rp-trt"><thead><tr><th>T+</th><th>Chuyển</th><th>Lý do</th></tr></thead><tbody id="rpTr"></tbody></table></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
+</div>
+<div class="toast" id="rpToast" role="status" hidden>
+  <span id="rpToastMsg"></span>
+  <button class="btn primary" id="rpToastGo">Xem báo cáo</button>
+  <button class="toast-x" id="rpToastX" aria-label="Đóng thông báo">×</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -1468,7 +1570,8 @@ let replanTimer = 0;
 let cargoLocked = null;
 function readTokens(){
   const cs = getComputedStyle(document.documentElement);
-  ['bg','panel','panel-2','line','line-2','fg','muted','faint','accent','accent-ink','tele','good','warn','bad','scene-sky','scene-ground','scene-grid','scene-grid2']
+  ['bg','panel','panel-2','line','line-2','fg','muted','faint','accent','accent-ink','tele','good','warn','bad','scene-sky','scene-ground','scene-grid','scene-grid2',
+    'st-takeoff','st-hover','st-mission','st-rtl','st-landing','st-manual','st-ground','st-armed']
     .forEach(k => { TK[k] = cs.getPropertyValue('--' + k).trim() || '#888888'; });
   const hex = TK.bg.replace('#',''); const n = parseInt(hex.length === 3 ? hex.split('').map(c => c+c).join('') : hex, 16);
   TK.dark = (((n >> 16) & 255)*0.299 + ((n >> 8) & 255)*0.587 + (n & 255)*0.114) < 110;
@@ -2921,9 +3024,441 @@ catch (err){ R3 = null; $('#glErr').hidden = false; $('#gl').style.display = 'no
 $('#clearTrail').addEventListener('click', () => { if (R3) R3.clearTrail(); });
 
 /* theme changes */
-function onTheme(){ readTokens(); if (R3) R3.applyTheme(); }
+function onTheme(){ readTokens(); if (R3) R3.applyTheme(); if (REC.sel) rpRender(); }
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', onTheme); } catch (e) {}
 new MutationObserver(onTheme).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme','class'] });
+
+/* ---------- flight recorder & post-flight report ---------- */
+// State colours: six validated categorical slots for flight modes, status colours for FAILSAFE / EMERGENCY, greys on the ground
+const ST_COLOR = { DISARMED:'st-ground', ARMED:'st-armed', TAKEOFF:'st-takeoff', HOVER:'st-hover', MANUAL:'st-manual',
+  MISSION:'st-mission', RTL:'st-rtl', LANDING:'st-landing', FAILSAFE:'warn', EMERGENCY:'bad' };
+const ST_ORDER = ['DISARMED','ARMED','TAKEOFF','HOVER','MANUAL','MISSION','RTL','LANDING','FAILSAFE','EMERGENCY'];
+const stCol = st => TK[ST_COLOR[st]] || TK.muted;
+const ROADS = { ew:[-42,-6,14,44], ns:[-44,-20,10,46], w:7.5 };
+const REC = { flights:[], cur:null, sel:null, n:0, lastT:-1 };
+let rpIdx = null, rpLastDraw = 0;
+
+function recPoint(S){
+  const sp = S.sp;
+  return { t:S.t, e:S.pos[0], n:S.pos[1], u:S.pos[2], gs:Math.hypot(S.vel[0], S.vel[1]), vs:S.vel[2],
+    roll:S.att[0]*DEG, pitch:-S.att[1]*DEG, psi:S.att[2], soc:S.soc*100, mAh:S.mAh,
+    clr:S.minObsDist, st:S.state, cargo:Sim.params.cargoMass, zsp: sp && sp.z != null ? sp.z : null,
+    wind:Math.hypot(S.windNow[0], S.windNow[1]), air:!S.grounded };
+}
+function recSample(force){
+  const f = REC.cur; if (!f) return;
+  const S = Sim.S;
+  if (!force && S.t - REC.lastT < 0.2) return;
+  REC.lastT = S.t; f.samples.push(recPoint(S));
+}
+function recStart(){
+  const S = Sim.S;
+  REC.n++;
+  REC.cur = { id:REC.n, t0:S.t, t1:null, st0:S.state, outcome:'', kind:'live', live:true,
+    samples:[], events:[], plans:[], drops:[], mAh0:S.mAh, soc0:S.soc*100,
+    cargo0:Sim.params.cargoMass, safe:Sim.params.safeMargin };
+  REC.flights.push(REC.cur);
+  if (REC.flights.length > 8) REC.flights.shift();
+  REC.sel = REC.cur; REC.lastT = -1; rpIdx = null;
+  recSample(true);
+  rpRefreshSelect(); rpRender();
+}
+function recFinish(outcome, kind, noSample){
+  const f = REC.cur; if (!f) return;
+  if (!noSample) recSample(true);
+  f.t1 = noSample ? f.samples[f.samples.length - 1].t : Sim.S.t;
+  f.outcome = outcome; f.kind = kind; f.live = false;
+  REC.cur = null;
+  if (!f.samples.some(p => p.air)){
+    // never left the ground: nothing to report
+    REC.flights.splice(REC.flights.indexOf(f), 1);
+    if (REC.sel === f) REC.sel = REC.flights[REC.flights.length - 1] || null;
+    rpRefreshSelect(); rpRender();
+    return;
+  }
+  rpRefreshSelect(); rpRender(); showReportToast(f);
+}
+
+Sim.on(ev => {
+  const S = Sim.S;
+  if (ev.type === 'transition'){
+    if (!REC.cur && ((ev.from === 'DISARMED' && ev.to === 'ARMED') || ev.to === 'TAKEOFF')) recStart();
+    const f = REC.cur;
+    if (!f) return;
+    f.events.push({ t:ev.t, from:ev.from, to:ev.to, reason:ev.reason, e:S.pos[0], n:S.pos[1], u:S.pos[2] });
+    recSample(true);
+    if (ev.to === 'MISSION' && Sim.mission.length){
+      const ms = Sim.missionStart || { e:S.pos[0], n:S.pos[1] };
+      f.plans.push({ t:ev.t, kind:'mission', pts:[{ e:ms.e, n:ms.n }].concat(Sim.mission.map(w => ({ e:w.e, n:w.n, avoid:w.kind === 'avoid', label:w.label }))) });
+    }
+    if (ev.to === 'RTL' || ev.to === 'FAILSAFE'){
+      f.plans.push({ t:ev.t, kind:'rtl', pts:[{ e:S.pos[0], n:S.pos[1] }].concat(Sim.rtlPath.map(w => ({ e:w.e, n:w.n, avoid:!(w.e === 0 && w.n === 0) }))) });
+    }
+    if (ev.from === 'LANDING' && ev.to === 'ARMED'){
+      const home = Math.hypot(S.pos[0], S.pos[1]) < 2;
+      const fs = f.events.some(x => x.to === 'FAILSAFE');
+      recFinish(fs ? 'Hạ cánh sau failsafe · ' + (home ? 'tại Nhà máy' : 'ngoài Nhà máy') : home ? 'Hoàn thành · đã về Nhà máy' : 'Đã hạ cánh · tại (' + fx(S.pos[0], 0) + ', ' + fx(S.pos[1], 0) + ')', fs ? 'warn' : 'good');
+    } else if (ev.from === 'EMERGENCY' && ev.to === 'DISARMED'){
+      const em = f.events.slice().reverse().find(x => x.to === 'EMERGENCY');
+      recFinish('Ngắt khẩn cấp · ' + (em ? em.reason : ''), 'bad');
+    } else if (ev.to === 'DISARMED'){
+      recFinish('Đã tắt động cơ', 'idle');
+    }
+  } else if (ev.type === 'delivery' && REC.cur){
+    const m = ev.msg.match(/thả ([\d.]+) kg/);
+    REC.cur.drops.push({ t:ev.t, e:S.pos[0], n:S.pos[1], kg: m ? parseFloat(m[1]) : 0, msg:ev.msg });
+    recSample(true);
+  } else if (ev.type === 'reset' && REC.cur){
+    recFinish('Đặt lại giữa chừng', 'idle', true);
+  }
+});
+
+/* ----- derived numbers ----- */
+function rpSegments(f){
+  const segs = [];
+  let st = f.st0, a = f.t0;
+  const end = f.live ? f.samples[f.samples.length - 1].t : f.t1;
+  f.events.forEach(ev => {
+    if (ev.t <= f.t0 && ev.to === f.st0) return;
+    if (ev.t > a || segs.length === 0) segs.push({ st, a, b:ev.t });
+    st = ev.to; a = ev.t;
+  });
+  segs.push({ st, a, b:Math.max(a, end) });
+  return segs.filter(s => s.b - s.a > 1e-6);
+}
+function rpStats(f){
+  const P = f.samples;
+  let dist = 0, air = 0, gsMax = 0, tilt = 0, clr = 99, clrAt = null;
+  for (let i = 1; i < P.length; i++){
+    const a = P[i - 1], b = P[i];
+    if (a.air || b.air){ dist += Math.hypot(b.e - a.e, b.n - a.n, b.u - a.u); air += b.t - a.t; }
+  }
+  P.forEach(p => {
+    if (!p.air || p.st === 'EMERGENCY') return;
+    gsMax = Math.max(gsMax, p.gs);
+    tilt = Math.max(tilt, Math.acos(clamp(Math.cos(p.roll / DEG) * Math.cos(p.pitch / DEG), -1, 1)) * DEG);
+    if (p.u > 0.5 && p.clr < clr){ clr = p.clr; clrAt = p; }
+  });
+  const last = P[P.length - 1];
+  const t1 = f.live ? last.t : f.t1;
+  const dur = {};
+  rpSegments(f).forEach(s => { dur[s.st] = (dur[s.st] || 0) + (s.b - s.a); });
+  return { dist, air, gsMax, tilt, clr, clrAt, total:t1 - f.t0, t1, last,
+    mAh:last.mAh - f.mAh0, socUsed:f.soc0 - last.soc, kg:f.drops.reduce((s, d) => s + d.kg, 0), dur };
+}
+
+/* ----- UI wiring ----- */
+function rpRefreshSelect(){
+  const sel = $('#rpSel');
+  sel.innerHTML = REC.flights.map(f => '<option value="' + f.id + '">Chuyến ' + f.id + ' · ' +
+    (f.live ? 'đang bay' : f.kind === 'good' ? 'hoàn thành' : f.kind === 'warn' ? 'failsafe' : f.kind === 'bad' ? 'sự cố' : 'kết thúc') + '</option>').reverse().join('');
+  if (REC.sel) sel.value = String(REC.sel.id);
+  sel.disabled = !REC.flights.length;
+  $('#rpCsv').disabled = !REC.sel; $('#rpPng').disabled = !REC.sel;
+}
+$('#rpSel').addEventListener('change', e => { REC.sel = REC.flights.find(f => f.id === +e.target.value) || null; rpIdx = null; rpRender(); });
+$('#rpScrub').addEventListener('input', e => {
+  const f = REC.sel; if (!f) return;
+  const v = +e.target.value;
+  rpIdx = v >= f.samples.length - 1 ? null : v;
+  rpRender(true);
+});
+function showReportToast(f){
+  $('#rpToastMsg').textContent = 'Chuyến ' + f.id + ' kết thúc: ' + f.outcome + '.';
+  $('#rpToast').hidden = false;
+  clearTimeout(showReportToast.tm);
+  showReportToast.tm = setTimeout(() => { $('#rpToast').hidden = true; }, 15000);
+}
+$('#rpToastGo').addEventListener('click', () => {
+  $('#rpToast').hidden = true;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('#report').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block:'start' });
+});
+$('#rpToastX').addEventListener('click', () => { $('#rpToast').hidden = true; });
+
+function rpDownload(name, blob){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+$('#rpCsv').addEventListener('click', () => {
+  const f = REC.sel; if (!f) return;
+  const rows = [['t_s','state','e_m','n_m','u_m','ground_speed_mps','vertical_speed_mps','roll_deg','pitch_deg','heading_deg','battery_pct','cargo_kg','clearance_m','wind_mps'].join(',')];
+  f.samples.forEach(p => rows.push([(p.t - f.t0).toFixed(2), p.st, p.e.toFixed(2), p.n.toFixed(2), p.u.toFixed(2), p.gs.toFixed(2), p.vs.toFixed(2),
+    p.roll.toFixed(1), p.pitch.toFixed(1), hdgOf(p.psi).toFixed(0), p.soc.toFixed(1), p.cargo.toFixed(2), Math.min(p.clr, 99).toFixed(2), p.wind.toFixed(1)].join(',')));
+  rpDownload('chuyen-bay-' + f.id + '.csv', new Blob(['﻿' + rows.join('\n')], { type:'text/csv;charset=utf-8' }));
+});
+$('#rpPng').addEventListener('click', () => {
+  if (!REC.sel) return;
+  $('#rpMap').toBlob(b => { if (b) rpDownload('quy-dao-chuyen-' + REC.sel.id + '.png', b); });
+});
+
+/* ----- map: top-down trajectory ----- */
+let rpMapView = null;
+function rpDrawMap(f, idx){
+  const c = $('#rpMap'), [ctx, w, h] = fitCanvas(c);
+  const R = 86, k = Math.min(w, h) / (2 * R);
+  const X = e => w/2 + e*k, Y = n => h/2 - n*k;
+  rpMapView = { X, Y, k, w, h };
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = TK['panel-2']; ctx.fillRect(0, 0, w, h);
+  // streets
+  ctx.fillStyle = TK.line;
+  ROADS.ew.forEach(n => ctx.fillRect(0, Y(n + ROADS.w/2), w, ROADS.w*k));
+  ROADS.ns.forEach(e => ctx.fillRect(X(e - ROADS.w/2), 0, ROADS.w*k, h));
+  // safety buffer
+  ctx.setLineDash([3, 3]); ctx.strokeStyle = TK['line-2']; ctx.lineWidth = 1;
+  Sim.obstacles.forEach(o => ctx.strokeRect(X(o.e - o.rx - f.safe), Y(o.n + o.ry + f.safe), (o.rx + f.safe)*2*k, (o.ry + f.safe)*2*k));
+  ctx.setLineDash([]);
+  // buildings, darker = taller
+  ctx.font = '600 9px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  Sim.obstacles.forEach(o => {
+    ctx.globalAlpha = 0.28 + 0.5 * clamp((o.h - 8) / 26, 0, 1);
+    ctx.fillStyle = TK.muted; ctx.fillRect(X(o.e - o.rx), Y(o.n + o.ry), o.rx*2*k, o.ry*2*k);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = TK.muted; ctx.lineWidth = 1; ctx.strokeRect(X(o.e - o.rx) + 0.5, Y(o.n + o.ry) + 0.5, o.rx*2*k - 1, o.ry*2*k - 1);
+    if (o.rx*2*k > 22){ ctx.fillStyle = TK.fg; ctx.fillText(o.id, X(o.e), Y(o.n) - 5); ctx.fillStyle = TK.muted; ctx.fillText(o.h + 'm', X(o.e), Y(o.n) + 6); }
+  });
+  // factory pad and hubs
+  const ring = (e, n, txt) => {
+    ctx.beginPath(); ctx.arc(X(e), Y(n), 7, 0, Math.PI*2); ctx.fillStyle = TK.panel; ctx.fill();
+    ctx.strokeStyle = TK.fg; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = TK.fg; ctx.font = '700 10px "Barlow Condensed", Arial, sans-serif'; ctx.fillText(txt, X(e), Y(n) + 0.5);
+  };
+  ring(0, 0, 'H');
+  Object.values(Sim.HUBS).forEach(hb => ring(hb.e, hb.n, hb.code));
+  // planned routes (dashed)
+  ctx.lineWidth = 1.5; ctx.strokeStyle = TK.fg; ctx.globalAlpha = 0.5; ctx.setLineDash([6, 4]);
+  f.plans.forEach(pl => { ctx.beginPath(); pl.pts.forEach((p, i) => i ? ctx.lineTo(X(p.e), Y(p.n)) : ctx.moveTo(X(p.e), Y(p.n))); ctx.stroke(); });
+  ctx.setLineDash([]);
+  f.plans.forEach(pl => pl.pts.forEach((p, i) => { if (i && p.avoid){ ctx.beginPath(); ctx.arc(X(p.e), Y(p.n), 2.6, 0, Math.PI*2); ctx.stroke(); } }));
+  ctx.globalAlpha = 1;
+  // flown path, coloured by state, with a surface halo so it reads over buildings and plans
+  const P = f.samples;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.strokeStyle = TK['panel-2']; ctx.lineWidth = 5.5;
+  ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(X(p.e), Y(p.n)) : ctx.moveTo(X(p.e), Y(p.n))); ctx.stroke();
+  ctx.lineWidth = 2.5;
+  for (let i = 1; i < P.length; i++){
+    const a = P[i - 1], b = P[i];
+    if (!a.air && !b.air) continue;
+    ctx.strokeStyle = stCol(b.st);
+    ctx.beginPath(); ctx.moveTo(X(a.e), Y(a.n)); ctx.lineTo(X(b.e), Y(b.n)); ctx.stroke();
+  }
+  // transition markers
+  f.events.forEach(ev => {
+    ctx.beginPath(); ctx.arc(X(ev.e), Y(ev.n), 4, 0, Math.PI*2);
+    ctx.fillStyle = stCol(ev.to); ctx.fill(); ctx.strokeStyle = TK['panel-2']; ctx.lineWidth = 2; ctx.stroke();
+  });
+  // deliveries
+  ctx.font = '600 10px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
+  f.drops.forEach(d => {
+    const x = X(d.e), y = Y(d.n);
+    ctx.beginPath(); ctx.moveTo(x, y - 7); ctx.lineTo(x + 7, y); ctx.lineTo(x, y + 7); ctx.lineTo(x - 7, y); ctx.closePath();
+    ctx.fillStyle = TK.accent; ctx.fill(); ctx.strokeStyle = TK['panel-2']; ctx.lineWidth = 2; ctx.stroke();
+    const txt = '−' + d.kg.toFixed(2) + ' kg', tw = ctx.measureText(txt).width;
+    const lx = x + 10 + tw > w - 4 ? x - 10 - tw : x + 10;
+    ctx.fillStyle = TK.panel; ctx.fillRect(lx - 3, y - 8, tw + 6, 15);
+    ctx.fillStyle = TK.fg; ctx.fillText(txt, lx, y);
+  });
+  // end marker (crash = X)
+  if (!f.live && P.length){
+    const e = P[P.length - 1], x = X(e.e), y = Y(e.n);
+    if (f.kind === 'bad'){
+      ctx.strokeStyle = TK.bad; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x - 6, y - 6); ctx.lineTo(x + 6, y + 6); ctx.moveTo(x + 6, y - 6); ctx.lineTo(x - 6, y + 6); ctx.stroke();
+    }
+  }
+  // replay cursor: drone position and heading at the selected moment
+  const cp = P[idx];
+  if (cp){
+    const x = X(cp.e), y = Y(cp.n), hx = Math.cos(cp.psi), hy = -Math.sin(cp.psi);
+    ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI*2); ctx.fillStyle = stCol(cp.st); ctx.fill();
+    ctx.strokeStyle = TK.fg; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + hx*14, y + hy*14); ctx.lineTo(x - hy*5 + hx*7, y + hx*5 + hy*7); ctx.lineTo(x + hy*5 + hx*7, y - hx*5 + hy*7); ctx.closePath();
+    ctx.fillStyle = TK.fg; ctx.fill();
+  }
+  // north arrow and 20 m scale bar
+  ctx.fillStyle = TK.fg; ctx.font = '700 11px "Barlow Condensed", Arial, sans-serif'; ctx.textAlign = 'center';
+  ctx.beginPath(); ctx.moveTo(18, 12); ctx.lineTo(23, 24); ctx.lineTo(13, 24); ctx.closePath(); ctx.fill();
+  ctx.fillText('N', 18, 32);
+  const sb = 20 * k;
+  ctx.strokeStyle = TK.fg; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(12, h - 12); ctx.lineTo(12 + sb, h - 12); ctx.moveTo(12, h - 16); ctx.lineTo(12, h - 8); ctx.moveTo(12 + sb, h - 16); ctx.lineTo(12 + sb, h - 8); ctx.stroke();
+  ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'left'; ctx.fillText('20 m', 16 + sb, h - 11);
+}
+
+/* ----- timeline: state band + small multiples sharing one time axis ----- */
+let rpTlView = null;
+function niceTicks(lo, hi, n){
+  const raw = (hi - lo) / n, p = Math.pow(10, Math.floor(Math.log10(raw || 1))), m = raw / p;
+  const step = (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(v);
+  return { step, ticks:out };
+}
+function rpDrawTl(f, idx, st){
+  const c = $('#rpTl'), [ctx, w, h] = fitCanvas(c);
+  ctx.clearRect(0, 0, w, h);
+  const P = f.samples, t0 = f.t0, t1 = Math.max(st.t1, t0 + 1);
+  const padL = 46, padR = 10, bandY = 16, bandH = 16, axisH = 18;
+  const top = bandY + bandH + 34, gap = 16;
+  const panels = [
+    { k:'u', title:'Độ cao (m)', sp:'zsp', floor0:true },
+    { k:'gs', title:'Tốc độ ngang (m/s)', floor0:true },
+    { k:'soc', title:'Pin (%)' },
+    { k:'clr', title:'Cách tường gần nhất (m)', cap:20, floor0:true, ref:f.safe, refLabel:'vùng an toàn ' + f.safe.toFixed(1) + ' m', airOnly:true },
+  ];
+  const ph = (h - top - axisH - gap*(panels.length - 1)) / panels.length;
+  const X = t => padL + (t - t0) / (t1 - t0) * (w - padL - padR);
+  rpTlView = { X, padL, padR, w, t0, t1 };
+  ctx.font = '10px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle';
+  // state band
+  ctx.fillStyle = TK.muted; ctx.textAlign = 'left'; ctx.font = '600 10.5px "Barlow Condensed", Arial, sans-serif';
+  ctx.fillText('TRẠNG THÁI', 0, bandY - 9);
+  const segs = rpSegments(f);
+  segs.forEach(s => {
+    const a = X(s.a), b = X(s.b);
+    ctx.fillStyle = stCol(s.st);
+    const x0 = a + 1, x1 = Math.max(a + 2, b - 1);
+    ctx.fillRect(x0, bandY, x1 - x0, bandH);
+    ctx.font = '600 10px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+    const tw = ctx.measureText(s.st).width;
+    if (b - a > tw + 6){ ctx.fillStyle = TK.fg; ctx.fillText(s.st, (a + b)/2, bandY + bandH + 9); }
+  });
+  // transitions as faint verticals through all panels
+  ctx.strokeStyle = TK.line; ctx.lineWidth = 1;
+  f.events.forEach(ev => { const x = Math.round(X(ev.t)) + 0.5; ctx.beginPath(); ctx.moveTo(x, top - 4); ctx.lineTo(x, h - axisH); ctx.stroke(); });
+  // panels
+  panels.forEach((pn, i) => {
+    const y0 = top + i*(ph + gap), y1 = y0 + ph;
+    const val = p => pn.cap ? Math.min(p[pn.k], pn.cap) : p[pn.k];
+    let lo = Infinity, hi = -Infinity;
+    P.forEach(p => { if (pn.airOnly && !p.air) return; const v = val(p); if (v < lo) lo = v; if (v > hi) hi = v; if (pn.sp && p[pn.sp] != null){ lo = Math.min(lo, p[pn.sp]); hi = Math.max(hi, p[pn.sp]); } });
+    if (pn.ref != null){ lo = Math.min(lo, pn.ref); hi = Math.max(hi, pn.ref); }
+    if (!isFinite(lo)){ lo = 0; hi = 1; }
+    if (pn.floor0) lo = Math.min(0, lo);
+    if (hi - lo < 1){ hi = lo + 1; }
+    const tk = niceTicks(lo, hi, 3); lo = Math.min(lo, tk.ticks[0]); hi = Math.max(hi, tk.ticks[tk.ticks.length - 1]);
+    const Y = v => y1 - (v - lo) / (hi - lo) * (ph - 4) - 2;
+    ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'right';
+    tk.ticks.forEach(v => {
+      const y = Math.round(Y(v)) + 0.5;
+      ctx.strokeStyle = TK.line; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+      ctx.fillStyle = TK.muted; ctx.fillText(fx(v, tk.step < 1 ? 1 : 0), padL - 6, y);
+    });
+    ctx.textAlign = 'left'; ctx.fillStyle = TK.muted; ctx.font = '600 10.5px "Barlow Condensed", Arial, sans-serif';
+    ctx.fillText(pn.title.toUpperCase(), padL + 4, y0 - 5);
+    if (pn.ref != null){
+      const y = Y(pn.ref); ctx.setLineDash([4, 3]); ctx.strokeStyle = TK.warn; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = TK.muted; ctx.textAlign = 'right'; ctx.font = '10px "JetBrains Mono", monospace'; ctx.fillText(pn.refLabel, w - padR - 2, y - 7);
+    }
+    ctx.save(); ctx.beginPath(); ctx.rect(padL, y0 - 2, w - padL - padR, ph + 4); ctx.clip();
+    if (pn.sp){
+      ctx.setLineDash([4, 3]); ctx.strokeStyle = TK.muted; ctx.lineWidth = 1.3; ctx.beginPath(); let pen = false;
+      P.forEach(p => { const v = p[pn.sp]; if (v == null){ pen = false; return; } const x = X(p.t), y = Y(v); pen ? ctx.lineTo(x, y) : ctx.moveTo(x, y); pen = true; });
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.strokeStyle = TK.tele; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath(); let pen = false;
+    P.forEach(p => { if (pn.airOnly && !p.air){ pen = false; return; } const x = X(p.t), y = Y(val(p)); pen ? ctx.lineTo(x, y) : ctx.moveTo(x, y); pen = true; });
+    ctx.stroke();
+    const cp = P[idx];
+    if (cp && !(pn.airOnly && !cp.air)){
+      ctx.beginPath(); ctx.arc(X(cp.t), Y(val(cp)), 4, 0, Math.PI*2); ctx.fillStyle = TK.tele; ctx.fill(); ctx.strokeStyle = TK.panel; ctx.lineWidth = 2; ctx.stroke();
+    }
+    ctx.restore();
+  });
+  // time axis
+  const span = t1 - t0, tk = niceTicks(0, span, Math.max(3, Math.floor((w - padL) / 90)));
+  ctx.fillStyle = TK.muted; ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+  tk.ticks.forEach(s => { const x = X(t0 + s); if (x > padL - 1 && x < w - padR + 1) ctx.fillText('T+' + mmss(s), clamp(x, padL + 16, w - padR - 18), h - 8); });
+  // cursor
+  const cp = P[idx];
+  if (cp){
+    const x = Math.round(X(cp.t)) + 0.5;
+    ctx.strokeStyle = TK.fg; ctx.globalAlpha = 0.65; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, bandY - 3); ctx.lineTo(x, h - axisH); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+}
+
+/* ----- HTML parts ----- */
+function rpTile(k, v, s, cls){
+  return '<div class="rp-tile' + (cls ? ' ' + cls : '') + '"><span class="k">' + k + '</span><span class="v">' + v + '</span><span class="s">' + (s || '&nbsp;') + '</span></div>';
+}
+function rpEsc(s){ return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[c]); }
+function rpReadout(f, idx){
+  const p = f.samples[idx]; if (!p) return;
+  $('#rpRead').innerHTML =
+    '<span><span class="k">T+</span> <b>' + mmss(p.t - f.t0) + '.' + String(Math.floor(((p.t - f.t0) % 1) * 10)) + '</b></span>' +
+    '<span class="rp-st"><i style="background:' + stCol(p.st) + '"></i><b>' + p.st + '</b></span>' +
+    '<span><span class="k">E/N/U</span> <b>' + fx(p.e, 1) + ' / ' + fx(p.n, 1) + ' / ' + fx(p.u, 1) + ' m</b></span>' +
+    '<span><span class="k">GS</span> <b>' + fx(p.gs, 1) + ' m/s</b></span>' +
+    '<span><span class="k">Pin</span> <b>' + p.soc.toFixed(1) + '%</b></span>' +
+    '<span><span class="k">Hàng</span> <b>' + p.cargo.toFixed(2) + ' kg</b></span>' +
+    '<span><span class="k">Cách tường</span> <b>' + (p.air ? (p.clr > 40 ? '> 40' : fx(p.clr, 1)) + ' m' : '—') + '</b></span>';
+}
+function rpRender(light){
+  const f = REC.sel;
+  const pill = $('#rpStatus');
+  $('#rpEmpty').hidden = !!f; $('#rpBody').hidden = !f;
+  if (!f){ pill.textContent = 'CHƯA CÓ'; pill.className = 'pill s-idle'; return; }
+  const kindPill = { live:['ĐANG GHI','s-air'], good:['HOÀN THÀNH','s-land'], warn:['FAILSAFE','s-fs'], bad:['SỰ CỐ','s-emg'], idle:['KẾT THÚC','s-idle'] }[f.kind];
+  pill.textContent = kindPill[0]; pill.className = 'pill ' + kindPill[1];
+  const n = f.samples.length;
+  const idx = rpIdx == null ? n - 1 : Math.min(rpIdx, n - 1);
+  const sc = $('#rpScrub'); sc.max = String(Math.max(0, n - 1)); sc.value = String(idx);
+  const st = rpStats(f);
+  rpDrawMap(f, idx); rpDrawTl(f, idx, st); rpReadout(f, idx);
+  if (light) return;
+  const resCls = { good:'good', warn:'warn', bad:'bad' }[f.kind] || '';
+  const clrCls = st.clr < 1 ? 'bad' : st.clr < f.safe ? 'warn' : '';
+  $('#rpTiles').innerHTML =
+    rpTile('Kết quả', f.live ? 'Đang bay' : rpEsc(f.outcome.split(' · ')[0]), f.live ? 'cập nhật trong lúc bay' : rpEsc(f.outcome.split(' · ').slice(1).join(' · ')) || 'Chuyến ' + f.id, resCls) +
+    rpTile('Tổng thời gian', mmss(st.total), 'trên không ' + mmss(st.air)) +
+    rpTile('Quãng đường bay', Math.round(st.dist) + ' m', st.air > 0 ? 'TB ' + (st.dist / st.air).toFixed(1) + ' m/s' : '') +
+    rpTile('Hàng đã giao', f.drops.length + ' trạm', st.kg.toFixed(2) + ' / ' + f.cargo0.toFixed(2) + ' kg') +
+    rpTile('Pin đã dùng', Math.round(st.mAh) + ' mAh', st.socUsed.toFixed(1) + '% · còn ' + st.last.soc.toFixed(0) + '%') +
+    rpTile('Cách tường gần nhất', st.clr > 40 ? '> 40 m' : st.clr.toFixed(2) + ' m', st.clrAt ? 'lúc T+' + mmss(st.clrAt.t - f.t0) + ' · ' + st.clrAt.st : '', clrCls) +
+    rpTile('Tốc độ tối đa', st.gsMax.toFixed(1) + ' m/s', 'nghiêng tối đa ' + st.tilt.toFixed(0) + '°') +
+    rpTile('Chuyển trạng thái', f.events.length + ' lần', f.plans.length + ' tuyến được lập');
+  const tot = Math.max(1e-6, st.total);
+  $('#rpDur').innerHTML = ST_ORDER.filter(s => st.dur[s] > 0).map(s =>
+    '<div class="rp-d"><i style="background:' + stCol(s) + '"></i><span>' + s + '</span><span class="bar"><span style="width:' + (st.dur[s] / tot * 100).toFixed(1) + '%;background:' + stCol(s) + '"></span></span><span class="t">' + mmss(st.dur[s]) + ' · ' + Math.round(st.dur[s] / tot * 100) + '%</span></div>').join('');
+  $('#rpTr').innerHTML = f.events.map((ev, i) =>
+    '<tr data-t="' + ev.t + '"><td>' + mmss(ev.t - f.t0) + '</td><td class="rp-ft"><i style="background:' + stCol(ev.from) + '"></i>' + ev.from + ' → <i style="background:' + stCol(ev.to) + '"></i>' + ev.to + '</td><td>' + rpEsc(ev.reason) + '</td></tr>').join('');
+  const used = ST_ORDER.filter(s => st.dur[s] > 0 && s !== 'DISARMED' && s !== 'ARMED');
+  $('#rpLegend').innerHTML = used.map(s => '<span><i style="border-color:' + stCol(s) + '"></i>' + s + '</span>').join('') +
+    '<span><i class="dash"></i>tuyến dự kiến (A*)</span><span><b class="rp-dia"></b>điểm thả hàng</span><span><b class="rp-dot"></b>đổi trạng thái</span>';
+}
+// click a transition row to jump the replay there
+$('#rpTr').addEventListener('click', e => {
+  const tr = e.target.closest('tr'); const f = REC.sel; if (!tr || !f) return;
+  const t = +tr.dataset.t; let best = 0;
+  f.samples.forEach((p, i) => { if (Math.abs(p.t - t) < Math.abs(f.samples[best].t - t)) best = i; });
+  rpIdx = best; rpRender(true);
+});
+// hover / drag on the timeline or the map scrubs the replay
+function rpPickTime(clientX){
+  const f = REC.sel, v = rpTlView; if (!f || !v) return;
+  const r = $('#rpTl').getBoundingClientRect(), t = v.t0 + (clientX - r.left - v.padL) / (v.w - v.padL - v.padR) * (v.t1 - v.t0);
+  let best = 0; f.samples.forEach((p, i) => { if (Math.abs(p.t - t) < Math.abs(f.samples[best].t - t)) best = i; });
+  rpIdx = best >= f.samples.length - 1 ? null : best; rpRender(true);
+}
+function rpPickMap(clientX, clientY){
+  const f = REC.sel, v = rpMapView; if (!f || !v) return;
+  const r = $('#rpMap').getBoundingClientRect(), x = clientX - r.left, y = clientY - r.top;
+  let best = -1, bd = 14;
+  f.samples.forEach((p, i) => { if (!p.air) return; const d = Math.hypot(v.X(p.e) - x, v.Y(p.n) - y); if (d < bd){ bd = d; best = i; } });
+  if (best >= 0){ rpIdx = best >= f.samples.length - 1 ? null : best; rpRender(true); }
+}
+$('#rpTl').addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) rpPickTime(e.clientX); });
+$('#rpTl').addEventListener('pointerdown', e => rpPickTime(e.clientX));
+$('#rpMap').addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) rpPickMap(e.clientX, e.clientY); });
+$('#rpMap').addEventListener('pointerdown', e => rpPickMap(e.clientX, e.clientY));
+new ResizeObserver(() => { if (REC.sel) rpRender(true); }).observe($('#rpBody'));
+function rpVisible(){ const r = $('#report').getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }
+rpRefreshSelect(); rpRender();
 
 /* ---------- main loop ---------- */
 updateCargoSpecUI();
@@ -2943,7 +3478,9 @@ function frame(now){
   sample();
   if (R3) R3.render(fdt, fdt*simSpeed);
   drawADI(); drawTape(); drawChart();
+  recSample(false);
   if (now - lastDom > 100){ lastDom = now; updateDom(); }
+  if (REC.cur && REC.sel === REC.cur && now - rpLastDraw > 500){ rpLastDraw = now; if (rpVisible()) rpRender(); }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
