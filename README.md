@@ -130,7 +130,7 @@ Click mặt đất 3D trong căn cứ vẫn thêm được điểm vào tuyến;
 
 ## Yêu cầu của các bên liên quan (SCV)
 
-Bảng **Yêu cầu bên liên quan (SCV)** có một thẻ cho mỗi năng lực của dòng Surveillance Drone (Dòng Trinh sát). Trong lúc vận hành, năng lực nào đang được dùng thì thẻ hiện đậm, viền cam và ghi **ĐANG ÁP DỤNG**; năng lực đang chờ thì thẻ mờ đi. Mỗi tiêu chí con có ✓ (mô phỏng đã đáp ứng) hoặc ✗ (còn thiếu) và số liệu trực tiếp.
+Bảng **Yêu cầu bên liên quan** liệt kê gọn tên các năng lực của dòng Surveillance Drone (Dòng Trinh sát). Trong lúc vận hành, năng lực nào đang được dùng thì dòng đó in đậm và có vạch cam; năng lực chưa dùng thì chữ nhạt đi.
 
 | Mã | Năng lực | Mô phỏng đáp ứng bằng | Khi nào đang áp dụng |
 |---|---|---|---|
@@ -142,9 +142,9 @@ Bảng **Yêu cầu bên liên quan (SCV)** có một thẻ cho mỗi năng lự
 
 Ảnh chụp có dải thông tin (thời gian, GPS, độ cao, cảm biến, zoom) và nằm trong mục **Ảnh chụp** của bảng Giám sát. Bấm một ảnh để xem lớn và tải bản xem trước 1920 × 1280.
 
-![Bảng yêu cầu SCV khi drone đang tuần tra](docs/requirements.png)
+![Bảng yêu cầu khi drone đang tuần tra](docs/requirements.png)
 
-**Còn thiếu:** V1_VC1 yêu cầu nhiệm vụ kéo dài tối thiểu 60 phút. Với pin 6S 12 Ah và khung hiện tại, thời gian bay ước tính chỉ khoảng 37 phút khi không chở hàng và khoảng 19 phút khi chở 1,5 kg, nên thẻ hiện ✗. Tiêu chí video 1080p@30fps lấy theo tốc độ khung hình thật của trình duyệt, nên máy chậm cũng sẽ hiện ✗.
+**Còn thiếu:** V1_VC1 yêu cầu nhiệm vụ kéo dài tối thiểu 60 phút. Với pin 6S 12 Ah và khung hiện tại, thời gian bay ước tính chỉ khoảng 37 phút khi không chở hàng và khoảng 19 phút khi chở 1,5 kg.
 
 ## Kết quả bay thử: gió và tải trọng thay đổi thì drone ra sao
 

@@ -589,34 +589,14 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
 .ph-fold{order:98;margin-left:4px;white-space:nowrap}
 @media (max-width:760px){ .ph-fold{order:0} }
 
-/* stakeholder requirement dashboard */
+/* stakeholder requirement list: bold when in use, faded when not */
 .rq{grid-area:rq}
-.rq-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px}
-.rq-lead{margin:0;font-size:12.5px;color:var(--muted);line-height:1.45}
-.rq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
-.rqc{border:1px solid var(--line);border-radius:5px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;opacity:.42;filter:saturate(.25);transition:opacity .35s,filter .35s,background-color .35s,border-color .35s;min-width:0}
-.rqc.on{opacity:1;filter:none;border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 4px 0 0 var(--accent)}
-.rqc header{display:flex;gap:6px;align-items:center}
-.rq-id{font-family:var(--f-mono);font-weight:700;font-size:12px;padding:1px 6px;border-radius:3px;background:var(--fg);color:var(--panel)}
-.rqc.on .rq-id{background:var(--accent);color:var(--on-accent)}
-.rq-type{font-family:var(--f-display);font-weight:600;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.rq-on{margin-left:auto;font-family:var(--f-mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--muted)}
-.rqc.on .rq-on{color:var(--accent-ink)}
-.rqc h3{margin:0;font-size:14px;letter-spacing:.04em;color:var(--fg);text-transform:none;font-weight:700}
-.rq-en{margin:-4px 0 0;font-size:12px;color:var(--muted);font-style:italic}
-.rq-who{margin:0;font-size:12px}
-.rq-need summary{font-size:12px;cursor:pointer;color:var(--muted)}
-.rq-need p{margin:4px 0 0;font-size:12px;line-height:1.45}
-.rq-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
-.rq-list li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:0 6px;font-size:12.5px;opacity:.6}
-.rq-list li.on{opacity:1;font-weight:600}
-.rq-list li i{font-style:normal;color:var(--good);font-weight:700}
-.rq-list li.miss i{color:var(--bad)}
-.rq-list li em{grid-column:2;font-style:normal;font-family:var(--f-mono);font-size:11.5px;color:var(--muted);font-weight:400;overflow-wrap:anywhere}
-.rqc footer{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:6px;margin-top:auto}
-.rq-cov{color:var(--good)}
-.rqc.gap .rq-cov{color:var(--warn)}
-@media (prefers-reduced-motion: reduce){ .rqc{transition:none} }
+.rq-list2{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.rqr{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);font-size:14px;color:var(--faint);transition:color .3s,background-color .3s,box-shadow .3s}
+.rqr .rq-id{font-family:var(--f-mono);font-weight:600;font-size:11px;color:var(--faint);min-width:52px}
+.rqr.on{color:var(--fg);font-weight:700;background:var(--accent-soft);box-shadow:inset 4px 0 0 var(--accent)}
+.rqr.on .rq-id{color:var(--accent-ink)}
+@media (prefers-reduced-motion: reduce){ .rqr{transition:none} }
 /* photos */
 .sv-ph{display:flex;flex-direction:column;gap:6px}
 .ph-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
@@ -1059,11 +1039,8 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
       </div>
     </section>
     <section class="panel rq" id="reqs" aria-labelledby="hRq">
-      <div class="ph"><span class="code">REQ</span><h2 id="hRq">Yêu cầu bên liên quan (SCV)</h2><span class="ph-note" id="rqSum"></span></div>
-      <div class="rq-body">
-        <p class="rq-lead">Năng lực nào đang được dùng trong lúc vận hành thì thẻ hiện đậm; năng lực đang chờ thì thẻ mờ đi. ✓ / ✗ cho biết mô phỏng đã đáp ứng từng tiêu chí chưa, dòng chữ nhỏ là số liệu trực tiếp. Dòng sản phẩm: Surveillance Drone (Dòng Trinh sát).</p>
-        <div class="rq-grid" id="rqGrid"></div>
-      </div>
+      <div class="ph"><span class="code">REQ</span><h2 id="hRq">Yêu cầu bên liên quan</h2><span class="ph-note" id="rqSum"></span></div>
+      <ul class="rq-list2" id="rqGrid"></ul>
     </section>
     <section class="panel sm" aria-labelledby="hSm">
       <div class="ph"><span class="code">SM</span><h2 id="hSm">Máy trạng thái</h2><span class="ph-note">10 trạng thái · tự động né cao ốc khi MISSION, RTL và FAILSAFE</span></div>
@@ -6010,32 +5987,20 @@ function rqEval(){
   };
 }
 function rqBuild(){
-  const g = $('#rqGrid');
-  g.innerHTML = SCV.map(r => '<article class="rqc" id="rq-' + r.id + '" aria-labelledby="rqh-' + r.id + '">'
-    + '<header><span class="rq-id">' + r.id + '</span><span class="rq-type">' + r.type + '</span><span class="rq-on" id="rqon-' + r.id + '"></span></header>'
-    + '<h3 id="rqh-' + r.id + '">' + r.vi + '</h3><p class="rq-en">' + r.en + '</p>'
-    + '<p class="rq-who">' + r.who + '</p>'
-    + '<details class="rq-need"><summary>Nhu cầu vận hành</summary><p>' + r.need + '</p></details>'
-    + '<ul class="rq-list" id="rql-' + r.id + '"></ul>'
-    + '<footer><span>Áp dụng cho: Surveillance Drone</span><b class="rq-cov" id="rqc-' + r.id + '"></b></footer></article>').join('');
+  $('#rqGrid').innerHTML = SCV.map(r => '<li class="rqr" id="rq-' + r.id + '"><span class="rq-id">' + r.id + '</span><span class="rq-name">' + r.vi + '</span></li>').join('');
   RQ.built = true;
 }
 function rqRender(){
   const panel = $('#reqs'); if (!panel || panel.hidden) return;
   if (!RQ.built) rqBuild();
   const E = rqEval();
-  let active = 0, full = 0;
+  let active = 0;
   SCV.forEach(r => {
-    const items = E[r.id], on = items.some(i => i.on), ok = items.every(i => i.ok);
-    if (on) active++; if (ok) full++;
-    const card = $('#rq-' + r.id);
-    card.classList.toggle('on', on); card.classList.toggle('gap', !ok);
-    $('#rqon-' + r.id).textContent = on ? 'ĐANG ÁP DỤNG' : 'CHỜ';
-    $('#rqc-' + r.id).textContent = ok ? '✓ Đáp ứng' : '△ Còn thiếu ' + items.filter(i => !i.ok).length;
-    const html = items.map(i => '<li class="' + (i.on ? 'on' : '') + (i.ok ? '' : ' miss') + '"><i aria-hidden="true">' + (i.ok ? '✓' : '✗') + '</i><span>' + i.txt + '</span>' + (i.live ? '<em>' + i.live + '</em>' : '') + '</li>').join('');
-    const ul = $('#rql-' + r.id); if (ul.innerHTML !== html) ul.innerHTML = html;
+    const on = E[r.id].some(i => i.on); if (on) active++;
+    const row = $('#rq-' + r.id);
+    if (row.classList.contains('on') !== on){ row.classList.toggle('on', on); row.setAttribute('aria-label', r.vi + (on ? ': đang áp dụng' : ': chưa áp dụng')); }
   });
-  $('#rqSum').textContent = active + '/' + SCV.length + ' năng lực đang áp dụng · ' + full + '/' + SCV.length + ' đáp ứng đầy đủ';
+  $('#rqSum').textContent = active + '/' + SCV.length + ' đang áp dụng';
 }
 function rqFrame(){
   const now = performance.now();
