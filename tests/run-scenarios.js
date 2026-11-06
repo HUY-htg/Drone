@@ -153,24 +153,48 @@ function hoverSteps(adaptive){
     `lệch ngang ${on.drift.toFixed(2)} vs ${off.drift.toFixed(2)} m · lệch cao ${on.alt.toFixed(2)} vs ${off.alt.toFixed(2)} m`);
 }
 
-// 9. Wind × payload sweep (the "Kết quả" panel): the physical trends must hold
+// 9. Test-flight programme → results (the "Kết quả" panel): results come only from recorded flight samples
 {
-  const sweepSrc = html.match(/<script id="sweep-core">([\s\S]*?)<\/script>/)[1];
-  const { SWEEP, sweepCase, sweepPlan } = new Function(sweepSrc + ';return { SWEEP, sweepCase, sweepPlan };')();
+  const acSrc = html.match(/<script id="analysis-core">([\s\S]*?)<\/script>/)[1];
+  const AC = new Function(acSrc + ';return { TESTPLAN, flightSample, testSteps, analyzeFlights, aggregatePoints };')();
+  const Sim = makeSim(), P = Sim.params, flights = [];
+  P.drain = 1;
   const t0 = Date.now();
-  const res = sweepPlan().map(o => sweepCase(makeSim, o));
-  const g = (p, w) => res.find(r => r.kind === 'steady' && r.payload === p && r.wind === w);
-  const incWind = SWEEP.payloads.every(p => SWEEP.winds.every((w, i) => i === 0 || g(p, w).lean > g(p, SWEEP.winds[i - 1]).lean));
-  const decLoad = SWEEP.winds.slice(1).every(w => SWEEP.payloads.every((p, i) => i === 0 || g(p, w).lean < g(SWEEP.payloads[i - 1], w).lean));
-  check('Kết quả: gió mạnh hơn → nghiêng nhiều hơn; tải nặng hơn → nghiêng ít hơn', incWind && decLoad,
-    `1,5 kg: ${SWEEP.winds.map(w => g(1.5, w).lean.toFixed(1)).join(' → ')}° · gió 12: ${SWEEP.payloads.map(p => g(p, 12).lean.toFixed(1)).join(' → ')}°`);
-  const end = SWEEP.payloads.map(p => g(p, 0).endurance);
-  check('Kết quả: tải nặng hơn → thời gian bay ngắn hơn', end.every((v, i) => i === 0 || v < end[i - 1]), end.map(v => v.toFixed(1)).join(' → ') + ' phút');
-  const stepA = res.filter(r => r.kind === 'windStep' && r.adaptive), stepF = res.filter(r => r.kind === 'windStep' && !r.adaptive);
-  const dropA = res.filter(r => r.kind === 'drop' && r.adaptive), dropF = res.filter(r => r.kind === 'drop' && !r.adaptive);
-  check('Kết quả: thích nghi lệch ít hơn PID cố định ở mọi mức tải', stepA.every((r, i) => r.peak < stepF[i].peak) && dropA.every((r, i) => r.peak < dropF[i].peak),
-    `gió tăng vọt ${stepA.map(r => r.peak.toFixed(2)).join('/')} vs ${stepF.map(r => r.peak.toFixed(2)).join('/')} m · thả hàng ${dropA.map(r => r.peak.toFixed(2)).join('/')} vs ${dropF.map(r => r.peak.toFixed(2)).join('/')} m · ${res.length} chuyến trong ${Date.now() - t0} ms`);
+  let id = 0;
+  for (const pl of AC.TESTPLAN.payloads){
+    Object.assign(P, { cargoMass:pl, windOn:true, windSpeed:0, gust:0, windDir:270 }); Sim.syncMass();
+    const f = { id:++id, t0:Sim.S.t, samples:[], live:false }; let last = -1;
+    const rec = () => { if (Sim.S.t - last >= 0.2){ last = Sim.S.t; f.samples.push(AC.flightSample(Sim)); } };
+    if (Sim.S.state === 'DISARMED') Sim.command('ARM');
+    for (let i = 0; i < 1 / DT; i++) Sim.step(DT);
+    Sim.command('TAKEOFF');
+    while (!(Sim.S.state === 'HOVER' && Sim.S.stateT > 1)){ Sim.step(DT); rec(); }
+    const tH = Sim.S.t, steps = AC.testSteps(pl); let k = 0;
+    for (;;){
+      while (k < steps.length && Sim.S.t - tH >= steps[k].at){
+        const st = steps[k++];
+        if (st.set) Object.assign(P, st.set);
+        if (st.drop){ P.cargoMass = 0; Sim.syncMass(); }
+        if (st.land) Sim.command('LAND');
+      }
+      Sim.step(DT); rec();
+      if (k >= steps.length && Sim.S.state === 'ARMED') break;
+    }
+    flights.push(f);
+  }
+  const A = AC.analyzeFlights(flights), agg = AC.aggregatePoints(A.points).filter(p => p.gust === 0);
+  const g = (p, w) => agg.find(r => r.payload === p && r.wind === w);
+  const pls = AC.TESTPLAN.payloads.slice().sort((a, b) => a - b), winds = [0, 3, 6, 9, 12];
+  check('Bay thử: mỗi chuyến cho đủ điểm đo ổn định và phản ứng', A.points.length >= 21 && A.resp.length >= 20,
+    `${flights.length} chuyến · ${A.points.length} đoạn đo · ${A.resp.length} phản ứng · ${Date.now() - t0} ms`);
+  const incWind = pls.every(p => winds.every((w, i) => i === 0 || g(p, w).lean > g(p, winds[i - 1]).lean));
+  const decLoad = winds.slice(1).every(w => pls.every((p, i) => i === 0 || g(p, w).lean < g(pls[i - 1], w).lean));
+  check('Bay thử: gió mạnh hơn → nghiêng nhiều hơn; tải nặng hơn → nghiêng ít hơn', incWind && decLoad,
+    `1,5 kg: ${winds.map(w => g(1.5, w).lean.toFixed(1)).join(' → ')}° · gió 12: ${pls.map(p => g(p, 12).lean.toFixed(1)).join(' → ')}°`);
+  const end = pls.map(p => g(p, 0).endurance);
+  check('Bay thử: tải nặng hơn → thời gian bay ngắn hơn', end.every((v, i) => i === 0 || v < end[i - 1]), end.map(v => v.toFixed(1)).join(' → ') + ' phút');
+  const drops = A.resp.filter(r => r.kind === 'drop').sort((a, b) => a.from.cargo - b.from.cargo);
+  check('Bay thử: thả hàng nặng hơn → vọt lên cao hơn', drops.length === 2 && drops[1].peakV > drops[0].peakV, drops.map(r => r.from.cargo + ' kg: ' + r.peakV.toFixed(2) + ' m').join(' · '));
 }
-
 console.log(failures ? `\n${failures} kiểm tra thất bại` : '\nTất cả kiểm tra đều đạt');
 process.exit(failures ? 1 : 0);

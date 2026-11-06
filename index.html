@@ -372,7 +372,14 @@ table.rp-trt tbody tr:hover td{background:var(--panel-2)}
 /* wind × payload results */
 .an-wait{padding:16px 14px;color:var(--muted);font-size:13px}
 .an-body{padding:12px 14px 16px;display:flex;flex-direction:column;gap:16px}
-.an-lead{margin:0;font-size:13px;color:var(--muted);max-width:110ch}
+.an-lead{margin:0;font-size:13px;color:var(--muted);max-width:120ch}
+.an-wait p{margin:0 0 8px;max-width:90ch}
+.an-plan{margin:0 0 8px;padding-left:20px;font-size:12.5px;display:grid;gap:3px}
+.an-plan b{font-family:var(--f-mono);font-weight:600;margin-right:6px}
+.an-src{display:block;margin-top:4px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+table.an-t tbody tr{cursor:pointer}
+table.an-t tbody tr:hover td{background:var(--panel-2)}
+#anRun:disabled{opacity:1;background:var(--panel-2);color:var(--muted);border-color:var(--line-2);cursor:default}
 .an-concl{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
 .an-c{background:var(--panel);padding:10px 12px}
 .an-c h4{margin:0 0 4px;font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
@@ -552,8 +559,9 @@ td.an-bad{color:var(--bad);font-weight:600}
             <button class="btn" data-step="drop">Thả 0,5 kg hàng</button>
           </div>
           <label class="chk" style="margin-top:10px"><input type="checkbox" id="pAdapt" checked> Bật điều khiển thích nghi</label>
-          <p class="note" style="margin:2px 0 0">Bỏ chọn để so sánh với PID cố định: m̂ giữ nguyên tải khai báo lúc cất cánh, không bù nhiễu gió. Chạy kịch bản hai lần (bật rồi tắt) rồi chọn từng chuyến trong báo cáo để so.</p>
-          <div class="row" style="margin-top:8px"><button class="btn primary" id="btnAdaptTest">Chạy kịch bản thử thích nghi</button></div>
+          <p class="note" style="margin:2px 0 0">Bỏ chọn để so sánh với PID cố định: m̂ giữ nguyên tải khai báo lúc cất cánh, không bù nhiễu gió. Chạy chương trình bay thử hai lần (bật rồi tắt) để phần Kết quả có cả hai.</p>
+          <div class="row" style="margin-top:8px"><button class="btn primary" id="btnAdaptTest">Chạy chương trình bay thử</button></div>
+          <p class="note">Drone bay thật 3 chuyến (tải 3; 1,5; 0 kg). Mỗi chuyến treo trên Nhà máy, gió tăng dần 0 → 12 m/s, giảm, đổi hướng, giật, rồi thả hàng và hạ cánh. Kết quả được tổng hợp từ chính các chuyến này.</p>
           <ol class="at-steps" id="atSteps"></ol>
         </div>
 
@@ -748,37 +756,48 @@ td.an-bad{color:var(--bad);font-weight:600}
       </div>
     </section>
 
-    <!-- RESULTS: wind × payload -->
+    <!-- RESULTS from recorded test flights -->
     <section class="panel an" id="analysis" aria-labelledby="hAn">
-      <div class="ph"><span class="code">KQ</span><h2 id="hAn">Kết quả: gió và tải trọng thay đổi thì drone ra sao</h2>
-        <span class="ph-note" id="anStatus">đang chuẩn bị…</span>
-        <button class="btn" id="anRerun">Tính lại</button>
+      <div class="ph"><span class="code">KQ</span><h2 id="hAn">Kết quả bay thử: gió và tải trọng thay đổi thì drone ra sao</h2>
+        <span class="ph-note" id="anStatus">chưa có chuyến bay nào</span>
+        <button class="btn primary" id="anRun">Chạy chương trình bay thử</button>
       </div>
-      <div class="an-wait" id="anWait">Đang bay thử 25 tổ hợp gió × tải trọng và 18 phép thử thay đổi đột ngột trên các bản sao độc lập của mô phỏng (mất vài giây)…</div>
+      <div class="an-wait" id="anWait">
+        <p><b>Chưa có kết quả vì chưa có chuyến bay thử nào.</b> Mọi con số ở đây chỉ được tổng hợp từ các chuyến bay đã ghi trong báo cáo hành trình, gồm chương trình bay thử và cả các chuyến bạn tự bay (đoạn treo ổn định, lúc đổi gió hoặc thả hàng).</p>
+        <p>Bấm <b>Chạy chương trình bay thử</b> để drone bay thật trong khung 3D:</p>
+        <ol class="an-plan" id="anPlan"></ol>
+        <p class="note">Trước mỗi chuyến drone được nạp hàng và thay pin đầy; trong lúc bay thử hệ số xả pin tạm về ×1 như thật. Ở tốc độ 4× mất khoảng 2 phút, kết quả hiện dần ngay trong lúc bay.</p>
+      </div>
       <div class="an-body" id="anBody" hidden>
-        <p class="an-lead">Mỗi điểm là một chuyến bay mô phỏng thật: drone treo ở 10 m trên Nhà máy, gió Tây, chở 0 – 3 kg, gió 0 – 12 m/s. Con số đo từ chuyến bay, không phải công thức. Rê chuột lên biểu đồ để xem giá trị.</p>
+        <p class="an-lead" id="anLead"></p>
         <div class="an-concl" id="anConcl"></div>
         <div class="an-grid">
-          <figure class="an-fig"><figcaption><b>Gió càng mạnh, drone càng phải nghiêng</b><span>Góc nghiêng để đứng yên theo tốc độ gió, mỗi đường một mức tải. Đường chạm 34° là drone hết khả năng chống gió.</span></figcaption>
-            <canvas id="anLean" class="an-cv" role="img" aria-label="Góc nghiêng giữ vị trí theo tốc độ gió cho 5 mức tải"></canvas></figure>
-          <figure class="an-fig"><figcaption><b>Tải càng nặng, bay càng ngắn</b><span>Thời gian treo tối đa (từ 100% pin đến ngưỡng failsafe 15%) theo tải trọng, ở 3 mức gió.</span></figcaption>
-            <canvas id="anEnd" class="an-cv" role="img" aria-label="Thời gian bay treo theo tải trọng ở gió 0, 6 và 12 m/s"></canvas></figure>
+          <figure class="an-fig"><figcaption><b>Gió càng mạnh, drone càng phải nghiêng</b><span>Góc nghiêng đo được khi treo ổn định, theo tốc độ gió; mỗi đường một mức tải (nét đứt = PID cố định).</span></figcaption>
+            <canvas id="anLean" class="an-cv" role="img" aria-label="Góc nghiêng đo được theo tốc độ gió cho từng mức tải"></canvas></figure>
+          <figure class="an-fig"><figcaption><b>Tải càng nặng, bay càng ngắn</b><span>Thời gian bay suy từ dòng điện đo được khi treo (100% pin đến ngưỡng failsafe 15%), theo tải trọng.</span></figcaption>
+            <canvas id="anEnd" class="an-cv" role="img" aria-label="Thời gian bay theo tải trọng tính từ dòng điện đo"></canvas></figure>
         </div>
-        <div class="an-sub"><h3>Khi điều kiện thay đổi đột ngột</h3>
-          <div class="seg" role="group" aria-label="Chọn bộ điều khiển" id="anMode"><button data-mode="adapt" aria-pressed="true">Điều khiển thích nghi</button><button data-mode="fixed">PID cố định</button></div>
-        </div>
+        <div class="an-sub"><h3>Khi điều kiện thay đổi đột ngột</h3></div>
         <div class="an-grid">
-          <figure class="an-fig"><figcaption><b>Gió tăng vọt 3 → 9 m/s</b><span>Drone bị đẩy lệch khỏi điểm treo bao xa và bao lâu thì về lại, theo từng mức tải. Hai chế độ dùng chung thang đo để so sánh.</span></figcaption>
-            <canvas id="anStep" class="an-cv" role="img" aria-label="Độ lệch ngang theo thời gian sau khi gió tăng đột ngột"></canvas></figure>
-          <figure class="an-fig"><figcaption><b>Thả toàn bộ hàng cùng lúc</b><span>Drone nhẹ đi đột ngột nên vọt lên; đường cho thấy lệch độ cao theo thời gian cho tới khi bộ điều khiển bù lại.</span></figcaption>
-            <canvas id="anDrop" class="an-cv" role="img" aria-label="Độ lệch độ cao theo thời gian sau khi thả toàn bộ hàng"></canvas></figure>
+          <figure class="an-fig"><figcaption><b>Lệch khỏi điểm treo sau mỗi loại thay đổi</b><span>Mỗi chấm là độ lệch lớn nhất đo được trong 12 s sau thay đổi, màu theo mức tải. Rê chuột lên một hàng để xem số.</span></figcaption>
+            <canvas id="anStep" class="an-cv" role="img" aria-label="Độ lệch lớn nhất sau từng loại thay đổi gió và tải"></canvas></figure>
+          <figure class="an-fig"><figcaption><b>Thả hàng: drone vọt lên rồi về lại</b><span>Lệch độ cao theo thời gian sau mỗi lần thả hàng đã ghi.</span></figcaption>
+            <canvas id="anDrop" class="an-cv" role="img" aria-label="Lệch độ cao theo thời gian sau khi thả hàng"></canvas></figure>
         </div>
         <div>
-          <h3>Bảng số liệu đầy đủ</h3>
+          <h3>Các đoạn đo ổn định</h3>
           <div class="an-tw"><table class="an-t">
-            <thead><tr><th>Tải</th><th>Gió m/s</th><th>Nghiêng</th><th>Lực đẩy N</th><th>Ga động cơ</th><th>Dòng A</th><th>Bay được (phút)</th><th>Lệch khi giật 30% (m)</th><th>Giới hạn gió m/s</th></tr></thead>
+            <thead><tr><th>Chuyến</th><th>T+</th><th>Tải</th><th>Gió m/s</th><th>Giật</th><th>Hướng</th><th>Điều khiển</th><th>Nghiêng</th><th>Lực đẩy N</th><th>Ga</th><th>Dòng A</th><th>Bay được (phút)</th><th>Lệch max (m)</th></tr></thead>
             <tbody id="anTbl"></tbody>
           </table></div>
+        </div>
+        <div>
+          <h3>Phản ứng với từng thay đổi</h3>
+          <div class="an-tw"><table class="an-t">
+            <thead><tr><th>Chuyến</th><th>T+</th><th>Thay đổi</th><th>Tải lúc đó</th><th>Điều khiển</th><th>Lệch ngang max</th><th>Lệch cao max</th><th>Ổn định lại sau</th></tr></thead>
+            <tbody id="anResp"></tbody>
+          </table></div>
+          <p class="note">Bấm một dòng để mở chuyến đó trong báo cáo hành trình, đúng thời điểm đó.</p>
         </div>
       </div>
     </section>
@@ -845,71 +864,117 @@ td.an-bad{color:var(--bad);font-weight:600}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-<script id="sweep-core">
-/* ===== Wind × payload analysis: flies many short hover tests on independent sim instances ===== */
-const SWEEP = {
-  payloads: [0, 0.75, 1.5, 2.25, 3],
-  winds: [0, 3, 6, 9, 12],
-  endWinds: [0, 6, 12],
-  stepFrom: 3, stepTo: 9,
-};
-// One hover test. mk() returns a fresh, independent Sim.
-function sweepCase(mk, o){
-  const Sim = mk(), P = Sim.params, DT = 1 / 250;
-  Object.assign(P, { drain: 1, windOn: o.wind > 0, windSpeed: o.wind, windDir: 270, gust: 0, cargoMass: o.payload, adaptive: o.adaptive !== false, takeoffAlt: 10 });
-  Sim.syncMass();
-  const S = () => Sim.S;
-  const run = (sec, cb) => { for (let i = 0; i < sec / DT; i++){ Sim.step(DT); if (cb) cb(Sim.S); } };
-  // start already in the wind: let the gradual-wind filter settle on the pad
-  S().windSpd = P.windOn ? o.wind : 0; S().windDirNow = P.windDir;
-  Sim.command('ARM'); run(0.5); Sim.command('TAKEOFF');
-  for (let i = 0; i < 30 / DT && S().state !== 'HOVER'; i++) Sim.step(DT);
-  run(o.settle || 6);
-  const tiltDeg = s => Math.acos(Math.max(-1, Math.min(1, Math.cos(s.att[0]) * Math.cos(s.att[1])))) * 180 / Math.PI;
-  const out = { kind: o.kind, adaptive: o.adaptive !== false, payload: o.payload, wind: o.wind, mass: Sim.P.m, windLimit: Sim.windLimit() };
-  if (o.kind === 'steady'){
-    let n = 0, lean = 0, T = 0, I = 0, fmax = 0;
-    run(4, s => { n++; lean += tiltDeg(s); T += s.T; I += s.I; fmax = Math.max(fmax, ...s.f); });
-    Object.assign(out, { lean: lean / n, thrust: T / n, current: I / n, motorPct: fmax / Sim.P.fMax * 100 });
-    // usable energy: 100 % → 15 % failsafe reserve
-    out.endurance = 0.85 * Sim.P.capacity / 1000 / out.current * 60;
-    // gust test: 30 % gusts for 20 s
-    P.gust = 0.3;
-    const hold = S().hold.slice();
-    let drift = 0, alt = 0, tmax = 0, sat = 0, m = 0;
-    run(20, s => { m++; const d = Math.hypot(s.pos[0] - hold[0], s.pos[1] - hold[1]); drift = Math.max(drift, d); alt = Math.max(alt, Math.abs(s.pos[2] - hold[2])); const t = tiltDeg(s); tmax = Math.max(tmax, t); if (t > 33) sat++; });
-    Object.assign(out, { gustDrift: drift, gustAlt: alt, gustTiltMax: tmax, satPct: sat / m * 100, holds: drift < 1.5 && S().state === 'HOVER' });
-  } else if (o.kind === 'windStep'){
-    // wind rises suddenly; record horizontal drift for 12 s
-    const hold = S().hold.slice(), tr = [];
-    P.windOn = true; P.windSpeed = SWEEP.stepTo;
-    let t = 0;
-    run(12, s => { t += DT; if (Math.round(t * 250) % 25 === 0) tr.push([t, Math.hypot(s.pos[0] - hold[0], s.pos[1] - hold[1]), tiltDeg(s)]); });
-    out.trace = tr; out.peak = Math.max(...tr.map(r => r[1]));
-    out.leanA = tr[0][2]; out.leanB = tr[tr.length - 1][2];
-  } else if (o.kind === 'drop'){
-    // the whole load is released at once; record altitude deviation for 10 s
-    const hold = S().hold.slice(), tr = [];
-    P.cargoMass = 0;
-    let t = 0;
-    run(10, s => { t += DT; if (Math.round(t * 250) % 25 === 0) tr.push([t, s.pos[2] - hold[2], s.est.mHat, s.T]); });
-    out.trace = tr; out.peak = Math.max(...tr.map(r => Math.abs(r[1])));
-    const conv = tr.findIndex((r, i) => tr.slice(i).every(q => Math.abs(q[2] - Sim.P.m) < 0.05));
-    out.conv = conv < 0 ? null : tr[conv][0];
-    const settle = tr.reduce((acc, r) => Math.abs(r[1]) > 0.1 ? r[0] : acc, 0);
-    out.settle = settle;
-  }
-  return out;
+<script id="analysis-core">
+/* ===== Test-flight analysis core (no DOM). Results are computed ONLY from recorded flight samples. =====
+   flightSample(Sim)        one recorded sample (the flight recorder stores these at 5 Hz)
+   testSteps(payload)       the scripted test-flight programme for one payload (flown live in the simulator)
+   analyzeFlights(flights)  steady operating points + step responses extracted from the recorded samples */
+const TESTPLAN = { payloads:[3, 1.5, 0], hold:12, settle:6, dropHold:8, capacityAh:12 };
+
+function flightSample(Sim){
+  const S = Sim.S, P = Sim.params, Pp = Sim.P, E = S.est, sp = S.sp, D = 180 / Math.PI;
+  const from = (e, n) => ((Math.atan2(e, n) * D) + 180 + 360) % 360;
+  const wT = Math.hypot(S.windNow[0], S.windNow[1]), wE = Math.hypot(E.wHat[0], E.wHat[1]);
+  const herr = sp && sp.xy ? Math.hypot(S.pos[0] - sp.xy[0], S.pos[1] - sp.xy[1]) : null;
+  const verr = sp && sp.z != null ? S.pos[2] - sp.z : null;
+  return {
+    t:S.t, e:S.pos[0], n:S.pos[1], u:S.pos[2], gs:Math.hypot(S.vel[0], S.vel[1]), vs:S.vel[2],
+    roll:S.att[0] * D, pitch:-S.att[1] * D, psi:S.att[2], soc:S.soc * 100, mAh:S.mAh,
+    clr:S.minObsDist, st:S.state, cargo:P.cargoMass, zsp: sp && sp.z != null ? sp.z : null, wind:wT, air:!S.grounded,
+    wT, wTd: wT > 0.3 ? from(S.windNow[0], S.windNow[1]) : null,
+    wE: E.valid ? wE : null, wEd: E.valid && wE > 0.3 ? from(E.wHat[0], E.wHat[1]) : null,
+    mT:Pp.m, mE:E.mHat, T:S.T, W:Pp.m * Pp.g, IE:E.IHat,
+    tilt: Math.acos(Math.max(-1, Math.min(1, Math.cos(S.att[0]) * Math.cos(S.att[1])))) * D,
+    tiltC: sp ? S.ctl.tiltCmd * D : null, herr, verr, verrA: verr == null ? null : Math.abs(verr),
+    I:S.I, fPct: Math.max(S.f[0], S.f[1], S.f[2], S.f[3]) / Pp.fMax * 100,
+    wSet: P.windOn ? P.windSpeed : 0, gust:P.gust, dir:P.windDir, ad:P.adaptive
+  };
 }
-// The full list of cases, run one by one by the caller
-function sweepPlan(){
-  const plan = [];
-  SWEEP.payloads.forEach(p => SWEEP.winds.forEach(w => plan.push({ kind: 'steady', payload: p, wind: w })));
-  [true, false].forEach(ad => {
-    SWEEP.payloads.forEach(p => plan.push({ kind: 'windStep', payload: p, wind: SWEEP.stepFrom, adaptive: ad }));
-    SWEEP.payloads.filter(p => p > 0).forEach(p => plan.push({ kind: 'drop', payload: p, wind: 0, adaptive: ad }));
+
+// One test flight for a given payload: hover, then one change every TESTPLAN.hold seconds
+function testSteps(payload){
+  const H = TESTPLAN.hold, s = [];
+  s.push({ at:0,   label:'Lặng gió', set:{ windSpeed:0, gust:0, windDir:270 } });
+  [3, 6, 9, 12].forEach((w, i) => s.push({ at:H * (i + 1), label:'Gió Tây ' + w + ' m/s', set:{ windSpeed:w } }));
+  s.push({ at:H * 5, label:'Gió giảm về 9 m/s', set:{ windSpeed:9 } });
+  s.push({ at:H * 6, label:'Gió đổi hướng Tây → Nam', set:{ windDir:180 } });
+  s.push({ at:H * 7, label:'Gió giật 30%', set:{ gust:0.3 } });
+  s.push({ at:H * 8, label:'Hết giật', set:{ gust:0 } });
+  let t = H * 8 + 6;
+  if (payload > 0){ s.push({ at:t, label:'Thả toàn bộ ' + String(payload).replace('.', ',') + ' kg hàng', drop:true }); t += TESTPLAN.dropHold; }
+  s.push({ at:t, label:'Hạ cánh', land:true });
+  return s;
+}
+
+const acKey = p => [p.wSet, p.gust, Math.round(p.cargo * 100), p.dir, p.ad].join('|');
+const acR2 = v => Math.round(v * 100) / 100;
+
+function analyzeFlights(flights){
+  const points = [], resp = [];
+  flights.forEach(f => {
+    const P = f.samples || [];
+    if (P.length < 2) return;
+    const hov = p => p.air && p.st === 'HOVER';
+    // 1) steady operating points: stretches of HOVER with unchanged wind, gust, load and controller
+    const segs = []; let a = null;
+    for (let i = 0; i < P.length; i++){
+      if (a == null){ if (hov(P[i])) a = i; continue; }
+      if (!hov(P[i]) || acKey(P[i]) !== acKey(P[a])){ segs.push([a, i - 1]); a = hov(P[i]) ? i : null; }
+    }
+    if (a != null && !f.live) segs.push([a, P.length - 1]);
+    segs.forEach(([i0, i1]) => {
+      const tStart = P[i0].t, use = P.slice(i0, i1 + 1).filter(p => p.t >= tStart + TESTPLAN.settle);
+      if (use.length < 2 || use[use.length - 1].t - use[0].t < 3) return;
+      const mean = k => use.reduce((s, p) => s + p[k], 0) / use.length;
+      const I = mean('I'), q = P[i0];
+      points.push({
+        flight:f.id, t:use[0].t - f.t0, t1:use[use.length - 1].t - f.t0, absT:use[0].t,
+        payload:acR2(q.cargo), wind:q.wSet, gust:q.gust, dir:q.dir, ad:q.ad,
+        lean:mean('tilt'), thrust:mean('T'), current:I, motor:mean('fPct'),
+        endurance: 0.85 * TESTPLAN.capacityAh / I * 60,
+        drift: Math.max(...use.map(p => p.herr || 0)), alt: Math.max(...use.map(p => Math.abs(p.verr || 0))),
+        mE: use[use.length - 1].mE, mT: q.mT, n: use.length
+      });
+    });
+    // 2) step responses: a change of wind, gust, direction or load while hovering
+    for (let i = 1; i < P.length; i++){
+      const b = P[i - 1], p = P[i];
+      if (acKey(b) === acKey(p) || !hov(b) || !hov(p) || b.ad !== p.ad) continue;
+      const kind = p.cargo < b.cargo - 1e-6 ? 'drop' : p.cargo > b.cargo + 1e-6 ? 'load' : 'wind';
+      const tr = [];
+      for (let j = i; j < P.length; j++){
+        const q = P[j];
+        if (q.t - p.t > 12 || !hov(q) || (j > i && acKey(q) !== acKey(p))) break;
+        tr.push([q.t - p.t, q.herr || 0, q.verr || 0]);
+      }
+      if (tr.length < 10) continue;
+      const peakH = Math.max(...tr.map(r => r[1])), peakV = Math.max(...tr.map(r => Math.abs(r[2])));
+      const base = Math.max(0.05, ...P.slice(Math.max(0, i - 10), i).map(r => r.herr || 0));
+      let settle = 0;
+      tr.forEach(r => { if (r[1] > base + 0.05 || Math.abs(r[2]) > 0.1) settle = r[0]; });
+      resp.push({
+        flight:f.id, t:p.t - f.t0, absT:p.t, kind, ad:p.ad,
+        from:{ wind:b.wSet, dir:b.dir, gust:b.gust, cargo:acR2(b.cargo) }, to:{ wind:p.wSet, dir:p.dir, gust:p.gust, cargo:acR2(p.cargo) },
+        trace:tr, peakH, peakV, settle, settled: tr[tr.length - 1][0] - settle > 1
+      });
+    }
   });
-  return plan;
+  return { points, resp };
+}
+
+// Average the operating points that share payload, wind, gust and controller (direction does not change the magnitudes)
+function aggregatePoints(points){
+  const groups = {};
+  points.forEach(p => {
+    const k = [p.payload, p.wind, p.gust, p.ad].join('|');
+    (groups[k] = groups[k] || []).push(p);
+  });
+  return Object.values(groups).map(g => {
+    const m = k => g.reduce((s, p) => s + p[k], 0) / g.length;
+    return { payload:g[0].payload, wind:g[0].wind, gust:g[0].gust, ad:g[0].ad, n:g.length,
+      lean:m('lean'), thrust:m('thrust'), current:m('current'), motor:m('motor'), endurance:m('endurance'),
+      drift:Math.max(...g.map(p => p.drift)), alt:Math.max(...g.map(p => p.alt)), src:g.map(p => ({ flight:p.flight, t:p.t })) };
+  });
 }
 </script>
 
@@ -2006,7 +2071,7 @@ function startDemo(){
   }
   if (!Sim.destinations.length) loadHubPreset('A');
   else replanAndRender();
-  demo.on = true; demo.t0 = Sim.S.t; if (atest.on){ atest.on = false; renderAtSteps(); }
+  demo.on = true; demo.t0 = Sim.S.t; if (atest.on) stopAdaptTest('bắt đầu Demo giao hàng');
   addLog('info', 'Bắt đầu Demo Giao Hàng tự động từ Nhà Máy Sản Xuất', '', Sim.S.t);
 }
 function demoTick(){
@@ -2026,7 +2091,7 @@ function resetKill(){ killArm = false; clearTimeout(killTimer); $('#killBtn').cl
 $$('.cmd').forEach(b => b.addEventListener('click', () => {
   const c = b.dataset.cmd;
   demo.on = false;
-  if (atest.on){ atest.on = false; renderAtSteps(); addLog('info', 'Dừng kịch bản thử thích nghi', '', Sim.S.t); }
+  if (atest.on) stopAdaptTest('người điều khiển ra lệnh ' + c);
   if (c === 'KILL'){
     if (Sim.check('KILL')){ Sim.command('KILL'); return; }
     if (!killArm){ killArm = true; b.classList.add('confirm'); $('#killTxt').textContent = 'Bấm lần nữa trong 3 s để xác nhận'; killTimer = setTimeout(resetKill, 3000); return; }
@@ -2259,59 +2324,95 @@ $$('[data-step]').forEach(b => b.addEventListener('click', () => {
   else if (k === 'drop') dropCargo(0.5);
 }));
 
-// Scripted test: hover over the factory and apply one change at a time, so each response is isolated
-const AT_STEPS = [
-  { at: 0,  label:'Treo ở độ cao cất cánh, gió Tây 4 m/s, hàng 1,5 kg' },
-  { at: 8,  label:'Gió đổi hướng: Tây → Nam',  run(){ setSlider('pWdir', 180); } },
-  { at: 22, label:'Gió tăng 4 → 9 m/s',         run(){ setSlider('pWind', 9); } },
-  { at: 36, label:'Gió giật 40%',               run(){ setSlider('pGust', 40); } },
-  { at: 50, label:'Hết giật',                   run(){ setSlider('pGust', 0); } },
-  { at: 58, label:'Thả 1,0 kg hàng',            run(){ dropCargo(1.0); } },
-  { at: 72, label:'Thả 0,5 kg hàng cuối',       run(){ dropCargo(0.5); } },
-  { at: 86, label:'Hạ cánh',                    run(){ Sim.command('LAND', 'test'); } },
-];
-const atest = { on:false, phase:0, t0:0, next:0, label:'' };
+// Test-flight programme (TESTPLAN / testSteps in analysis-core): flown live, one recorded flight per payload
+const atest = { on:false, phase:0, t0:0, next:0, label:'', pi:0, steps:[], drain0:null };
+function setCargoGround(kg){ Sim.params.cargoMass = kg; Sim.syncMass(); $('#pCargo').value = String(kg); $('#oCargo').textContent = kg.toFixed(2) + ' kg'; updateCargoSpecUI(); }
+function applyStep(st){
+  if (st.set){
+    if (st.set.windSpeed != null){ setWindOn(true); setSlider('pWind', st.set.windSpeed); }
+    if (st.set.windDir != null) setSlider('pWdir', st.set.windDir);
+    if (st.set.gust != null) setSlider('pGust', Math.round(st.set.gust * 100));
+  }
+  if (st.drop) dropCargo(Sim.params.cargoMass);
+  if (st.land) Sim.command('LAND', 'test');
+}
 function renderAtSteps(){
-  $('#atSteps').innerHTML = AT_STEPS.map((s, i) => {
-    const cls = !atest.on ? '' : i < atest.next - 1 ? 'done' : i === atest.next - 1 ? 'now' : '';
-    return '<li class="' + cls + '"><b>+' + s.at + 's</b><span>' + s.label + '</span></li>';
+  const n = TESTPLAN.payloads.length;
+  $('#atSteps').innerHTML = TESTPLAN.payloads.map((p, i) => {
+    const cls = !atest.on ? '' : i < atest.pi ? 'done' : i === atest.pi ? 'now' : '';
+    const kg = String(p).replace('.', ',') + ' kg';
+    const now = atest.on && i === atest.pi ? ' · đang: ' + atest.label + (atest.phase === 3 ? ' (' + atest.next + '/' + atest.steps.length + ')' : '') : '';
+    return '<li class="' + cls + '"><b>' + (i + 1) + '/' + n + '</b><span>Tải ' + kg + now + '</span></li>';
   }).join('');
+  if (typeof anRunBtn === 'function') anRunBtn();
 }
 renderAtSteps();
-function startAdaptTest(){
-  const S = Sim.S;
-  if (!(S.state === 'DISARMED' || S.state === 'ARMED') || !S.grounded){ addLog('rej', 'Kịch bản thử cần drone đang đỗ trên mặt đất', 'bấm LAND hoặc Đặt lại về Nhà máy trước', S.t); return; }
-  demo.on = false;
-  Sim.params.cargoMass = 1.5; Sim.syncMass(); $('#pCargo').value = '1.5'; $('#oCargo').textContent = '1.50 kg'; updateCargoSpecUI();
-  setWindOn(true); setSlider('pWind', 4); setSlider('pWdir', 270); setSlider('pGust', 0);
-  atest.on = true; atest.phase = S.state === 'DISARMED' ? 0 : 1; atest.next = 0; atest.label = 'chuẩn bị cất cánh';
-  addLog('info', 'Bắt đầu kịch bản thử thích nghi', 'mỗi thay đổi cách nhau ~14 s để thấy rõ phản ứng', S.t);
+function beginLeg(){
+  const p = TESTPLAN.payloads[atest.pi], S = Sim.S, kg = String(p).replace('.', ',') + ' kg';
+  // On the pad between flights: load this flight's cargo and fit a full battery, as a real test crew would
+  setCargoGround(p); setSlider('pGust', 0); setWindOn(true); setSlider('pWind', 0); setSlider('pWdir', 270);
+  S.mAh = 0; S.soc = 1; S.flags.low = false;
+  addLog('info', 'Chuyến bay thử ' + (atest.pi + 1) + '/' + TESTPLAN.payloads.length + ': nạp ' + kg + ' hàng, thay pin đầy', 'lặng gió trước khi cất cánh', S.t);
+  atest.steps = testSteps(p); atest.next = 0; atest.phase = S.state === 'DISARMED' ? 0 : 1;
+  atest.label = 'cất cánh với ' + kg;
   renderAtSteps();
 }
+function startAdaptTest(){
+  const S = Sim.S;
+  if (atest.on) return;
+  if (!(S.state === 'DISARMED' || S.state === 'ARMED') || !S.grounded){ addLog('rej', 'Chương trình bay thử cần drone đang đỗ trên mặt đất', 'bấm LAND hoặc Đặt lại về Nhà máy trước', S.t); return; }
+  demo.on = false;
+  atest.on = true; atest.pi = 0;
+  // The battery drain multiplier only speeds up demos; test flights use the real discharge rate
+  atest.drain0 = Sim.params.drain;
+  if (atest.drain0 !== 1) setSlider('pDrain', 1);
+  addLog('info', 'Bắt đầu chương trình bay thử: ' + TESTPLAN.payloads.length + ' chuyến', 'mỗi chuyến: gió 0 → 12 m/s, đổi hướng, giật, thả hàng' + (atest.drain0 !== 1 ? '; hệ số xả pin tạm về ×1 như thật' : ''), S.t);
+  beginLeg();
+}
+function atestEnd(){
+  atest.on = false;
+  if (atest.drain0 != null && Sim.params.drain !== atest.drain0) setSlider('pDrain', atest.drain0);
+  atest.drain0 = null; renderAtSteps();
+}
+function stopAdaptTest(why, failed){
+  atestEnd();
+  addLog(failed ? 'fail' : 'info', 'Dừng chương trình bay thử', why || '', Sim.S.t);
+  if (failed && typeof showToast === 'function') showToast('Bay thử dừng giữa chừng: ' + why + '. Kết quả chỉ gồm phần đã bay.', 'analysis', 'Xem kết quả');
+  if (typeof anRender === 'function') anRender();
+}
 $('#btnAdaptTest').addEventListener('click', startAdaptTest);
+function atestTick(){
+  if (!atest.on) return;
+  const S = Sim.S, st = S.state;
+  const why = () => (S.prevState ? S.prevState + ' → ' : '') + st + (S.lastReason ? ' (' + S.lastReason + ')' : '');
+  if (st === 'EMERGENCY' || st === 'FAILSAFE' || st === 'MANUAL' || st === 'RTL' || st === 'MISSION'){ stopAdaptTest('drone chuyển ' + why(), true); return; }
+  if (atest.phase === 0){ if (Sim.command('ARM', 'test')) atest.phase = 1; else { stopAdaptTest('không ARM được', true); return; } }
+  else if (atest.phase === 1 && st === 'ARMED' && S.stateT > 0.8){ Sim.command('TAKEOFF', 'test'); atest.phase = 2; atest.label = 'cất cánh'; renderAtSteps(); }
+  else if (atest.phase === 2 && st === 'HOVER' && S.stateT > 1){ atest.phase = 3; atest.t0 = S.t; }
+  else if (atest.phase === 3){
+    // Until the programme itself commands LAND the drone must stay in HOVER; anything else ends the programme
+    const landCmd = atest.steps.slice(0, atest.next).some(s => s.land);
+    if (!landCmd && st !== 'HOVER'){ stopAdaptTest('drone chuyển ' + why(), true); return; }
+    while (atest.next < atest.steps.length && S.t - atest.t0 >= atest.steps[atest.next].at){
+      const step = atest.steps[atest.next++];
+      applyStep(step); atest.label = step.label; renderAtSteps();
+    }
+    if (landCmd && (st === 'DISARMED' || (st === 'ARMED' && S.stateT > 0.6))){
+      atest.pi++;
+      if (atest.pi < TESTPLAN.payloads.length) beginLeg();
+      else {
+        atestEnd();
+        addLog('info', 'Chương trình bay thử hoàn tất', 'kết quả đã tổng hợp trong phần Kết quả', S.t);
+        if (typeof showToast === 'function') showToast('Bay thử xong ' + TESTPLAN.payloads.length + ' chuyến. Kết quả đã được tổng hợp từ các chuyến này.', 'analysis', 'Xem kết quả');
+        if (typeof anRender === 'function') anRender();
+      }
+    }
+  }
+}
 $('#pAdapt').addEventListener('change', e => {
   Sim.params.adaptive = e.target.checked;
   addLog('info', e.target.checked ? 'Bật điều khiển thích nghi' : 'Tắt điều khiển thích nghi: dùng PID cố định', e.target.checked ? 'ước lượng m̂ và gió ŵ, bù nhiễu d̂' : 'm̂ giữ nguyên, không bù nhiễu gió', Sim.S.t);
 });
-function atestTick(){
-  if (!atest.on) return;
-  const S = Sim.S, st = S.state;
-  if (st === 'EMERGENCY' || st === 'FAILSAFE' || st === 'MANUAL'){ atest.on = false; renderAtSteps(); return; }
-  if (atest.phase === 0){ if (Sim.command('ARM', 'test')) atest.phase = 1; else { atest.on = false; return; } }
-  else if (atest.phase === 1 && st === 'ARMED' && S.stateT > 0.8){ Sim.command('TAKEOFF', 'test'); atest.phase = 2; atest.label = 'cất cánh'; }
-  else if (atest.phase === 2 && st === 'HOVER' && S.stateT > 2){ atest.phase = 3; atest.t0 = S.t; }
-  else if (atest.phase === 3){
-    while (atest.next < AT_STEPS.length && S.t - atest.t0 >= AT_STEPS[atest.next].at){
-      const step = AT_STEPS[atest.next++];
-      if (step.run) step.run();
-      atest.label = step.label; renderAtSteps();
-    }
-    if (atest.next >= AT_STEPS.length && (st === 'ARMED' || st === 'DISARMED')){
-      atest.on = false; renderAtSteps();
-      addLog('info', 'Kịch bản thử thích nghi hoàn tất', 'xem tab "Điều khiển & môi trường" trong báo cáo hành trình', S.t);
-    }
-  }
-}
 
 function drawAdaptCompass(){
   const c = $('#adWind'); if (!c) return;
@@ -2594,7 +2695,7 @@ function updateDom(){
   else if (S.state === 'FAILSAFE') msg = 'Failsafe: ' + S.fsReason + ', đang về Nhà Máy';
   else if (!S.grounded && obsD < 4.2) { msg = 'Lidar APF: Đang né ' + S.nearObsName + ' (' + fx(obsD, 1) + ' m)'; cls = 'warn'; }
   else if (S.soc < 0.25 && S.state !== 'DISARMED') msg = 'Pin yếu ' + Math.ceil(pct) + '%';
-  else if (atest.on) { msg = 'Kịch bản thích nghi: ' + atest.label; cls = 'warn'; }
+  else if (atest.on) { msg = 'Bay thử ' + (atest.pi + 1) + '/' + TESTPLAN.payloads.length + ': ' + atest.label; cls = 'warn'; }
   else if (demo.on) { msg = 'Đang chạy Demo Giao Hàng Đô Thị'; cls = 'warn'; }
   els.banner.hidden = !msg; if (msg){ els.banner.textContent = msg; els.banner.className = 'ov ov-banner ' + cls; }
 
@@ -3459,31 +3560,13 @@ const ROADS = { ew:[-42,-6,14,44], ns:[-44,-20,10,46], w:7.5 };
 const REC = { flights:[], cur:null, sel:null, n:0, lastT:-1 };
 let rpIdx = null, rpLastDraw = 0;
 
-function recPoint(S){
-  const sp = S.sp;
-  return { t:S.t, e:S.pos[0], n:S.pos[1], u:S.pos[2], gs:Math.hypot(S.vel[0], S.vel[1]), vs:S.vel[2],
-    roll:S.att[0]*DEG, pitch:-S.att[1]*DEG, psi:S.att[2], soc:S.soc*100, mAh:S.mAh,
-    clr:S.minObsDist, st:S.state, cargo:Sim.params.cargoMass, zsp: sp && sp.z != null ? sp.z : null,
-    wind:Math.hypot(S.windNow[0], S.windNow[1]), air:!S.grounded,
-    ...ctlPoint(S, sp) };
-}
-function ctlPoint(S, sp){
-  const E = S.est, wT = Math.hypot(S.windNow[0], S.windNow[1]), wE = Math.hypot(E.wHat[0], E.wHat[1]);
-  const herr = sp && sp.xy ? Math.hypot(S.pos[0] - sp.xy[0], S.pos[1] - sp.xy[1]) : null;
-  const verr = sp && sp.z != null ? S.pos[2] - sp.z : null;
-  return {
-    wT, wTd: wT > 0.3 ? cmpFrom(S.windNow[0], S.windNow[1]) : null,
-    wE: E.valid ? wE : null, wEd: E.valid && wE > 0.3 ? cmpFrom(E.wHat[0], E.wHat[1]) : null,
-    mT: Sim.P.m, mE: E.mHat, T: S.T, W: Sim.P.m * Sim.P.g, IE: E.IHat,
-    tilt: Math.acos(clamp(Math.cos(S.att[0]) * Math.cos(S.att[1]), -1, 1)) * DEG,
-    tiltC: S.sp ? S.ctl.tiltCmd * DEG : null, herr, verr, verrA: verr == null ? null : Math.abs(verr)
-  };
-}
+// One recorded sample: the shared, DOM-free flightSample() from analysis-core (the results panel reads the same data)
+function recPoint(){ return flightSample(Sim); }
 function recSample(force){
   const f = REC.cur; if (!f) return;
   const S = Sim.S;
   if (!force && S.t - REC.lastT < 0.2) return;
-  REC.lastT = S.t; f.samples.push(recPoint(S));
+  REC.lastT = S.t; f.samples.push(recPoint());
 }
 // Weather / payload settings watched during a flight; slider drags within 1.5 s merge into one change
 const ENV_KEYS = [['windDir', 'dir'], ['windSpeed', 'spd'], ['gust', 'gust'], ['windOn', 'on'], ['cargoMass', 'cargo'], ['adaptive', 'adapt']];
@@ -3507,7 +3590,7 @@ function recStart(){
     samples:[], events:[], plans:[], drops:[], env:[], envState:envSnapshot(), mAh0:S.mAh, soc0:S.soc*100,
     cargo0:Sim.params.cargoMass, safe:Sim.params.safeMargin, adaptive:Sim.params.adaptive };
   REC.flights.push(REC.cur);
-  if (REC.flights.length > 8) REC.flights.shift();
+  if (REC.flights.length > 12) REC.flights.shift();
   REC.sel = REC.cur; REC.lastT = -1; rpIdx = null;
   recSample(true);
   rpRefreshSelect(); rpRender();
@@ -3525,7 +3608,7 @@ function recFinish(outcome, kind, noSample){
     rpRefreshSelect(); rpRender();
     return;
   }
-  rpRefreshSelect(); rpRender(); showReportToast(f);
+  rpRefreshSelect(); rpRender(); showReportToast(f); anRender();
 }
 
 Sim.on(ev => {
@@ -3612,16 +3695,21 @@ $('#rpScrub').addEventListener('input', e => {
   rpIdx = v >= f.samples.length - 1 ? null : v;
   rpRender(true);
 });
-function showReportToast(f){
-  $('#rpToastMsg').textContent = 'Chuyến ' + f.id + ' kết thúc: ' + f.outcome + '.';
+function showToast(msg, target, btn){
+  $('#rpToastMsg').textContent = msg;
+  $('#rpToastGo').dataset.target = target; $('#rpToastGo').textContent = btn;
   $('#rpToast').hidden = false;
-  clearTimeout(showReportToast.tm);
-  showReportToast.tm = setTimeout(() => { $('#rpToast').hidden = true; }, 15000);
+  clearTimeout(showToast.tm);
+  showToast.tm = setTimeout(() => { $('#rpToast').hidden = true; }, 15000);
+}
+function showReportToast(f){
+  if (atest.on) return;   // the test programme shows one toast at the end
+  showToast('Chuyến ' + f.id + ' kết thúc: ' + f.outcome + '.', 'report', 'Xem báo cáo');
 }
 $('#rpToastGo').addEventListener('click', () => {
   $('#rpToast').hidden = true;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  $('#report').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block:'start' });
+  $('#' + ($('#rpToastGo').dataset.target || 'report')).scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block:'start' });
 });
 $('#rpToastX').addEventListener('click', () => { $('#rpToast').hidden = true; });
 
@@ -4062,44 +4150,37 @@ new ResizeObserver(() => { if (REC.sel) rpRender(true); }).observe($('#rpBody'))
 function rpVisible(){ const r = $('#report').getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }
 rpRefreshSelect(); rpRender();
 
-/* ---------- results: how wind and payload change the drone's behaviour ---------- */
-const AN = { out:null, plan:null, i:0, running:false, mode:'adapt', ms:0, hover:{} };
-const mkSweepSim = (() => { const src = document.getElementById('sim-core').textContent; return () => new Function(src + ';return Sim;')(); })();
+/* ---------- Kết quả: built ONLY from the flights recorded in the flight report ---------- */
+const AN = { hover:{}, data:null, lastDraw:0 };
 const PL_TOK = ['pl-0','pl-1','pl-2','pl-3','pl-4'], WD_TOK = ['wd-0','wd-1','wd-2'];
 const kgTxt = v => String(parseFloat(v.toFixed(2))).replace('.', ',') + ' kg';
 const nv = (v, d) => v.toFixed(d).replace('.', ',');
+const plTok = p => PL_TOK[Math.max(0, Math.min(4, Math.round(p / 3 * 4)))];
+const flightsTxt = ids => { const u = [...new Set(ids)].sort((a, b) => a - b); return (u.length > 1 ? 'chuyến ' : 'chuyến ') + u.join(', '); };
 
-function anStatus(){
-  const el = $('#anStatus');
-  if (AN.running) el.textContent = 'đang bay thử ' + AN.i + '/' + AN.plan.length + ' tổ hợp…';
-  else if (AN.out) el.textContent = AN.plan.length + ' chuyến bay mô phỏng · tính trong ' + nv(AN.ms / 1000, 1) + ' s';
-}
-function anRun(){
-  if (AN.running) return;
-  AN.plan = sweepPlan(); AN.out = []; AN.i = 0; AN.running = true;
-  const t0 = performance.now();
-  anStatus();
-  const tick = () => {
-    const ts = performance.now();
-    while (AN.i < AN.plan.length && performance.now() - ts < 35) AN.out.push(sweepCase(mkSweepSim, AN.plan[AN.i++]));
-    anStatus();
-    if (AN.i < AN.plan.length) setTimeout(tick, 0);
-    else { AN.running = false; AN.ms = performance.now() - t0; anStatus(); anRender(); }
-  };
-  setTimeout(tick, 0);
-}
-function anGet(kind, p, w, ad){
-  return AN.out.find(r => r.kind === kind && r.payload === p && (w == null || r.wind === w) && (ad == null || r.adaptive === ad));
+function anCompute(){
+  const A = analyzeFlights(REC.flights);
+  A.agg = aggregatePoints(A.points);
+  A.flown = REC.flights.filter(f => f.samples.some(p => p.air));
+  return A;
 }
 
-/* generic line chart with direct end labels and a hover crosshair */
+/* generic line chart: direct end labels, markers, hover crosshair; draws a note when there is not enough data */
+function chartNote(id, msg){
+  const [ctx, w, h] = fitCanvas($('#' + id));
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = TK.line; ctx.setLineDash([4, 4]); ctx.strokeRect(0.5, 0.5, w - 1, h - 1); ctx.setLineDash([]);
+  ctx.fillStyle = TK.muted; ctx.font = '13px ' + getComputedStyle(document.body).fontFamily; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(msg, w / 2, h / 2);
+}
 function lineChart(id, spec){
   const c = $('#' + id), [ctx, w, h] = fitCanvas(c);
   ctx.clearRect(0, 0, w, h);
-  const padL = 40, padR = spec.endW || 66, padT = 12, padB = 34;
+  const padL = 40, padR = spec.endW || 92, padT = 12, padB = 34;
   const xs = spec.series.flatMap(s => s.pts.map(p => p[0])), ys = spec.series.flatMap(s => s.pts.map(p => p[1]));
   let x0 = spec.xMin != null ? spec.xMin : Math.min(...xs), x1 = spec.xMax != null ? spec.xMax : Math.max(...xs);
-  let y0 = spec.yMin != null ? spec.yMin : Math.min(0, ...ys), y1 = spec.yMax != null ? spec.yMax : Math.max(...ys, ...(spec.refs || []).map(r => r.y));
+  if (x1 - x0 < 1e-6){ x0 -= 1; x1 += 1; }
+  let y0 = spec.yMin != null ? spec.yMin : Math.min(0, ...ys), y1 = Math.max(...ys, ...(spec.refs || []).map(r => r.y), spec.yMinTop || 0);
   if (y1 - y0 < 1e-6) y1 = y0 + 1;
   const yt = niceTicks(y0, y1, 4); y0 = Math.min(y0, yt.ticks[0]); y1 = Math.max(y1, yt.ticks[yt.ticks.length - 1]);
   const X = v => padL + (v - x0) / (x1 - x0) * (w - padL - padR), Y = v => padT + (1 - (v - y0) / (y1 - y0)) * (h - padT - padB);
@@ -4107,9 +4188,9 @@ function lineChart(id, spec){
   yt.ticks.forEach(v => {
     const y = Math.round(Y(v)) + 0.5;
     ctx.strokeStyle = TK.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
-    ctx.fillStyle = TK.muted; ctx.textAlign = 'right'; ctx.fillText(spec.yFmt ? spec.yFmt(v) : fx(v, yt.step < 1 ? 1 : 0), padL - 6, y);
+    ctx.fillStyle = TK.muted; ctx.textAlign = 'right'; ctx.fillText(spec.yFmt ? spec.yFmt(v) : nv(v, yt.step < 1 ? 1 : 0), padL - 6, y);
   });
-  const xt = spec.xTicks || niceTicks(x0, x1, 5).ticks;
+  const xt = spec.xTicks ? spec.xTicks.filter(v => v >= x0 - 1e-9 && v <= x1 + 1e-9) : niceTicks(x0, x1, 5).ticks;
   ctx.textAlign = 'center';
   xt.forEach(v => { ctx.fillStyle = TK.muted; ctx.fillText(spec.xFmt ? spec.xFmt(v) : String(v), X(v), h - padB + 12); });
   ctx.fillStyle = TK.muted; ctx.font = '600 10.5px "Barlow Condensed", Arial, sans-serif';
@@ -4119,13 +4200,11 @@ function lineChart(id, spec){
     ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = TK.muted; ctx.textAlign = 'left'; ctx.font = '10px "JetBrains Mono", monospace'; ctx.fillText(r.label, padL + 4, y - 7);
   });
-  // lines, then markers with a surface ring
   spec.series.forEach(s => {
     ctx.strokeStyle = TK[s.tok]; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.setLineDash(s.dash ? [5, 3] : []);
     ctx.beginPath(); s.pts.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))); ctx.stroke(); ctx.setLineDash([]);
     if (spec.markers) s.pts.forEach(p => { ctx.beginPath(); ctx.arc(X(p[0]), Y(p[1]), 4, 0, Math.PI*2); ctx.fillStyle = TK[s.tok]; ctx.fill(); ctx.strokeStyle = TK.panel; ctx.lineWidth = 2; ctx.stroke(); });
   });
-  // direct labels at line ends, nudged apart
   const labs = spec.series.map(s => ({ s, y: Y(s.pts[s.pts.length - 1][1]) })).sort((a, b) => a.y - b.y);
   for (let i = 1; i < labs.length; i++) if (labs[i].y - labs[i - 1].y < 12) labs[i].y = labs[i - 1].y + 12;
   const over = labs.length ? labs[labs.length - 1].y - (h - padB - 4) : 0;
@@ -4133,10 +4212,10 @@ function lineChart(id, spec){
   ctx.font = '600 10.5px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
   labs.forEach(l => {
     const last = l.s.pts[l.s.pts.length - 1];
-    ctx.strokeStyle = TK[l.s.tok]; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(last[0]) + 5, l.y); ctx.lineTo(X(last[0]) + 11, l.y); ctx.stroke();
+    ctx.strokeStyle = TK[l.s.tok]; ctx.lineWidth = 2; ctx.setLineDash(l.s.dash ? [3, 2] : []);
+    ctx.beginPath(); ctx.moveTo(X(last[0]) + 5, l.y); ctx.lineTo(X(last[0]) + 11, l.y); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = TK.fg; ctx.fillText(l.s.name, X(last[0]) + 14, l.y);
   });
-  // hover: nearest x across all series
   const hx = AN.hover[id];
   if (hx != null){
     const cand = [...new Set(xs)]; let bx = cand[0];
@@ -4148,82 +4227,205 @@ function lineChart(id, spec){
       const p = s.pts.reduce((a, q) => Math.abs(q[0] - bx) < Math.abs(a[0] - bx) ? q : a, s.pts[0]);
       if (Math.abs(p[0] - bx) > 1e-6 && !spec.continuous) return;
       ctx.beginPath(); ctx.arc(X(p[0]), Y(p[1]), 5, 0, Math.PI*2); ctx.fillStyle = TK[s.tok]; ctx.fill(); ctx.strokeStyle = TK.panel; ctx.lineWidth = 2; ctx.stroke();
-      rows.push([s, p[1]]);
+      rows.push([s, p]);
     });
-    const head = (spec.xFmtTip || spec.xFmt || String)(bx);
+    const lines = [(spec.xFmtTip || spec.xFmt || String)(bx)].concat(rows.map(r => r[0].name + ': ' + spec.tip(r[1][1]) + (r[1][2] ? ' · ' + r[1][2] : '')));
     ctx.font = '11px "JetBrains Mono", monospace';
-    const lines = [head].concat(rows.map(r => r[0].name + ': ' + spec.tip(r[1])));
     const bw = Math.max(...lines.map(t => ctx.measureText(t).width)) + 26, bh = lines.length * 15 + 8;
-    let bxp = xp + 10; if (bxp + bw > w - 4) bxp = xp - 10 - bw;
-    const byp = padT + 2;
+    let bxp = xp + 10; if (bxp + bw > w - 4) bxp = Math.max(4, xp - 10 - bw);
     ctx.fillStyle = TK.panel; ctx.strokeStyle = TK['line-2']; ctx.lineWidth = 1;
-    ctx.fillRect(bxp, byp, bw, bh); ctx.strokeRect(bxp + 0.5, byp + 0.5, bw - 1, bh - 1);
+    ctx.fillRect(bxp, padT + 2, bw, bh); ctx.strokeRect(bxp + 0.5, padT + 2.5, bw - 1, bh - 1);
     ctx.textAlign = 'left';
     lines.forEach((t, i) => {
-      const y = byp + 11 + i * 15;
+      const y = padT + 13 + i * 15;
       if (i){ ctx.fillStyle = TK[rows[i - 1][0].tok]; ctx.fillRect(bxp + 8, y - 4, 9, 9); }
       ctx.fillStyle = i ? TK.fg : TK.muted; ctx.font = (i ? '' : '600 ') + '11px "JetBrains Mono", monospace';
       ctx.fillText(t, bxp + (i ? 22 : 8), y);
     });
   }
 }
+/* dot plot: one row per kind of change, one dot per payload (largest deviation measured) */
+function dotPlot(id, rows, series){
+  const c = $('#' + id), [ctx, w, h] = fitCanvas(c);
+  ctx.clearRect(0, 0, w, h);
+  const padL = 132, padR = 16, padT = 10, padB = 34;
+  const vmax = Math.max(0.1, ...rows.flatMap(r => r.vals.map(v => v.v)));
+  const xt = niceTicks(0, vmax, 4);
+  if (xt.ticks[xt.ticks.length - 1] < vmax - 1e-9) xt.ticks.push(xt.ticks[xt.ticks.length - 1] + xt.step);   // the axis must reach the largest dot
+  const x1 = xt.ticks[xt.ticks.length - 1];
+  const X = v => padL + v / x1 * (w - padL - padR);
+  const rh = (h - padT - padB) / rows.length;
+  ctx.font = '10px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle';
+  xt.ticks.forEach(v => {
+    const x = Math.round(X(v)) + 0.5; ctx.strokeStyle = TK.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, h - padB); ctx.stroke();
+    ctx.fillStyle = TK.muted; ctx.textAlign = 'center'; ctx.fillText(nv(v, xt.step < 0.1 ? 2 : 1), x, h - padB + 12);
+  });
+  ctx.fillStyle = TK.muted; ctx.font = '600 10.5px "Barlow Condensed", Arial, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('LỆCH KHỎI ĐIỂM TREO LỚN NHẤT (M)', padL + (w - padL - padR) / 2, h - 7);
+  const hv = AN.hover[id];
+  rows.forEach((r, i) => {
+    const y = padT + rh * (i + 0.5);
+    ctx.fillStyle = TK.fg; ctx.textAlign = 'right'; ctx.font = '12px ' + getComputedStyle(document.body).fontFamily; ctx.fillText(r.label, padL - 10, y);
+    ctx.strokeStyle = TK.line; ctx.beginPath(); ctx.moveTo(padL, y + 0.5); ctx.lineTo(w - padR, y + 0.5); ctx.stroke();
+    const vs = r.vals.slice().sort((a, b) => a.v - b.v);
+    vs.forEach(d => {
+      ctx.beginPath(); ctx.arc(X(d.v), y, 5.5, 0, Math.PI*2); ctx.fillStyle = TK[d.tok]; ctx.fill(); ctx.strokeStyle = TK.panel; ctx.lineWidth = 2; ctx.stroke();
+    });
+    if (hv && Math.abs(hv.y - y) < rh / 2 && vs.length){
+      const txt = vs.map(d => d.name + ' ' + nv(d.v, 2) + ' m').join(' · ');
+      ctx.font = '11px "JetBrains Mono", monospace'; const tw = ctx.measureText(txt).width + 14;
+      const bx = Math.min(w - tw - 4, Math.max(padL, X(vs[vs.length - 1].v) + 10));
+      ctx.fillStyle = TK.panel; ctx.strokeStyle = TK['line-2']; ctx.fillRect(bx, y - 10, tw, 20); ctx.strokeRect(bx + 0.5, y - 9.5, tw - 1, 19);
+      ctx.fillStyle = TK.fg; ctx.textAlign = 'left'; ctx.fillText(txt, bx + 7, y);
+    }
+  });
+}
 
-function anSpecs(){
-  const P = SWEEP.payloads, W = SWEEP.winds, ad = AN.mode === 'adapt';
-  const step = P.map((p, i) => ({ r: anGet('windStep', p, null, ad), i }));
-  const drop = P.map((p, i) => ({ r: anGet('drop', p, null, ad), i })).filter(o => o.r);
-  // shared y-scale across controller modes so switching the toggle compares like with like
-  const stepMax = Math.max(...AN.out.filter(r => r.kind === 'windStep').map(r => r.peak));
-  const dropMax = Math.max(...AN.out.filter(r => r.kind === 'drop').map(r => r.peak));
-  return {
-    anLean: { xTitle:'tốc độ gió (m/s)', xTicks:W, markers:true, yMin:0, yMax:36, xFmtTip: v => 'gió ' + v + ' m/s',
-      refs:[{ y:34, label:'giới hạn nghiêng 34°' }], tip: v => nv(v, 1) + '°', yFmt: v => v + '°',
-      series: P.map((p, i) => ({ name: kgTxt(p), tok: PL_TOK[i], pts: W.map(w => [w, anGet('steady', p, w).lean]) })) },
-    anEnd: { xTitle:'tải trọng (kg)', xTicks:P, markers:true, yMin:0, xFmt: v => String(v).replace('.', ','), xFmtTip: v => 'tải ' + kgTxt(v), tip: v => nv(v, 1) + ' phút', yFmt: v => v + ' ph',
-      series: SWEEP.endWinds.map((w, i) => ({ name: 'gió ' + w, tok: WD_TOK[i], pts: P.map(p => [p, anGet('steady', p, w).endurance]) })) },
-    anStep: { xTitle:'giây sau khi gió tăng 3 → 9 m/s', yMin:0, yMax: stepMax * 1.08, continuous:true, endW:66, xFmtTip: v => 't = ' + nv(v, 1) + ' s', tip: v => nv(v, 2) + ' m', yFmt: v => nv(v, 1), xTicks:[0, 2, 4, 6, 8, 10, 12], xMin:0,
-      series: step.map(o => ({ name: kgTxt(P[o.i]), tok: PL_TOK[o.i], pts: o.r.trace.map(r => [r[0], r[1]]) })) },
-    anDrop: { xTitle:'giây sau khi thả toàn bộ hàng', yMin: Math.min(0, ...AN.out.filter(r => r.kind === 'drop').flatMap(r => r.trace.map(q => q[1]))), yMax: dropMax * 1.08, continuous:true, xFmtTip: v => 't = ' + nv(v, 1) + ' s', tip: v => (v >= 0 ? '+' : '') + nv(v, 2) + ' m', yFmt: v => nv(v, 1), xTicks:[0, 2, 4, 6, 8, 10], xMin:0,
-      series: drop.map(o => ({ name: kgTxt(P[o.i]), tok: PL_TOK[o.i], pts: o.r.trace.map(r => [r[0], r[1]]) })) },
-  };
+function anSpecs(A){
+  const ok = p => p.gust === 0;
+  const flat = A.agg.filter(ok);
+  // 1) lean vs wind, one line per payload/controller
+  const byPl = {};
+  flat.forEach(p => { const k = p.payload + '|' + p.ad; (byPl[k] = byPl[k] || []).push(p); });
+  const leanSeries = Object.values(byPl).sort((a, b) => a[0].payload - b[0].payload || (b[0].ad - a[0].ad)).map(g => ({
+    name: kgTxt(g[0].payload) + (g[0].ad ? '' : ' · PID'), tok: plTok(g[0].payload), dash: !g[0].ad,
+    pts: g.sort((a, b) => a.wind - b.wind).map(p => [p.wind, p.lean, flightsTxt(p.src.map(s => s.flight))]) }));
+  // 2) endurance vs payload, one line per wind level (min / middle / max wind measured)
+  const ad = flat.some(p => p.ad) ? flat.filter(p => p.ad) : flat;
+  const winds = [...new Set(ad.map(p => p.wind))].sort((a, b) => a - b);
+  const pick = winds.length <= 3 ? winds : [winds[0], winds[Math.floor(winds.length / 2)], winds[winds.length - 1]];
+  const endSeries = pick.map((wv, i) => ({ name: 'gió ' + wv, tok: WD_TOK[pick.length === 1 ? 0 : Math.round(i / (pick.length - 1) * 2)],
+    pts: ad.filter(p => p.wind === wv).sort((a, b) => a.payload - b.payload).map(p => [p.payload, p.endurance, flightsTxt(p.src.map(s => s.flight))]) })).filter(s => s.pts.length >= 2);
+  // 3) responses to each kind of wind change, per payload
+  const kinds = [
+    { label:'Gió tăng 3 m/s', f: r => r.kind === 'wind' && r.to.wind > r.from.wind && r.to.dir === r.from.dir && r.to.gust === r.from.gust },
+    { label:'Gió giảm 3 m/s', f: r => r.kind === 'wind' && r.to.wind < r.from.wind && r.to.dir === r.from.dir && r.to.gust === r.from.gust },
+    { label:'Đổi hướng gió', f: r => r.kind === 'wind' && r.to.dir !== r.from.dir },
+    { label:'Gió giật 30%', f: r => r.kind === 'wind' && r.to.gust > r.from.gust },
+    { label:'Thả hàng', f: r => r.kind === 'drop' },
+  ];
+  const dotRows = kinds.map(k => {
+    const rs = A.resp.filter(k.f), g = {};
+    rs.forEach(r => { const key = r.from.cargo + '|' + r.ad, v = Math.max(r.peakH, r.kind === 'drop' ? r.peakV : 0); if (!g[key] || v > g[key].v) g[key] = { v, name: kgTxt(r.from.cargo) + (r.ad ? '' : ' PID'), tok: plTok(r.from.cargo) }; });
+    return { label: k.label, vals: Object.values(g) };
+  }).filter(r => r.vals.length);
+  // 4) altitude trace after each load drop
+  const drops = A.resp.filter(r => r.kind === 'drop');
+  const dropSeries = drops.map(r => ({ name: kgTxt(r.from.cargo) + (r.ad ? '' : ' · PID') + ' (c.' + r.flight + ')', tok: plTok(r.from.cargo), dash: !r.ad,
+    pts: r.trace.map(q => [q[0], q[2]]) }));
+  return { leanSeries, endSeries, dotRows, dropSeries };
 }
-function anRender(){
-  if (!AN.out || AN.running) return;
-  $('#anBody').hidden = false; $('#anWait').hidden = true;
-  const sp = anSpecs();
-  Object.keys(sp).forEach(id => lineChart(id, sp[id]));
-  anConclusions(); anTable();
+function anRender(light){
+  try { anRenderInner(light && AN.data); } catch (err){ console.error('Kết quả:', err); }
 }
-function anConclusions(){
-  const g = (p, w) => anGet('steady', p, w);
-  const a15 = [g(1.5, 0), g(1.5, 6), g(1.5, 12)], e12 = g(0, 12), h12 = g(3, 12), z0 = g(0, 0), z3 = g(3, 0);
-  const sA = anGet('windStep', 1.5, null, true), sF = anGet('windStep', 1.5, null, false);
-  const dA = anGet('drop', 3, null, true), dF = anGet('drop', 3, null, false);
+function anRenderInner(light){
+  const A = light ? AN.data : (AN.data = anCompute());
+  const live = REC.cur ? ' · đang ghi chuyến ' + REC.cur.id : '';
+  $('#anStatus').textContent = A.flown.length ? A.flown.length + ' chuyến đã bay · ' + A.points.length + ' đoạn đo · ' + A.resp.length + ' lần phản ứng' + live : 'chưa có chuyến bay nào';
+  const has = A.points.length || A.resp.length;
+  $('#anWait').hidden = !!has; $('#anBody').hidden = !has;
+  anRunBtn();
+  if (!has) return;
+  const sp = anSpecs(A);
+  $('#anLead').textContent = 'Tổng hợp từ ' + A.flown.length + ' chuyến bay đã ghi trong báo cáo hành trình (' + flightsTxt(A.flown.map(f => f.id)) + '). Mỗi điểm đo là một đoạn drone treo ổn định ít nhất ' + (TESTPLAN.settle + 3) + ' s với gió và tải không đổi; ' + TESTPLAN.settle + ' s đầu sau mỗi thay đổi bị bỏ để drone ổn định. Bấm một dòng trong bảng để tua lại đúng đoạn đó.';
+  if (sp.leanSeries.length) lineChart('anLean', { xTitle:'tốc độ gió (m/s)', xTicks:[0, 3, 6, 9, 12], xMin:0, xMax:12, markers:true, yMin:0, yMinTop:36, refs:[{ y:34, label:'giới hạn nghiêng 34°' }],
+    xFmtTip: v => 'gió ' + v + ' m/s', tip: v => nv(v, 1) + '°', yFmt: v => v + '°', series: sp.leanSeries });
+  else chartNote('anLean', 'Chưa có đoạn treo ổn định nào không có gió giật');
+  if (sp.endSeries.length) lineChart('anEnd', { xTitle:'tải trọng (kg)', xTicks:[0, 0.75, 1.5, 2.25, 3], xMin:0, xMax:3, markers:true, yMin:0, endW:64,
+    xFmt: v => String(v).replace('.', ','), xFmtTip: v => 'tải ' + kgTxt(v), tip: v => nv(v, 1) + ' phút', yFmt: v => v + ' ph', series: sp.endSeries });
+  else chartNote('anEnd', 'Cần đo ở ít nhất 2 mức tải với cùng tốc độ gió');
+  if (sp.dotRows.length) dotPlot('anStep', sp.dotRows); else chartNote('anStep', 'Chưa có thay đổi gió hoặc tải nào lúc drone đang treo');
+  if (sp.dropSeries.length) lineChart('anDrop', { xTitle:'giây sau khi thả hàng', xMin:0, xTicks:[0, 2, 4, 6, 8, 10, 12], continuous:true, endW:118,
+    xFmtTip: v => 't = ' + nv(v, 1) + ' s', tip: v => (v >= 0 ? '+' : '') + nv(v, 2) + ' m', yFmt: v => nv(v, 1), series: sp.dropSeries });
+  else chartNote('anDrop', 'Chưa có lần thả hàng nào lúc drone đang treo');
+  if (light) return;
+  anConclusions(A); anTables(A);
+}
+function anConclusions(A){
+  const flat = A.agg.filter(p => p.gust === 0 && p.ad).length ? A.agg.filter(p => p.gust === 0 && p.ad) : A.agg.filter(p => p.gust === 0);
   const item = (t, body) => '<div class="an-c"><h4>' + t + '</h4><p>' + body + '</p></div>';
-  $('#anConcl').innerHTML =
-    item('Gió mạnh lên', 'Drone nghiêng vào gió để đứng yên. Chở 1,5 kg: gió 0 → 6 → 12 m/s thì nghiêng <b>' + nv(a15[0].lean, 0) + '° → ' + nv(a15[1].lean, 1) + '° → ' + nv(a15[2].lean, 1) + '°</b>. Lực đẩy chỉ tăng ' + Math.round((a15[2].thrust / a15[0].thrust - 1) * 100) + '% và thời gian bay giảm ' + nv(a15[0].endurance, 1) + ' → ' + nv(a15[2].endurance, 1) + ' phút. Khi gió giật 30%, lệch khỏi vị trí tăng ' + nv(a15[0].gustDrift, 2) + ' → ' + nv(a15[2].gustDrift, 2) + ' m.') +
-    item('Tải nặng lên', 'Không gió, tải 0 → 3 kg: lực đẩy <b>' + nv(z0.thrust, 0) + ' → ' + nv(z3.thrust, 0) + ' N</b> (ga động cơ ' + Math.round(z0.motorPct) + '% → ' + Math.round(z3.motorPct) + '%), dòng điện ' + nv(z0.current, 0) + ' → ' + nv(z3.current, 0) + ' A, thời gian bay <b>' + nv(z0.endurance, 0) + ' → ' + nv(z3.endurance, 1) + ' phút</b>. Đổi lại drone nặng đứng vững hơn trong gió: giới hạn gió ' + nv(z0.windLimit, 1) + ' → ' + nv(z3.windLimit, 1) + ' m/s.') +
-    item('Drone nhẹ chịu gió kém hơn', 'Cùng gió 12 m/s: không hàng phải nghiêng <b>' + nv(e12.lean, 0) + '°</b>, sát giới hạn 34°, chạm giới hạn ' + Math.round(e12.satPct) + '% thời gian khi gió giật và lệch tới <b>' + nv(e12.gustDrift, 2) + ' m</b>. Chở 3 kg chỉ nghiêng ' + nv(h12.lean, 1) + '° và lệch ' + nv(h12.gustDrift, 2) + ' m. Lực cản như nhau, nhưng trọng lượng lớn hơn: tan(nghiêng) = lực cản / (m·g).') +
-    item('Thay đổi đột ngột', 'Gió tăng vọt 3 → 9 m/s (chở 1,5 kg): góc nghiêng ' + nv(sA.leanA, 1) + '° → ' + nv(sA.leanB, 1) + '°, drone bị đẩy lệch tối đa <b>' + nv(sA.peak, 2) + ' m</b> với điều khiển thích nghi, ' + nv(sF.peak, 2) + ' m với PID cố định. Thả hết 3 kg hàng: drone vọt lên <b>' + nv(dA.peak, 2) + ' m</b>, về lại trong 0,1 m sau ' + nv(dA.settle, 1) + ' s và học xong khối lượng mới sau ' + nv(dA.conv, 1) + ' s; PID cố định vọt ' + nv(dF.peak, 2) + ' m, cần ' + nv(dF.settle, 1) + ' s.');
+  const src = arr => '<span class="an-src">Nguồn: ' + flightsTxt(arr.flatMap(p => p.src ? p.src.map(s => s.flight) : [p.flight])) + '</span>';
+  const out = [];
+  // wind effect at one payload
+  const byP = {}; flat.forEach(p => (byP[p.payload] = byP[p.payload] || []).push(p));
+  const pl = Object.keys(byP).map(Number).sort((a, b) => (byP[b].length - byP[a].length) || (Math.abs(a - 1.5) - Math.abs(b - 1.5)))[0];
+  if (pl != null && byP[pl].length >= 2){
+    const g = byP[pl].sort((a, b) => a.wind - b.wind), lo = g[0], hi = g[g.length - 1];
+    out.push(item('Gió mạnh lên', 'Chở ' + kgTxt(pl) + ', gió ' + g.map(p => p.wind).join(' → ') + ' m/s: drone nghiêng vào gió <b>' + g.map(p => nv(p.lean, 1) + '°').join(' → ') + '</b> để đứng yên. Lực đẩy ' + nv(lo.thrust, 1) + ' → ' + nv(hi.thrust, 1) + ' N, dòng điện ' + nv(lo.current, 1) + ' → ' + nv(hi.current, 1) + ' A, thời gian bay ' + nv(lo.endurance, 1) + ' → ' + nv(hi.endurance, 1) + ' phút. ' + src(g)));
+  } else out.push(item('Gió mạnh lên', 'Chưa đủ dữ liệu: cần ít nhất 2 mức gió với cùng một mức tải.'));
+  // payload effect at one wind
+  const byW = {}; flat.forEach(p => (byW[p.wind] = byW[p.wind] || []).push(p));
+  const wsel = Object.keys(byW).map(Number).sort((a, b) => (byW[b].length - byW[a].length) || a - b)[0];
+  if (wsel != null && byW[wsel].length >= 2){
+    const g = byW[wsel].sort((a, b) => a.payload - b.payload), lo = g[0], hi = g[g.length - 1];
+    out.push(item('Tải nặng lên', 'Gió ' + wsel + ' m/s, tải ' + kgTxt(lo.payload) + ' → ' + kgTxt(hi.payload) + ': lực đẩy <b>' + nv(lo.thrust, 0) + ' → ' + nv(hi.thrust, 0) + ' N</b>, ga động cơ ' + Math.round(lo.motor) + '% → ' + Math.round(hi.motor) + '%, dòng điện ' + nv(lo.current, 0) + ' → ' + nv(hi.current, 0) + ' A, thời gian bay <b>' + nv(lo.endurance, 1) + ' → ' + nv(hi.endurance, 1) + ' phút</b>. ' + src(g)));
+  } else out.push(item('Tải nặng lên', 'Chưa đủ dữ liệu: cần ít nhất 2 mức tải ở cùng một tốc độ gió.'));
+  // light vs heavy in the strongest wind measured at 2+ payloads
+  const wHi = Object.keys(byW).map(Number).filter(w => w > 0 && byW[w].length >= 2).sort((a, b) => b - a)[0];
+  if (wHi != null){
+    const g = byW[wHi].sort((a, b) => a.payload - b.payload), lo = g[0], hi = g[g.length - 1];
+    const gust = A.agg.filter(p => p.gust > 0).sort((a, b) => a.payload - b.payload);
+    const gTxt = gust.length >= 2 ? ' Khi gió giật ' + Math.round(gust[0].gust * 100) + '%, lệch khỏi điểm treo: ' + gust.map(p => kgTxt(p.payload) + ' ' + nv(p.drift, 2) + ' m').join(', ') + '.' : '';
+    out.push(item('Drone nhẹ chịu gió kém hơn', 'Cùng gió ' + wHi + ' m/s: ' + kgTxt(lo.payload) + ' phải nghiêng <b>' + nv(lo.lean, 1) + '°</b>, ' + kgTxt(hi.payload) + ' chỉ nghiêng <b>' + nv(hi.lean, 1) + '°</b>. Lực cản như nhau nhưng trọng lượng lớn hơn: tan(nghiêng) = lực cản / (m·g).' + gTxt + ' ' + src(g.concat(gust))));
+  } else out.push(item('Drone nhẹ chịu gió kém hơn', 'Chưa đủ dữ liệu: cần ít nhất 2 mức tải ở cùng một tốc độ gió khác 0.'));
+  // sudden changes
+  const dirs = A.resp.filter(r => r.kind === 'wind' && r.to.dir !== r.from.dir).sort((a, b) => a.from.cargo - b.from.cargo);
+  const drops = A.resp.filter(r => r.kind === 'drop').sort((a, b) => b.from.cargo - a.from.cargo);
+  if (dirs.length || drops.length){
+    let t = '';
+    if (dirs.length) t += 'Gió đổi hướng 90°: lệch khỏi điểm treo ' + dirs.map(r => kgTxt(r.from.cargo) + (r.ad ? '' : ' (PID)') + ' <b>' + nv(r.peakH, 2) + ' m</b>').join(', ') + '. ';
+    if (drops.length) t += 'Thả hàng: drone vọt lên ' + drops.map(r => kgTxt(r.from.cargo) + (r.ad ? '' : ' (PID)') + ' <b>' + nv(r.peakV, 2) + ' m</b>' + (r.settle > 0 ? ', ổn định sau ' + nv(r.settle, 1) + ' s' : '')).join('; ') + '. ';
+    out.push(item('Thay đổi đột ngột', t + src(dirs.concat(drops))));
+  } else out.push(item('Thay đổi đột ngột', 'Chưa có thay đổi gió hoặc tải nào trong lúc drone đang treo.'));
+  $('#anConcl').innerHTML = out.join('');
 }
-function anTable(){
-  $('#anTbl').innerHTML = SWEEP.payloads.map(p => SWEEP.winds.map((w, j) => {
-    const r = anGet('steady', p, w);
-    const sat = r.satPct > 0.5 ? ' · chạm giới hạn ' + Math.round(r.satPct) + '%' : '';
-    return '<tr' + (j === 0 ? ' class="an-grp"' : '') + '><td>' + (j === 0 ? kgTxt(p) : '') + '</td><td>' + w + '</td><td>' + nv(r.lean, 1) + '°</td><td>' + nv(r.thrust, 1) + '</td><td>' + Math.round(r.motorPct) + '%</td><td>' + nv(r.current, 1) + '</td><td>' + nv(r.endurance, 1) + '</td><td' + (r.gustDrift > 1 ? ' class="an-bad"' : '') + '>' + nv(r.gustDrift, 2) + sat + '</td><td>' + nv(r.windLimit, 1) + '</td></tr>';
-  }).join('')).join('');
+function anTables(A){
+  const pts = A.points.slice().sort((a, b) => a.flight - b.flight || a.t - b.t);
+  $('#anTbl').innerHTML = pts.map(p =>
+    '<tr data-f="' + p.flight + '" data-t="' + p.absT + '"><td>' + p.flight + '</td><td>' + mmss(p.t) + '–' + mmss(p.t1) + '</td><td>' + kgTxt(p.payload) + '</td><td>' + p.wind + '</td><td>' + Math.round(p.gust * 100) + '%</td><td>' + pad3(p.dir) + '°</td><td>' + (p.ad ? 'thích nghi' : 'PID') + '</td>' +
+    '<td>' + nv(p.lean, 1) + '°</td><td>' + nv(p.thrust, 1) + '</td><td>' + Math.round(p.motor) + '%</td><td>' + nv(p.current, 1) + '</td><td>' + nv(p.endurance, 1) + '</td><td' + (p.drift > 1 ? ' class="an-bad"' : '') + '>' + nv(p.drift, 2) + '</td></tr>').join('');
+  const kindTxt = r => r.kind === 'drop' ? 'Thả ' + kgTxt(r.from.cargo - r.to.cargo) + ' hàng'
+    : r.kind === 'load' ? 'Thêm hàng'
+    : r.to.dir !== r.from.dir ? 'Gió đổi hướng ' + pad3(r.from.dir) + '° → ' + pad3(r.to.dir) + '°'
+    : r.to.gust !== r.from.gust ? 'Giật ' + Math.round(r.from.gust * 100) + '% → ' + Math.round(r.to.gust * 100) + '%'
+    : 'Gió ' + r.from.wind + ' → ' + r.to.wind + ' m/s';
+  $('#anResp').innerHTML = A.resp.slice().sort((a, b) => a.flight - b.flight || a.t - b.t).map(r =>
+    '<tr data-f="' + r.flight + '" data-t="' + r.absT + '"><td>' + r.flight + '</td><td>' + mmss(r.t) + '</td><td>' + kindTxt(r) + '</td><td>' + kgTxt(r.from.cargo) + '</td><td>' + (r.ad ? 'thích nghi' : 'PID') + '</td>' +
+    '<td>' + nv(r.peakH, 2) + ' m</td><td>' + nv(r.peakV, 2) + ' m</td><td>' + (r.settle < 0.05 ? 'không vượt ngưỡng' : (r.settled ? nv(r.settle, 1) + ' s' : '> ' + nv(r.settle, 1) + ' s')) + '</td></tr>').join('');
 }
-['anLean','anEnd','anStep','anDrop'].forEach(id => {
+// a table row opens that flight in the flight report at that moment
+function anOpen(e){
+  const tr = e.target.closest('tr[data-f]'); if (!tr) return;
+  const f = REC.flights.find(x => x.id === +tr.dataset.f); if (!f) return;
+  REC.sel = f; rpRefreshSelect(); rpIdx = null; rpRender(); rpJump(+tr.dataset.t);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('#report').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block:'start' });
+}
+$('#anTbl').addEventListener('click', anOpen);
+$('#anResp').addEventListener('click', anOpen);
+['anLean','anEnd','anDrop'].forEach(id => {
   const c = $('#' + id);
-  c.addEventListener('pointermove', e => { AN.hover[id] = e.clientX - c.getBoundingClientRect().left; if (AN.out && !AN.running) lineChart(id, anSpecs()[id]); });
-  c.addEventListener('pointerleave', () => { AN.hover[id] = null; if (AN.out && !AN.running) lineChart(id, anSpecs()[id]); });
+  c.addEventListener('pointermove', e => { AN.hover[id] = e.clientX - c.getBoundingClientRect().left; anRender(true); });
+  c.addEventListener('pointerleave', () => { AN.hover[id] = null; anRender(true); });
 });
-$$('#anMode button').forEach(b => b.addEventListener('click', () => {
-  AN.mode = b.dataset.mode; $$('#anMode button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); anRender();
-}));
-$('#anRerun').addEventListener('click', anRun);
-new ResizeObserver(() => anRender()).observe($('#anBody'));
-setTimeout(anRun, 600);
+$('#anStep').addEventListener('pointermove', e => { AN.hover.anStep = { y: e.clientY - $('#anStep').getBoundingClientRect().top }; anRender(true); });
+$('#anStep').addEventListener('pointerleave', () => { AN.hover.anStep = null; anRender(true); });
+function anRunBtn(){
+  const b = $('#anRun');
+  b.disabled = atest.on; b.textContent = atest.on ? 'Đang bay thử: ' + atest.label : 'Chạy chương trình bay thử (' + TESTPLAN.payloads.length + ' chuyến)';
+}
+$('#anRun').addEventListener('click', () => {
+  startAdaptTest();
+  if (atest.on){
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelector('.view').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block:'start' });
+  }
+});
+$('#anPlan').innerHTML = TESTPLAN.payloads.map((p, i) => '<li><b>Chuyến ' + (i + 1) + '</b> tải ' + kgTxt(p) + ': ' + testSteps(p).map(s => s.label).join(' → ') + '</li>').join('');
+function anVisible(){ const r = $('#analysis').getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }
+new ResizeObserver(() => { if (AN.data) anRender(true); }).observe($('#anBody'));
+anRender();
 
 /* ---------- main loop ---------- */
 updateCargoSpecUI();
@@ -4247,6 +4449,7 @@ function frame(now){
   recEnv(); recSample(false);
   if (now - lastDom > 100){ lastDom = now; updateDom(); }
   if (REC.cur && REC.sel === REC.cur && now - rpLastDraw > 500){ rpLastDraw = now; if (rpVisible()) rpRender(); }
+  if (REC.cur && now - AN.lastDraw > 1000){ AN.lastDraw = now; anRender(); }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

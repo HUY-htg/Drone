@@ -30,28 +30,37 @@ Cách nhanh nhất để xem toàn bộ chu trình là bấm **Chạy Demo Giao 
 
 Đang HOVER mà chạm cần hoặc phím thì drone tự chuyển sang MANUAL. Buông cần thì drone phanh lại rồi giữ vị trí.
 
-## Kết quả: gió và tải trọng thay đổi thì drone ra sao
+## Kết quả bay thử: gió và tải trọng thay đổi thì drone ra sao
 
-Phần **Kết quả** (liên kết "Kết quả gió & tải ↓" ở đầu trang) tự bay 43 chuyến mô phỏng ngắn ngay khi mở trang, mất vài giây. Gồm 25 tổ hợp: 5 mức gió (0, 3, 6, 9, 12 m/s) nhân 5 mức tải (0; 0,75; 1,5; 2,25; 3 kg), cộng 18 phép thử thay đổi đột ngột. Mọi con số đều đo từ chuyến bay, không phải công thức.
+Phần **Kết quả** (liên kết "Kết quả gió & tải ↓" ở đầu trang) **chỉ tổng hợp từ các chuyến bay đã ghi** trong báo cáo hành trình. Chưa bay thì phần này trống.
 
-![Kết quả gió và tải trọng](docs/results.png)
+Bấm **Chạy chương trình bay thử** để drone bay thật trong khung 3D, 3 chuyến với tải 3 kg, 1,5 kg và 0 kg. Mỗi chuyến cất cánh, treo trên Nhà máy, rồi cứ 12 s đổi một điều kiện:
 
-| Khi… | Drone biểu hiện (số đo trong mô phỏng) |
+1. gió Tây 0 → 3 → 6 → 9 → 12 m/s;
+2. giảm về 9 m/s;
+3. đổi hướng sang gió Nam;
+4. giật 30%, rồi hết giật;
+5. thả toàn bộ hàng;
+6. hạ cánh.
+
+Trước mỗi chuyến drone được nạp hàng và thay pin đầy, và trong lúc bay thử hệ số xả pin tạm về ×1 như thật để pin không cạn giữa chừng. Nếu drone rời trạng thái treo ngoài kịch bản (pin yếu, va chạm, bạn chạm cần điều khiển…), chương trình dừng và báo lý do; kết quả chỉ gồm phần đã bay. Ở tốc độ 4× cả chương trình mất khoảng 2 phút, và kết quả hiện dần trong lúc bay. Các chuyến bạn tự bay cũng được tính, nếu có đoạn treo ổn định hoặc có thay đổi gió/tải lúc đang treo.
+
+- **Đoạn đo ổn định:** drone treo (HOVER) với gió, giật, tải và bộ điều khiển không đổi. Bỏ 6 s đầu sau mỗi thay đổi, lấy trung bình phần còn lại: góc nghiêng, lực đẩy, ga động cơ, dòng điện. Thời gian bay được suy từ dòng điện đo.
+- **Phản ứng:** mỗi lần gió, hướng, giật hoặc tải đổi lúc đang treo. Ghi độ lệch ngang và độ cao trong 12 s sau đó, cùng thời gian ổn định lại.
+- **Nguồn:** mỗi điểm và mỗi kết luận ghi rõ lấy từ chuyến nào. Bấm một dòng trong bảng để mở chuyến đó trong báo cáo hành trình, đúng thời điểm đó.
+
+![Phần Kết quả sau khi bay xong 3 chuyến thử](docs/results.png)
+
+Ví dụ kết quả của một lần chạy chương trình (điều khiển thích nghi):
+
+| Khi… | Drone biểu hiện (đo trong chuyến bay) |
 |---|---|
-| **Gió mạnh lên** (chở 1,5 kg, gió 0 → 6 → 12 m/s) | Nghiêng vào gió 0° → 7,3° → 18,9° để đứng yên. Lực đẩy chỉ tăng 6%. Thời gian bay 18,5 → 17,1 phút. Lệch vị trí khi gió giật 30%: 0,04 → 0,28 m |
-| **Tải nặng lên** (không gió, 0 → 3 kg) | Lực đẩy 24 → 53 N, ga động cơ 27% → 60%, dòng điện 16 → 53 A, thời gian bay 37 → 11,5 phút. Giới hạn chịu gió tăng 13,6 → 22,7 m/s |
-| **Drone nhẹ gặp gió mạnh** (12 m/s) | Không hàng: nghiêng 29°, chạm giới hạn 34° trong 34% thời gian khi giật, lệch 1,21 m. Chở 3 kg: nghiêng 13,9°, lệch 0,22 m |
-| **Gió tăng vọt 3 → 9 m/s** (1,5 kg) | Góc nghiêng 3,1° → 12,6°. Bị đẩy lệch tối đa 0,13 m (thích nghi), 0,32 m (PID cố định) |
-| **Thả toàn bộ 3 kg hàng** | Vọt lên 0,46 m, về lại trong 0,1 m sau 6,4 s, học xong khối lượng mới sau 4,0 s. PID cố định vọt 0,74 m, cần 10 s |
+| Gió mạnh lên (chở 1,5 kg, 0 → 12 m/s) | nghiêng 0° → 3° → 7,3° → 12,7° → 18,8° để đứng yên; lực đẩy 38,3 → 40,4 N; dòng 33 → 36 A |
+| Tải nặng lên (không gió, 0 → 3 kg) | lực đẩy 23,5 → 53 N; dòng 16 → 53 A; thời gian bay 37 → 11,5 phút |
+| Drone nhẹ gặp gió 12 m/s | 0 kg nghiêng 28,9°, sát giới hạn 34°; 3 kg chỉ nghiêng 13,8° |
+| Thả hàng | thả 3 kg vọt lên 0,48 m; thả 1,5 kg vọt lên 0,32 m |
 
-Bốn biểu đồ (rê chuột để xem giá trị):
-
-- góc nghiêng theo tốc độ gió, mỗi đường một mức tải;
-- thời gian bay theo tải trọng ở 3 mức gió;
-- độ lệch ngang theo thời gian khi gió tăng vọt;
-- độ lệch độ cao theo thời gian khi thả hàng. Biểu đồ này có nút chuyển giữa *điều khiển thích nghi* và *PID cố định*, dùng chung thang đo để so sánh.
-
-Bên dưới là bảng số liệu đủ 25 tổ hợp.
+Bỏ chọn **Bật điều khiển thích nghi** rồi chạy lại chương trình để có thêm các chuyến PID cố định. Phần Kết quả vẽ chúng bằng nét đứt để so sánh.
 
 ## Báo cáo hành trình
 
@@ -82,9 +91,9 @@ Hệ quả nhìn thấy được: để giữ vị trí, drone nghiêng *vào* g
 **Cách xem:**
 - Mục **Thích nghi điều khiển** trên dashboard: la bàn gió thật, gió ước lượng và hướng nghiêng, kèm bảng tham số trực tiếp.
 - Các nút **Gió đổi hướng +90°**, **Gió ±4 m/s**, **Thả 0,5 kg hàng** tạo thay đổi đột ngột lúc đang bay.
-- **Chạy kịch bản thử thích nghi**: treo trên nhà máy, rồi lần lượt đổi hướng gió, tăng gió, gió giật, thả 1 kg, thả 0,5 kg, hạ cánh. Mỗi thay đổi cách nhau khoảng 14 s.
+- **Chạy chương trình bay thử**: 3 chuyến bay thật (xem mục Kết quả bay thử ở trên).
 - Báo cáo hành trình, tab **Điều khiển & môi trường**: gió thật và ước lượng, hướng gió, khối lượng thật và m̂, lực đẩy so với trọng lượng, góc nghiêng, sai lệch vị trí. Mỗi thay đổi được đánh dấu ◆, kèm bảng phản ứng: lệch tối đa, thời gian ổn định, góc nghiêng và lực đẩy trước → sau, thời gian bộ ước lượng hội tụ.
-- Bỏ chọn **Bật điều khiển thích nghi** rồi chạy lại kịch bản để so với PID cố định. Trong lần chạy thử, PID cố định lệch ngang gần gấp đôi (0,16 so với 0,09 m khi thả 1 kg; 0,36 so với 0,22 m khi gió giật), và m̂ đứng yên ở 3,9 kg dù khối lượng thật đã giảm.
+- Bỏ chọn **Bật điều khiển thích nghi** rồi chạy lại chương trình bay thử để so với PID cố định. Trong lần chạy thử, PID cố định lệch ngang gần gấp đôi (0,16 so với 0,09 m khi thả 1 kg; 0,36 so với 0,22 m khi gió giật), và m̂ đứng yên ở 3,9 kg dù khối lượng thật đã giảm.
 
 ![Điều khiển thích nghi trong báo cáo hành trình](docs/adaptive.png)
 
@@ -129,7 +138,7 @@ Lõi mô phỏng không phụ thuộc DOM, nên có thể chạy bằng Node:
 node tests/run-scenarios.js
 ```
 
-Bộ kiểm thử bay các tuyến Hub A, B, C và liên trạm, bay ở tốc độ 14 m/s, thử HOLD rồi bay tiếp, mất liên kết, chia hàng, 200 điểm click ngẫu nhiên và bay trên mọi nóc nhà, kiểm tra xu hướng gió × tải trong phần Kết quả, và kiểm tra điều khiển thích nghi: góc nghiêng giữ vị trí khớp lý thuyết, m̂ hội tụ sau mỗi lần thả hàng, giữ vị trí tốt hơn PID cố định. Kết quả là PASS/FAIL cho từng mục; mã thoát khác 0 nếu có mục thất bại.
+Bộ kiểm thử bay các tuyến Hub A, B, C và liên trạm, bay ở tốc độ 14 m/s, thử HOLD rồi bay tiếp, mất liên kết, chia hàng, 200 điểm click ngẫu nhiên và bay trên mọi nóc nhà, bay chương trình bay thử rồi kiểm tra xu hướng gió × tải rút ra từ dữ liệu đã ghi, và kiểm tra điều khiển thích nghi: góc nghiêng giữ vị trí khớp lý thuyết, m̂ hội tụ sau mỗi lần thả hàng, giữ vị trí tốt hơn PID cố định. Kết quả là PASS/FAIL cho từng mục; mã thoát khác 0 nếu có mục thất bại.
 
 ## Giới hạn của mô hình
 
