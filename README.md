@@ -44,6 +44,8 @@ Hai phím sau dùng được ở mọi trạng thái:
 
 Nút **Bảng** trên đầu trang mở danh sách các bảng: Điều hành nhiệm vụ, Telemetry, Giám sát, Máy trạng thái, Kết quả bay thử, Báo cáo hành trình. Bỏ chọn để ẩn, chọn để hiện lại. **Chỉ xem 3D** ẩn tất cả, khung 3D giãn ra toàn bộ chiều rộng. Mỗi bảng cũng có nút × ở góc tiêu đề. Trình duyệt nhớ lựa chọn cho lần mở sau.
 
+Trong bảng Điều hành nhiệm vụ và bảng Telemetry, bấm tiêu đề một mục (ví dụ "Nhiệm vụ giám sát", "Thử phản ứng điều khiển", "Gió đô thị & giả lập sự cố", "Pin 6S") để ẩn hoặc hiện mục đó. Nút **Thu gọn hết / Mở hết** trên đầu mỗi bảng ẩn hoặc hiện tất cả các mục cùng lúc. Trình duyệt cũng nhớ các mục đã thu gọn.
+
 Bảng bị ẩn mà bạn bấm liên kết tới nó (ví dụ "Kết quả gió & tải ↓", nút "Xem kết quả" khi bay thử xong) thì bảng tự hiện lại.
 
 ### Camera trên drone
