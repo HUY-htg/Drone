@@ -286,6 +286,25 @@ table.ctl thead th:first-child{text-align:left}
 .ah{fill:var(--line-2)}
 .ah-on{fill:var(--accent)}
 
+/* adaptive control */
+.ad-grid{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;align-items:center}
+.ad-wind{width:120px;height:120px;display:block}
+.ad-legend{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:11px;color:var(--muted);margin:6px 0 10px}
+.ad-legend span{display:inline-flex;align-items:center;gap:5px}
+.ad-legend i{display:inline-block;width:14px;height:0;border-top:2px solid}
+.ad-legend i.dash{border-top-style:dashed}
+table.ad-tbl td{white-space:nowrap;vertical-align:top}
+table.ad-tbl th{white-space:normal;vertical-align:top}
+.ad-why{font-family:var(--f-body);font-size:11px;color:var(--faint);font-weight:400;margin-top:1px;line-height:1.3}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:9.5px;font-weight:600;padding:0 4px;border-radius:2px;margin-right:4px;vertical-align:1px}
+.tag.ad{background:var(--tele-soft);color:var(--tele)}
+.tag.fx{background:var(--panel-2);color:var(--muted);border:1px solid var(--line)}
+.at-steps{margin:8px 0 0;padding:0;list-style:none;font-size:12px;display:grid;gap:2px}
+.at-steps li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:6px;color:var(--muted)}
+.at-steps li b{font-family:var(--f-mono);font-weight:500;color:var(--muted)}
+.at-steps li.done{color:var(--fg)}
+.at-steps li.now{color:var(--fg);font-weight:600}
+.at-steps li.now b{color:var(--accent-ink)}
 
 /* post-flight report */
 .rp-tools{margin-left:auto;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -312,6 +331,13 @@ table.ctl thead th:first-child{text-align:left}
 .rp-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted)}
 .rp-side{display:flex;flex-direction:column;gap:12px;min-width:0}
 .rp-tl{width:100%;height:430px;display:block;cursor:crosshair;touch-action:pan-y}
+.rp-tl.tall{height:660px}
+.rp-tlhead{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:6px 12px}
+.rp-tlhead .rp-cap{flex:1;min-width:220px}
+.rp-tablewrap.rp-respwrap{max-height:none}
+table.rp-rt td{white-space:nowrap;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+table.rp-rt td:nth-child(2){white-space:normal;font-family:var(--f-body);min-width:200px}
+.rp-dim{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);margin-top:1px}
 .rp-scrub{display:flex;flex-direction:column;gap:6px;padding:8px 10px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px}
 .rp-scrub input{width:100%;accent-color:var(--accent);margin:0}
 .rp-read{display:flex;flex-wrap:wrap;gap:4px 14px;font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums;align-items:center}
@@ -486,6 +512,21 @@ table.rp-trt tbody tr:hover td{background:var(--panel-2)}
         </div>
 
         <div class="sec">
+          <h3>Thử phản ứng điều khiển</h3>
+          <p class="note" style="margin:0 0 8px">Tạo thay đổi đột ngột lúc drone đang bay để xem bộ điều khiển thích nghi. Mỗi thay đổi được đánh dấu ◆ trong báo cáo hành trình, tab "Điều khiển &amp; môi trường".</p>
+          <div class="row">
+            <button class="btn" data-step="dir90">Gió đổi hướng +90°</button>
+            <button class="btn" data-step="spdUp">Gió +4 m/s</button>
+            <button class="btn" data-step="spdDown">Gió −4 m/s</button>
+            <button class="btn" data-step="drop">Thả 0,5 kg hàng</button>
+          </div>
+          <label class="chk" style="margin-top:10px"><input type="checkbox" id="pAdapt" checked> Bật điều khiển thích nghi</label>
+          <p class="note" style="margin:2px 0 0">Bỏ chọn để so sánh với PID cố định: m̂ giữ nguyên tải khai báo lúc cất cánh, không bù nhiễu gió. Chạy kịch bản hai lần (bật rồi tắt) rồi chọn từng chuyến trong báo cáo để so.</p>
+          <div class="row" style="margin-top:8px"><button class="btn primary" id="btnAdaptTest">Chạy kịch bản thử thích nghi</button></div>
+          <ol class="at-steps" id="atSteps"></ol>
+        </div>
+
+        <div class="sec">
           <h3>Gió đô thị &amp; Giả lập sự cố</h3>
           <label class="chk" style="margin-bottom:10px"><input type="checkbox" id="pWindOn" checked> Bật gió luồn giữa các tòa nhà (hiển thị hướng gió)</label>
           <div class="field"><label for="pWind">Tốc độ gió</label><output id="oWind"></output><input type="range" id="pWind" min="0" max="12" step="1" value="5"></div>
@@ -578,6 +619,35 @@ table.rp-trt tbody tr:hover td{background:var(--panel-2)}
           </div>
           <canvas id="tape" class="tape" role="img" aria-label="Băng hướng mũi"></canvas>
         </div>
+        <div class="sec" id="adSec">
+          <div class="sec-h"><h3>Thích nghi điều khiển</h3><span class="sub">ước lượng trực tuyến</span></div>
+          <div class="ad-grid">
+            <canvas id="adWind" class="ad-wind" role="img" aria-label="La bàn: gió thật, gió ước lượng và hướng drone nghiêng để giữ vị trí"></canvas>
+            <dl class="kv">
+              <div><dt>Gió thật</dt><dd id="adWt">—</dd></div>
+              <div><dt>Gió ước lượng ŵ</dt><dd id="adWe">—</dd></div>
+              <div><dt>Nghiêng giữ vị trí</dt><dd id="adLean">—</dd></div>
+            </dl>
+          </div>
+          <div class="ad-legend"><span><i style="border-color:var(--muted)"></i>gió thật</span><span><i class="dash" style="border-color:var(--tele)"></i>gió ước lượng</span><span><i style="border-color:var(--accent)"></i>hướng nghiêng</span></div>
+          <table class="ctl ad-tbl">
+            <thead><tr><th>Tham số · thay đổi theo</th><th>Giá trị</th></tr></thead>
+            <tbody>
+              <tr><th><span class="tag ad">THÍCH NGHI</span>Khối lượng m̂<div class="ad-why">học từ lực đẩy và gia tốc, τ 1 s</div></th><td id="adM">—</td></tr>
+              <tr><th><span class="tag ad">THÍCH NGHI</span>Lực đẩy treo m̂·g<div class="ad-why">theo m̂</div></th><td id="adTh">—</td></tr>
+              <tr><th><span class="tag ad">THÍCH NGHI</span>Ga treo mỗi động cơ<div class="ad-why">theo m̂</div></th><td id="adThr">—</td></tr>
+              <tr><th><span class="tag ad">THÍCH NGHI</span>Bù nhiễu gió d̂<div class="ad-why">bộ quan sát nhiễu, τ 0,5 s</div></th><td id="adD">—</td></tr>
+              <tr><th><span class="tag ad">LẬP LỊCH</span>Quán tính Î<div class="ad-why">I₀ + (m̂ − 2,4)·0,11²</div></th><td id="adI">—</td></tr>
+              <tr><th><span class="tag ad">LẬP LỊCH</span>K tư thế hiệu dụng<div class="ad-why">Î·Kp, giữ băng thông không đổi</div></th><td id="adKa">—</td></tr>
+              <tr><th><span class="tag fx">CỐ ĐỊNH</span>Kp vị trí / vận tốc<div class="ad-why">giống nhau mọi tải</div></th><td id="adKv">—</td></tr>
+              <tr><th><span class="tag fx">CỐ ĐỊNH</span>Kp / Kd tư thế<div class="ad-why">trước khi nhân Î</div></th><td id="adKatt">—</td></tr>
+              <tr><th>Tích phân vận tốc<div class="ad-why">phần sai số d̂ chưa bù hết</div></th><td id="adInt">—</td></tr>
+              <tr><th>Dự trữ góc nghiêng<div class="ad-why">giới hạn 34°</div></th><td id="adTiltM">—</td></tr>
+              <tr><th>Dự trữ lực đẩy<div class="ad-why">tối đa 86 N</div></th><td id="adThM">—</td></tr>
+            </tbody>
+          </table>
+          <p class="note">Cùng một cơn gió, drone nhẹ phải nghiêng nhiều hơn drone nặng: lực cản như nhau nhưng trọng lượng nhỏ hơn, tan(nghiêng) = lực cản / (m·g).</p>
+        </div>
         <div class="sec">
           <div class="sec-h"><h3>Pin 6S Heavy-Lift</h3><span class="big" id="batPct">100%</span></div>
           <div class="batbar" id="batBar"><span id="batFill"></span><i style="left:15%"></i><i style="left:25%"></i></div>
@@ -669,7 +739,10 @@ table.rp-trt tbody tr:hover td{background:var(--panel-2)}
           </figure>
           <div class="rp-side">
             <figure>
-              <figcaption class="rp-cap">Diễn biến theo thời gian <span class="sub">rê chuột lên biểu đồ hoặc bản đồ, hoặc kéo thanh tua, để xem lại từng thời điểm</span></figcaption>
+              <div class="rp-tlhead">
+                <figcaption class="rp-cap">Diễn biến theo thời gian <span class="sub">rê chuột lên biểu đồ hoặc bản đồ, hoặc kéo thanh tua; ◆ = thay đổi gió hoặc tải</span></figcaption>
+                <div class="seg" role="group" aria-label="Chọn nhóm biểu đồ" id="rpTab"><button data-tab="flight" aria-pressed="true">Bay &amp; trạng thái</button><button data-tab="ctrl">Điều khiển &amp; môi trường</button></div>
+              </div>
               <canvas id="rpTl" class="rp-tl" role="img" aria-label="Dải trạng thái và biểu đồ độ cao, tốc độ, pin, khoảng cách tới tòa nhà theo thời gian"></canvas>
             </figure>
             <div class="rp-scrub">
@@ -683,6 +756,14 @@ table.rp-trt tbody tr:hover td{background:var(--panel-2)}
               </div>
             </div>
           </div>
+        </div>
+        <div class="rp-resp" id="rpResp" hidden>
+          <h3>Phản ứng của bộ điều khiển với từng thay đổi gió và tải</h3>
+          <div class="rp-tablewrap rp-respwrap"><table class="rp-trt rp-rt">
+            <thead><tr><th>T+</th><th>Thay đổi</th><th>Lệch ngang max</th><th>Lệch cao max</th><th>Ổn định lại sau</th><th>Góc nghiêng</th><th>Lực đẩy</th><th>Bộ ước lượng sau thay đổi</th></tr></thead>
+            <tbody id="rpRespBody"></tbody>
+          </table></div>
+          <p class="note">Lệch ngang chỉ đo khi drone đang giữ một điểm (HOVER, cất/hạ cánh). Ổn định lại = lần cuối sai lệch vượt 0,3 m. Góc nghiêng và lực đẩy so trung bình 2 s trước thay đổi với 3 s cuối của khoảng sau thay đổi. Bấm một dòng để tua tới thời điểm đó.</p>
         </div>
       </div>
     </section>
@@ -703,7 +784,7 @@ table.rp-trt tbody tr:hover td{background:var(--panel-2)}
 var Sim = (function(){
   const P = {
     mBase: 2.4, cargoMass: 1.5, m: 3.9, g: 9.81, L: 0.40,
-    Ixx: 0.048, Iyy: 0.048, Izz: 0.082,
+    Ixx: 0.048, Iyy: 0.048, Izz: 0.082, I0x: 0.048, I0y: 0.048, rCargo: 0.11,
     fMax: 22.0, fIdle: 0.9, fMin: 0.35,
     km: 0.022, tauM: 0.04, kd: 0.55, kq: 0.045,
     rpmMax: 9200, capacity: 12000, cells: 6, rPack: 0.014, fenceAlt: 65,
@@ -730,7 +811,7 @@ var Sim = (function(){
   const params = {
     takeoffAlt: 10, rtlAlt: 14, vMax: 8, missionAlt: 12, missionEnd: 'RTL',
     cargoMass: 1.5, autoAvoid: true, autoDrop: true, safeMargin: 4.5,
-    windOn: true, windSpeed: 5, windDir: 270, gust: 0.3, drain: 5, linkLost: false
+    windOn: true, windSpeed: 5, windDir: 270, gust: 0.3, drain: 5, linkLost: false, adaptive: true
   };
 
   // Delivery Hubs in the urban environment
@@ -787,7 +868,12 @@ var Sim = (function(){
   function syncMass(){
     P.cargoMass = clamp(params.cargoMass, 0, 3.5);
     P.m = P.mBase + P.cargoMass;
+    // the parcel hangs ~0.11 m below the centre of mass and adds roll/pitch inertia m·r²
+    P.Ixx = P.I0x + P.cargoMass * P.rCargo * P.rCargo;
+    P.Iyy = P.I0y + P.cargoMass * P.rCargo * P.rCargo;
   }
+  // Adaptive-control settings (shown in the dashboard)
+  const EST = { tauM: 1.0, tauD: 0.5, tauWind: 2.0 };
 
   function fresh(){
     syncMass();
@@ -800,6 +886,9 @@ var Sim = (function(){
       sp:null, tgtAtt:[0,0], hold:[0,0,0], yawSp:Math.PI/2, toXY:[0,0], landXY:[0,0],
       rtlPhase:'climb', rtlAlt:14, wpIdx:0, touchT:0, braking:false,
       windNow:[0,0,0], flags:{ low:false }, fsReason:'',
+      windSpd: params.windOn ? params.windSpeed : 0, windDirNow: params.windDir,
+      est:{ mHat: P.mBase + clamp(params.cargoMass, 0, 3.5), dHat:[0,0], wHat:[0,0], IHat: P.I0x + clamp(params.cargoMass, 0, 3.5) * P.rCargo * P.rCargo, valid:false },
+      ctl:{ aH:[0,0], tiltCmd:0, T:0 },
       minObsDist: 12.0, nearObsName: '', hitObs: null, lidarRays: [], lidarT: -1, apfVec: [0,0], cargoDelivered: false,
       destDone: 0, legFrom: null, dwell: 0, rtlVer: 0, windWarnT: -99
     };
@@ -1214,13 +1303,60 @@ var Sim = (function(){
     }
   }
 
-  function updateWind(){
-    if (!params.windOn){ S.windNow = [0,0,0]; return; }
+  function updateWind(dt){
+    // Base wind eases toward the set speed and veers toward the set direction (time constant EST.tauWind)
+    const k = Math.min(1, dt / EST.tauWind);
+    S.windSpd += ((params.windOn ? params.windSpeed : 0) - S.windSpd) * k;
+    let dd = params.windDir - S.windDirNow; dd = ((dd + 540) % 360) - 180;
+    S.windDirNow = (S.windDirNow + dd * k + 360) % 360;
+    if (S.windSpd < 0.02){ S.windNow = [0,0,0]; return; }
     const t = S.t, g = params.gust;
     const n = Math.sin(t*0.7)*0.5 + Math.sin(t*1.9 + 1.3)*0.3 + Math.sin(t*4.3 + 0.4)*0.2;
-    const sp = Math.max(0, params.windSpeed * (1 + g*n));
-    const toward = (params.windDir + 180 + 12*Math.sin(t*0.37)) * Math.PI/180;
-    S.windNow = [sp*Math.sin(toward), sp*Math.cos(toward), 0.06*g*params.windSpeed*Math.sin(t*1.3)];
+    const sp = Math.max(0, S.windSpd * (1 + g*n));
+    const toward = (S.windDirNow + 180 + 12*Math.sin(t*0.37)) * Math.PI/180;
+    S.windNow = [sp*Math.sin(toward), sp*Math.cos(toward), 0.06*g*S.windSpd*Math.sin(t*1.3)];
+  }
+
+  // Body z-axis in world frame for the current attitude
+  function zBody(){
+    const ph = S.att[0], th = S.att[1], ps = S.att[2];
+    const cph = Math.cos(ph), sph = Math.sin(ph), cth = Math.cos(th), sth = Math.sin(th), cps = Math.cos(ps), sps = Math.sin(ps);
+    return [cps*sth*cph + sps*sph, sps*sth*cph - cps*sph, cth*cph];
+  }
+
+  /* Online estimators (what a real flight controller has to work with: thrust, attitude, IMU acceleration)
+     - hover-thrust / mass estimator: m̂ ← T·z_b,z / (a_z + g), low-pass τ = EST.tauM, gated against climb drag
+     - disturbance observer: d̂ = a_meas − z_b·T/m̂ (horizontal), low-pass τ = EST.tauD; fed forward as −d̂
+     - wind estimate: invert the drag model d = −(k_d + k_q|v_r|)·v_r / m, then ŵ = v − v_r
+     - payload-scheduled attitude gains: Î = I₀ + (m̂ − m_base)·r² */
+  function estimate(dt){
+    const E = S.est;
+    if (S.grounded || S.state === 'DISARMED' || S.state === 'ARMED' || S.state === 'EMERGENCY'){
+      // On the pad the operator-declared load is known
+      E.mHat = P.m; E.dHat[0] *= 0.98; E.dHat[1] *= 0.98; E.wHat = [0,0]; E.valid = false;
+    } else if (!params.adaptive){
+      // Fixed-gain comparison: m̂ frozen at the declared take-off load, no disturbance feed-forward
+      E.dHat[0] = 0; E.dHat[1] = 0; E.wHat = [0,0]; E.valid = false;
+    } else {
+      const zb = zBody();
+      if (Math.abs(S.vel[2]) < 1.5 && S.T > 4*P.fMin*1.5){
+        const den = S.acc[2] + P.g;
+        if (den > 3){
+          const mMeas = clamp(S.T * zb[2] / den, P.mBase * 0.7, P.mBase + 5);
+          E.mHat += (mMeas - E.mHat) * Math.min(1, dt / EST.tauM);
+        }
+      }
+      for (let i = 0; i < 2; i++){
+        const d = S.acc[i] - zb[i] * S.T / E.mHat;
+        E.dHat[i] += (d - E.dHat[i]) * Math.min(1, dt / EST.tauD);
+      }
+      const dn = Math.hypot(E.dHat[0], E.dHat[1]), F = E.mHat * dn;
+      const vrn = (-P.kd + Math.sqrt(P.kd*P.kd + 4*P.kq*F)) / (2*P.kq);
+      const vr = dn > 1e-4 ? [-E.dHat[0] / dn * vrn, -E.dHat[1] / dn * vrn] : [0, 0];
+      E.wHat = [S.vel[0] - vr[0], S.vel[1] - vr[1]];
+      E.valid = true;
+    }
+    E.IHat = P.I0x + Math.max(0, E.mHat - P.mBase) * P.rCargo * P.rCargo;
   }
 
   function advanceWaypoint(){
@@ -1375,8 +1511,9 @@ var Sim = (function(){
     const e = [vd[0]-v[0], vd[1]-v[1], vd[2]-v[2]];
     for (let i = 0; i < 3; i++) if (Math.abs(e[i]) < 2.2) S.integ[i] = clamp(S.integ[i] + e[i]*dt, -K.iMax[i], K.iMax[i]);
     if (S.grounded){ S.integ[0] = 0; S.integ[1] = 0; }
-    const a = [ K.vXY*e[0] + K.iXY*S.integ[0] + P.kd/P.m*vd[0],
-                K.vXY*e[1] + K.iXY*S.integ[1] + P.kd/P.m*vd[1],
+    const E = S.est;
+    const a = [ K.vXY*e[0] + K.iXY*S.integ[0] - E.dHat[0],
+                K.vXY*e[1] + K.iXY*S.integ[1] - E.dHat[1],
                 K.vZ*e[2] + K.iZ*S.integ[2] ];
     const ah = Math.hypot(a[0], a[1]); if (ah > K.aXY){ a[0] *= K.aXY/ah; a[1] *= K.aXY/ah; }
     a[2] = clamp(a[2], -0.6*P.g, 6.5);
@@ -1386,14 +1523,15 @@ var Sim = (function(){
     let thD = clamp(Math.atan2(af, az), -K.tilt, K.tilt);
     let phD = clamp(Math.asin(clamp(-al/an, -1, 1)), -K.tilt, K.tilt);
     if (S.grounded && st === 'LANDING'){ thD = 0; phD = 0; }
-    const T = clamp(P.m*az/(Math.cos(phD)*Math.cos(thD)), 4*P.fMin, 4*P.fMax*0.98);
+    const T = clamp(E.mHat*az/(Math.cos(phD)*Math.cos(thD)), 4*P.fMin, 4*P.fMax*0.98);
     const yawD = g.yaw != null ? g.yaw : ps;
     const ey = clamp(wrap(yawD - ps), -0.9, 0.9);
-    const tx = P.Ixx*(K.att*(phD - S.att[0]) - K.attD*S.rate[0]);
-    const ty = P.Iyy*(K.att*(thD - S.att[1]) - K.attD*S.rate[1]);
+    const tx = E.IHat*(K.att*(phD - S.att[0]) - K.attD*S.rate[0]);
+    const ty = E.IHat*(K.att*(thD - S.att[1]) - K.attD*S.rate[1]);
     const tz = clamp(P.Izz*(K.yaw*ey - K.yawD*S.rate[2]), -0.35, 0.35);
     mix(T, tx, ty, tz);
     S.tgtAtt = [phD, thD]; S.Tcmd = T;
+    S.ctl = { aH:[a[0], a[1]], tiltCmd: Math.acos(clamp(Math.cos(phD)*Math.cos(thD), -1, 1)), T };
     S.sp = { xy: g.xy ? [g.xy[0], g.xy[1]] : null, z: g.z != null ? g.z : null, vd: vd, yaw: yawD };
   }
 
@@ -1477,11 +1615,12 @@ var Sim = (function(){
     S.t += dt; S.stateT += dt;
     if (S.state !== 'DISARMED') S.armT += dt;
     if (!S.grounded) S.flightT += dt;
-    updateWind();
+    updateWind(dt);
     updateLidarAndAPF();
     const g = guidance(dt);
     control(dt, g);
     physics(dt);
+    estimate(dt);
     battery(dt);
     checks();
   }
@@ -1528,7 +1667,7 @@ var Sim = (function(){
     P, K, MOT, AIR, CMDS, HUBS, obstacles, params, mission, blockedSegments, sticks,
     on, step, command, check, setLink, reset, syncMass,
     rebuildTrajectory, setDestinations, addDestination, removeDestination, sanitizePoint,
-    planSegmentAStar, clearanceAt, windLimit,
+    planSegmentAStar, clearanceAt, windLimit, EST,
     get destinations(){ return destinations; },
     get missionStart(){ return missionStart; },
     get rtlPath(){ return rtlPath; },
@@ -1730,7 +1869,7 @@ function startDemo(){
   }
   if (!Sim.destinations.length) loadHubPreset('A');
   else replanAndRender();
-  demo.on = true; demo.t0 = Sim.S.t;
+  demo.on = true; demo.t0 = Sim.S.t; if (atest.on){ atest.on = false; renderAtSteps(); }
   addLog('info', 'Bắt đầu Demo Giao Hàng tự động từ Nhà Máy Sản Xuất', '', Sim.S.t);
 }
 function demoTick(){
@@ -1750,6 +1889,7 @@ function resetKill(){ killArm = false; clearTimeout(killTimer); $('#killBtn').cl
 $$('.cmd').forEach(b => b.addEventListener('click', () => {
   const c = b.dataset.cmd;
   demo.on = false;
+  if (atest.on){ atest.on = false; renderAtSteps(); addLog('info', 'Dừng kịch bản thử thích nghi', '', Sim.S.t); }
   if (c === 'KILL'){
     if (Sim.check('KILL')){ Sim.command('KILL'); return; }
     if (!killArm){ killArm = true; b.classList.add('confirm'); $('#killTxt').textContent = 'Bấm lần nữa trong 3 s để xác nhận'; killTimer = setTimeout(resetKill, 3000); return; }
@@ -1959,6 +2099,127 @@ function addWaypointAt(e, n){
   n = clamp(Math.round(n*2)/2, -80, 80);
   Sim.addDestination({ e, n, u: P.missionAlt, label: 'Điểm giao ' + (Sim.destinations.length + 1) });
   renderMission();
+}
+
+
+/* ---------- adaptive control: step changes, scripted test, live panel ---------- */
+$$('#adSec .tag.ad').forEach(t => { t.dataset.k = t.textContent; });
+function setSlider(id, v){ const el = $('#' + id); el.value = String(v); el.dispatchEvent(new Event('input')); }
+function setWindOn(on){ const c = $('#pWindOn'); if (c.checked !== on){ c.checked = on; c.dispatchEvent(new Event('change')); } }
+function dropCargo(kg){
+  const P = Sim.params;
+  if (P.cargoMass <= 0.001){ addLog('rej', 'Không còn hàng để thả', '', Sim.S.t); return; }
+  const d = Math.min(kg, P.cargoMass);
+  P.cargoMass = Math.round((P.cargoMass - d) * 100) / 100; Sim.syncMass();
+  $('#pCargo').value = String(P.cargoMass); $('#oCargo').textContent = P.cargoMass.toFixed(2) + ' kg'; updateCargoSpecUI();
+  addLog('info', 'Thả ' + d.toFixed(2) + ' kg hàng · còn ' + P.cargoMass.toFixed(2) + ' kg', 'khối lượng đổi đột ngột, bộ ước lượng m̂ học lại', Sim.S.t);
+}
+$$('[data-step]').forEach(b => b.addEventListener('click', () => {
+  const P = Sim.params, k = b.dataset.step;
+  if (k === 'dir90'){ setWindOn(true); if (P.windSpeed < 1) setSlider('pWind', 5); setSlider('pWdir', (P.windDir + 90) % 360); }
+  else if (k === 'spdUp') setSlider('pWind', Math.min(12, P.windSpeed + 4));
+  else if (k === 'spdDown') setSlider('pWind', Math.max(0, P.windSpeed - 4));
+  else if (k === 'drop') dropCargo(0.5);
+}));
+
+// Scripted test: hover over the factory and apply one change at a time, so each response is isolated
+const AT_STEPS = [
+  { at: 0,  label:'Treo ở độ cao cất cánh, gió Tây 4 m/s, hàng 1,5 kg' },
+  { at: 8,  label:'Gió đổi hướng: Tây → Nam',  run(){ setSlider('pWdir', 180); } },
+  { at: 22, label:'Gió tăng 4 → 9 m/s',         run(){ setSlider('pWind', 9); } },
+  { at: 36, label:'Gió giật 40%',               run(){ setSlider('pGust', 40); } },
+  { at: 50, label:'Hết giật',                   run(){ setSlider('pGust', 0); } },
+  { at: 58, label:'Thả 1,0 kg hàng',            run(){ dropCargo(1.0); } },
+  { at: 72, label:'Thả 0,5 kg hàng cuối',       run(){ dropCargo(0.5); } },
+  { at: 86, label:'Hạ cánh',                    run(){ Sim.command('LAND', 'test'); } },
+];
+const atest = { on:false, phase:0, t0:0, next:0, label:'' };
+function renderAtSteps(){
+  $('#atSteps').innerHTML = AT_STEPS.map((s, i) => {
+    const cls = !atest.on ? '' : i < atest.next - 1 ? 'done' : i === atest.next - 1 ? 'now' : '';
+    return '<li class="' + cls + '"><b>+' + s.at + 's</b><span>' + s.label + '</span></li>';
+  }).join('');
+}
+renderAtSteps();
+function startAdaptTest(){
+  const S = Sim.S;
+  if (!(S.state === 'DISARMED' || S.state === 'ARMED') || !S.grounded){ addLog('rej', 'Kịch bản thử cần drone đang đỗ trên mặt đất', 'bấm LAND hoặc Đặt lại về Nhà máy trước', S.t); return; }
+  demo.on = false;
+  Sim.params.cargoMass = 1.5; Sim.syncMass(); $('#pCargo').value = '1.5'; $('#oCargo').textContent = '1.50 kg'; updateCargoSpecUI();
+  setWindOn(true); setSlider('pWind', 4); setSlider('pWdir', 270); setSlider('pGust', 0);
+  atest.on = true; atest.phase = S.state === 'DISARMED' ? 0 : 1; atest.next = 0; atest.label = 'chuẩn bị cất cánh';
+  addLog('info', 'Bắt đầu kịch bản thử thích nghi', 'mỗi thay đổi cách nhau ~14 s để thấy rõ phản ứng', S.t);
+  renderAtSteps();
+}
+$('#btnAdaptTest').addEventListener('click', startAdaptTest);
+$('#pAdapt').addEventListener('change', e => {
+  Sim.params.adaptive = e.target.checked;
+  addLog('info', e.target.checked ? 'Bật điều khiển thích nghi' : 'Tắt điều khiển thích nghi: dùng PID cố định', e.target.checked ? 'ước lượng m̂ và gió ŵ, bù nhiễu d̂' : 'm̂ giữ nguyên, không bù nhiễu gió', Sim.S.t);
+});
+function atestTick(){
+  if (!atest.on) return;
+  const S = Sim.S, st = S.state;
+  if (st === 'EMERGENCY' || st === 'FAILSAFE' || st === 'MANUAL'){ atest.on = false; renderAtSteps(); return; }
+  if (atest.phase === 0){ if (Sim.command('ARM', 'test')) atest.phase = 1; else { atest.on = false; return; } }
+  else if (atest.phase === 1 && st === 'ARMED' && S.stateT > 0.8){ Sim.command('TAKEOFF', 'test'); atest.phase = 2; atest.label = 'cất cánh'; }
+  else if (atest.phase === 2 && st === 'HOVER' && S.stateT > 2){ atest.phase = 3; atest.t0 = S.t; }
+  else if (atest.phase === 3){
+    while (atest.next < AT_STEPS.length && S.t - atest.t0 >= AT_STEPS[atest.next].at){
+      const step = AT_STEPS[atest.next++];
+      if (step.run) step.run();
+      atest.label = step.label; renderAtSteps();
+    }
+    if (atest.next >= AT_STEPS.length && (st === 'ARMED' || st === 'DISARMED')){
+      atest.on = false; renderAtSteps();
+      addLog('info', 'Kịch bản thử thích nghi hoàn tất', 'xem tab "Điều khiển & môi trường" trong báo cáo hành trình', S.t);
+    }
+  }
+}
+
+function drawAdaptCompass(){
+  const c = $('#adWind'); if (!c) return;
+  const [ctx, w, h] = fitCanvas(c), S = Sim.S, E = S.est;
+  const cx = w/2, cy = h/2, R = Math.min(w, h)/2 - 12;
+  ctx.clearRect(0, 0, w, h);
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fillStyle = TK['panel-2']; ctx.fill(); ctx.strokeStyle = TK['line-2']; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.strokeStyle = TK.line; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, R/2, 0, Math.PI*2); ctx.stroke();
+  ctx.font = '600 10px "Barlow Condensed", Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = TK.muted;
+  ctx.fillText('N', cx, cy - R - 6); ctx.fillText('S', cx, cy + R + 6); ctx.fillText('E', cx + R + 6, cy); ctx.fillText('W', cx - R - 6, cy);
+  const arrow = (vx, vy, len, color, dash, width) => {
+    const n = Math.hypot(vx, vy); if (n < 1e-6 || len < 2) return;
+    const ux = vx / n, uy = -vy / n, x1 = cx + ux*len, y1 = cy + uy*len;
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash ? [4, 3] : []);
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x1 - ux*5, y1 - uy*5); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 - ux*8 - uy*4, y1 - uy*8 + ux*4); ctx.lineTo(x1 - ux*8 + uy*4, y1 - uy*8 - ux*4); ctx.closePath(); ctx.fill();
+  };
+  const scaleW = v => Math.min(1, v / 15) * R;   // outer ring = 15 m/s
+  arrow(S.windNow[0], S.windNow[1], scaleW(Math.hypot(S.windNow[0], S.windNow[1])), TK.muted, false, 2.5);
+  if (E.valid) arrow(E.wHat[0], E.wHat[1], scaleW(Math.hypot(E.wHat[0], E.wHat[1])), TK.tele, true, 2);
+  if (S.sp) arrow(S.ctl.aH[0], S.ctl.aH[1], Math.min(1, S.ctl.tiltCmd / (34 * Math.PI / 180)) * R, TK.accent, false, 3);
+  ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2); ctx.fillStyle = TK.fg; ctx.fill();
+}
+function updateAdaptUI(){
+  const S = Sim.S, E = S.est, Pp = Sim.P, K = Sim.K;
+  const wt = Math.hypot(S.windNow[0], S.windNow[1]), we = Math.hypot(E.wHat[0], E.wHat[1]);
+  $('#adWt').textContent = wt > 0.05 ? fx(wt, 1) + ' m/s · từ ' + pad3(cmpFrom(S.windNow[0], S.windNow[1])) + '° ' + compassDirVN(cmpFrom(S.windNow[0], S.windNow[1])) : 'lặng gió';
+  $('#adWe').textContent = !E.valid ? 'chỉ ước lượng khi bay' : we > 0.3 ? fx(we, 1) + ' m/s · từ ' + pad3(cmpFrom(E.wHat[0], E.wHat[1])) + '°' : '< 0,3 m/s';
+  const tc = S.sp ? S.ctl.tiltCmd * DEG : 0;
+  $('#adLean').textContent = S.sp ? fx(tc, 1) + '°' + (tc > 0.5 ? ' về phía ' + compassDirVN(hdgOf(Math.atan2(S.ctl.aH[1], S.ctl.aH[0]))) : '') : '—';
+  const on = Sim.params.adaptive;
+  $$('#adSec .tag.ad').forEach(t => { t.textContent = on ? (t.dataset.k || t.textContent) : 'TẮT'; });
+  $('#adM').textContent = E.mHat.toFixed(2) + ' kg (thật ' + Pp.m.toFixed(2) + ')' + (on ? '' : ' · giữ nguyên');
+  $('#adTh').textContent = (E.mHat * Pp.g).toFixed(1) + ' N';
+  $('#adThr').textContent = Math.round(E.mHat * Pp.g / 4 / Pp.fMax * 100) + '% · ' + (E.mHat * Pp.g / 4).toFixed(1) + ' N';
+  $('#adD').textContent = on ? fx(Math.hypot(E.dHat[0], E.dHat[1]), 2) + ' m/s²' : 'tắt';
+  $('#adI').textContent = E.IHat.toFixed(4) + ' kg·m²';
+  $('#adKa').textContent = (E.IHat * K.att).toFixed(2) + ' N·m/rad';
+  $('#adKv').textContent = K.pXY.toFixed(2) + ' / ' + K.vXY.toFixed(1);
+  $('#adKatt').textContent = K.att + ' / ' + K.attD;
+  $('#adInt').textContent = fx(K.iXY * Math.hypot(S.integ[0], S.integ[1]), 2) + ' m/s²';
+  $('#adTiltM').textContent = S.sp ? fx(34 - tc, 1) + '° còn lại' : '—';
+  $('#adThM').textContent = S.sp ? fx(4 * Pp.fMax * 0.98 - S.T, 1) + ' N còn lại' : '—';
+  drawAdaptCompass();
 }
 
 /* ---------- sticks: keyboard + on-screen ---------- */
@@ -2196,6 +2457,7 @@ function updateDom(){
   else if (S.state === 'FAILSAFE') msg = 'Failsafe: ' + S.fsReason + ', đang về Nhà Máy';
   else if (!S.grounded && obsD < 4.2) { msg = 'Lidar APF: Đang né ' + S.nearObsName + ' (' + fx(obsD, 1) + ' m)'; cls = 'warn'; }
   else if (S.soc < 0.25 && S.state !== 'DISARMED') msg = 'Pin yếu ' + Math.ceil(pct) + '%';
+  else if (atest.on) { msg = 'Kịch bản thích nghi: ' + atest.label; cls = 'warn'; }
   else if (demo.on) { msg = 'Đang chạy Demo Giao Hàng Đô Thị'; cls = 'warn'; }
   els.banner.hidden = !msg; if (msg){ els.banner.textContent = msg; els.banner.className = 'ov ov-banner ' + cls; }
 
@@ -2212,6 +2474,7 @@ function updateDom(){
   const live = (S.state === 'HOVER' || S.state === 'MANUAL') && !P.linkLost;
   $('#stickL').classList.toggle('dim', !live); $('#stickR').classList.toggle('dim', !live);
   updateWindHudUI();
+  updateAdaptUI();
   refreshValidity(false);
 }
 
@@ -3043,7 +3306,20 @@ function recPoint(S){
   return { t:S.t, e:S.pos[0], n:S.pos[1], u:S.pos[2], gs:Math.hypot(S.vel[0], S.vel[1]), vs:S.vel[2],
     roll:S.att[0]*DEG, pitch:-S.att[1]*DEG, psi:S.att[2], soc:S.soc*100, mAh:S.mAh,
     clr:S.minObsDist, st:S.state, cargo:Sim.params.cargoMass, zsp: sp && sp.z != null ? sp.z : null,
-    wind:Math.hypot(S.windNow[0], S.windNow[1]), air:!S.grounded };
+    wind:Math.hypot(S.windNow[0], S.windNow[1]), air:!S.grounded,
+    ...ctlPoint(S, sp) };
+}
+function ctlPoint(S, sp){
+  const E = S.est, wT = Math.hypot(S.windNow[0], S.windNow[1]), wE = Math.hypot(E.wHat[0], E.wHat[1]);
+  const herr = sp && sp.xy ? Math.hypot(S.pos[0] - sp.xy[0], S.pos[1] - sp.xy[1]) : null;
+  const verr = sp && sp.z != null ? S.pos[2] - sp.z : null;
+  return {
+    wT, wTd: wT > 0.3 ? cmpFrom(S.windNow[0], S.windNow[1]) : null,
+    wE: E.valid ? wE : null, wEd: E.valid && wE > 0.3 ? cmpFrom(E.wHat[0], E.wHat[1]) : null,
+    mT: Sim.P.m, mE: E.mHat, T: S.T, W: Sim.P.m * Sim.P.g, IE: E.IHat,
+    tilt: Math.acos(clamp(Math.cos(S.att[0]) * Math.cos(S.att[1]), -1, 1)) * DEG,
+    tiltC: S.sp ? S.ctl.tiltCmd * DEG : null, herr, verr, verrA: verr == null ? null : Math.abs(verr)
+  };
 }
 function recSample(force){
   const f = REC.cur; if (!f) return;
@@ -3051,12 +3327,27 @@ function recSample(force){
   if (!force && S.t - REC.lastT < 0.2) return;
   REC.lastT = S.t; f.samples.push(recPoint(S));
 }
+// Weather / payload settings watched during a flight; slider drags within 1.5 s merge into one change
+const ENV_KEYS = [['windDir', 'dir'], ['windSpeed', 'spd'], ['gust', 'gust'], ['windOn', 'on'], ['cargoMass', 'cargo'], ['adaptive', 'adapt']];
+function envSnapshot(){ const o = {}; ENV_KEYS.forEach(([k]) => { o[k] = Sim.params[k]; }); return o; }
+function recEnv(){
+  const f = REC.cur; if (!f) return;
+  const P = Sim.params, t = Sim.S.t;
+  ENV_KEYS.forEach(([k, kind]) => {
+    const v = P[k], old = f.envState[k];
+    if (v === old) return;
+    f.envState[k] = v;
+    const last = f.env.length ? f.env[f.env.length - 1] : null;
+    if (last && last.kind === kind && t - last.t1 < 1.5 && kind !== 'cargo'){ last.to = v; last.t1 = t; }
+    else f.env.push({ t, t1:t, kind, from:old, to:v });
+  });
+}
 function recStart(){
   const S = Sim.S;
   REC.n++;
   REC.cur = { id:REC.n, t0:S.t, t1:null, st0:S.state, outcome:'', kind:'live', live:true,
-    samples:[], events:[], plans:[], drops:[], mAh0:S.mAh, soc0:S.soc*100,
-    cargo0:Sim.params.cargoMass, safe:Sim.params.safeMargin };
+    samples:[], events:[], plans:[], drops:[], env:[], envState:envSnapshot(), mAh0:S.mAh, soc0:S.soc*100,
+    cargo0:Sim.params.cargoMass, safe:Sim.params.safeMargin, adaptive:Sim.params.adaptive };
   REC.flights.push(REC.cur);
   if (REC.flights.length > 8) REC.flights.shift();
   REC.sel = REC.cur; REC.lastT = -1; rpIdx = null;
@@ -3151,7 +3442,7 @@ function rpStats(f){
 function rpRefreshSelect(){
   const sel = $('#rpSel');
   sel.innerHTML = REC.flights.map(f => '<option value="' + f.id + '">Chuyến ' + f.id + ' · ' +
-    (f.live ? 'đang bay' : f.kind === 'good' ? 'hoàn thành' : f.kind === 'warn' ? 'failsafe' : f.kind === 'bad' ? 'sự cố' : 'kết thúc') + '</option>').reverse().join('');
+    (f.live ? 'đang bay' : f.kind === 'good' ? 'hoàn thành' : f.kind === 'warn' ? 'failsafe' : f.kind === 'bad' ? 'sự cố' : 'kết thúc') + (f.adaptive ? ' · thích nghi' : ' · PID cố định') + '</option>').reverse().join('');
   if (REC.sel) sel.value = String(REC.sel.id);
   sel.disabled = !REC.flights.length;
   $('#rpCsv').disabled = !REC.sel; $('#rpPng').disabled = !REC.sel;
@@ -3184,9 +3475,12 @@ function rpDownload(name, blob){
 }
 $('#rpCsv').addEventListener('click', () => {
   const f = REC.sel; if (!f) return;
-  const rows = [['t_s','state','e_m','n_m','u_m','ground_speed_mps','vertical_speed_mps','roll_deg','pitch_deg','heading_deg','battery_pct','cargo_kg','clearance_m','wind_mps'].join(',')];
+  const rows = [['t_s','state','e_m','n_m','u_m','ground_speed_mps','vertical_speed_mps','roll_deg','pitch_deg','heading_deg','battery_pct','cargo_kg','clearance_m','wind_mps',
+    'wind_from_deg','wind_est_mps','wind_est_from_deg','mass_kg','mass_est_kg','thrust_N','weight_N','tilt_deg','tilt_cmd_deg','inertia_est_kgm2','pos_err_m','alt_err_m'].join(',')];
+  const o = (v, d) => v == null ? '' : v.toFixed(d);
   f.samples.forEach(p => rows.push([(p.t - f.t0).toFixed(2), p.st, p.e.toFixed(2), p.n.toFixed(2), p.u.toFixed(2), p.gs.toFixed(2), p.vs.toFixed(2),
-    p.roll.toFixed(1), p.pitch.toFixed(1), hdgOf(p.psi).toFixed(0), p.soc.toFixed(1), p.cargo.toFixed(2), Math.min(p.clr, 99).toFixed(2), p.wind.toFixed(1)].join(',')));
+    p.roll.toFixed(1), p.pitch.toFixed(1), hdgOf(p.psi).toFixed(0), p.soc.toFixed(1), p.cargo.toFixed(2), Math.min(p.clr, 99).toFixed(2), p.wind.toFixed(1),
+    o(p.wTd, 0), o(p.wE, 2), o(p.wEd, 0), o(p.mT, 2), o(p.mE, 3), o(p.T, 2), o(p.W, 2), o(p.tilt, 2), o(p.tiltC, 2), o(p.IE, 4), o(p.herr, 3), o(p.verr, 3)].join(',')));
   rpDownload('chuyen-bay-' + f.id + '.csv', new Blob(['﻿' + rows.join('\n')], { type:'text/csv;charset=utf-8' }));
 });
 $('#rpPng').addEventListener('click', () => {
@@ -3297,75 +3591,143 @@ function niceTicks(lo, hi, n){
   const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(v);
   return { step, ticks:out };
 }
+let rpTab = 'flight';
+const cmpFrom = (e, n) => ((Math.atan2(e, n) * 180 / Math.PI) + 180 + 360) % 360;   // compass direction the wind blows FROM
+function rpPanels(f){
+  if (rpTab === 'ctrl') return [
+    { title:'Tốc độ gió (m/s)', floor0:true, series:[{ k:'wT', c:'muted', w:1.4, label:'thật' }, { k:'wE', c:'tele', label:'ước lượng ŵ' }] },
+    { title:'Hướng gió thổi từ (°) · 90 Đông · 180 Nam · 270 Tây', fixed:[0, 360], ticks:[0, 90, 180, 270, 360], wrap:true,
+      series:[{ k:'wTd', c:'muted', w:1.4, label:'thật' }, { k:'wEd', c:'tele', label:'ước lượng' }] },
+    { title:'Khối lượng (kg)', floor0:true, series:[{ k:'mT', c:'muted', w:1.4, label:'thật' }, { k:'mE', c:'tele', label:'ước lượng m̂' }] },
+    { title:'Lực đẩy tổng (N)', floor0:true, series:[{ k:'W', c:'muted', dash:true, label:'trọng lượng m·g' }, { k:'T', c:'tele', label:'lực đẩy' }] },
+    { title:'Góc nghiêng (°)', floor0:true, ref:34, refLabel:'giới hạn 34°', series:[{ k:'tiltC', c:'muted', dash:true, label:'lệnh' }, { k:'tilt', c:'tele', label:'thực tế' }] },
+    { title:'Sai lệch so với điểm đặt (m)', floor0:true, cap:5, series:[{ k:'verrA', c:'muted', dash:true, label:'độ cao' }, { k:'herr', c:'tele', label:'ngang' }] },
+  ];
+  return [
+    { title:'Độ cao (m)', floor0:true, series:[{ k:'zsp', c:'muted', dash:true, label:'đặt' }, { k:'u', c:'tele', label:'thực tế' }] },
+    { title:'Tốc độ ngang (m/s)', floor0:true, series:[{ k:'gs', c:'tele' }] },
+    { title:'Pin (%)', series:[{ k:'soc', c:'tele' }] },
+    { title:'Cách tường gần nhất (m)', cap:20, floor0:true, airOnly:true, ref:f.safe, refLabel:'vùng an toàn ' + f.safe.toFixed(1) + ' m', series:[{ k:'clr', c:'tele' }] },
+  ];
+}
+function envList(f){ return (f.env || []).filter(e => e.to !== e.from); }
+function envShort(e){
+  if (e.kind === 'dir') return 'Gió từ ' + pad3(e.to) + '°';
+  if (e.kind === 'spd') return 'Gió ' + e.to + ' m/s';
+  if (e.kind === 'gust') return 'Giật ' + Math.round(e.to * 100) + '%';
+  if (e.kind === 'on') return e.to ? 'Bật gió' : 'Tắt gió';
+  if (e.kind === 'adapt') return e.to ? 'Bật thích nghi' : 'Tắt thích nghi';
+  const d = e.to - e.from; return (d < 0 ? 'Tải −' : 'Tải +') + Math.abs(d).toFixed(2) + ' kg';
+}
+function envLong(e){
+  if (e.kind === 'dir') return 'Gió đổi hướng: từ ' + pad3(e.from) + '° (' + compassDirVN(e.from) + ') sang ' + pad3(e.to) + '° (' + compassDirVN(e.to) + ')';
+  if (e.kind === 'spd') return 'Tốc độ gió ' + e.from + ' → ' + e.to + ' m/s';
+  if (e.kind === 'gust') return 'Gió giật ' + Math.round(e.from * 100) + '% → ' + Math.round(e.to * 100) + '%';
+  if (e.kind === 'on') return e.to ? 'Bật gió' : 'Tắt gió';
+  if (e.kind === 'adapt') return e.to ? 'Bật điều khiển thích nghi' : 'Tắt điều khiển thích nghi (PID cố định)';
+  return 'Tải trọng ' + e.from.toFixed(2) + ' → ' + e.to.toFixed(2) + ' kg';
+}
 function rpDrawTl(f, idx, st){
-  const c = $('#rpTl'), [ctx, w, h] = fitCanvas(c);
+  const c = $('#rpTl');
+  c.classList.toggle('tall', rpTab === 'ctrl');
+  const [ctx, w, h] = fitCanvas(c);
   ctx.clearRect(0, 0, w, h);
   const P = f.samples, t0 = f.t0, t1 = Math.max(st.t1, t0 + 1);
   const padL = 46, padR = 10, bandY = 16, bandH = 16, axisH = 18;
-  const top = bandY + bandH + 34, gap = 16;
-  const panels = [
-    { k:'u', title:'Độ cao (m)', sp:'zsp', floor0:true },
-    { k:'gs', title:'Tốc độ ngang (m/s)', floor0:true },
-    { k:'soc', title:'Pin (%)' },
-    { k:'clr', title:'Cách tường gần nhất (m)', cap:20, floor0:true, ref:f.safe, refLabel:'vùng an toàn ' + f.safe.toFixed(1) + ' m', airOnly:true },
-  ];
+  const env = envList(f);
+  const top = bandY + bandH + (env.length ? 50 : 34), gap = 16;
+  const panels = rpPanels(f);
   const ph = (h - top - axisH - gap*(panels.length - 1)) / panels.length;
   const X = t => padL + (t - t0) / (t1 - t0) * (w - padL - padR);
   rpTlView = { X, padL, padR, w, t0, t1 };
-  ctx.font = '10px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle';
+  ctx.textBaseline = 'middle';
   // state band
   ctx.fillStyle = TK.muted; ctx.textAlign = 'left'; ctx.font = '600 10.5px "Barlow Condensed", Arial, sans-serif';
   ctx.fillText('TRẠNG THÁI', 0, bandY - 9);
-  const segs = rpSegments(f);
-  segs.forEach(s => {
+  rpSegments(f).forEach(s => {
     const a = X(s.a), b = X(s.b);
     ctx.fillStyle = stCol(s.st);
-    const x0 = a + 1, x1 = Math.max(a + 2, b - 1);
-    ctx.fillRect(x0, bandY, x1 - x0, bandH);
+    ctx.fillRect(a + 1, bandY, Math.max(1, b - a - 2), bandH);
     ctx.font = '600 10px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
-    const tw = ctx.measureText(s.st).width;
-    if (b - a > tw + 6){ ctx.fillStyle = TK.fg; ctx.fillText(s.st, (a + b)/2, bandY + bandH + 9); }
+    if (b - a > ctx.measureText(s.st).width + 6){ ctx.fillStyle = TK.fg; ctx.fillText(s.st, (a + b)/2, bandY + bandH + 9); }
   });
-  // transitions as faint verticals through all panels
+  // weather / payload changes: labelled markers below the band, staggered on two rows
+  ctx.font = '600 10px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
+  let lastEnd = [-1e9, -1e9];
+  env.forEach(e => {
+    const x = X(e.t), txt = envShort(e), tw = ctx.measureText(txt).width;
+    const row = x > lastEnd[0] + 4 ? 0 : x > lastEnd[1] + 4 ? 1 : 0;
+    lastEnd[row] = x + 8 + tw;
+    const y = bandY + bandH + 22 + row * 13;
+    ctx.fillStyle = TK.accent; ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x + 5, y); ctx.lineTo(x, y + 5); ctx.lineTo(x - 5, y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = TK.fg; ctx.fillText(txt, x + 8, y);
+  });
+  // state transitions (faint) and weather/payload changes (dashed accent) through all panels
   ctx.strokeStyle = TK.line; ctx.lineWidth = 1;
   f.events.forEach(ev => { const x = Math.round(X(ev.t)) + 0.5; ctx.beginPath(); ctx.moveTo(x, top - 4); ctx.lineTo(x, h - axisH); ctx.stroke(); });
+  ctx.strokeStyle = TK.accent; ctx.setLineDash([3, 3]); ctx.globalAlpha = 0.8;
+  env.forEach(e => { const x = Math.round(X(e.t)) + 0.5; ctx.beginPath(); ctx.moveTo(x, top - 6); ctx.lineTo(x, h - axisH); ctx.stroke(); });
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
   // panels
   panels.forEach((pn, i) => {
     const y0 = top + i*(ph + gap), y1 = y0 + ph;
-    const val = p => pn.cap ? Math.min(p[pn.k], pn.cap) : p[pn.k];
+    const val = (p, k) => { const v = p[k]; return v == null ? null : pn.cap ? Math.min(v, pn.cap) : v; };
     let lo = Infinity, hi = -Infinity;
-    P.forEach(p => { if (pn.airOnly && !p.air) return; const v = val(p); if (v < lo) lo = v; if (v > hi) hi = v; if (pn.sp && p[pn.sp] != null){ lo = Math.min(lo, p[pn.sp]); hi = Math.max(hi, p[pn.sp]); } });
-    if (pn.ref != null){ lo = Math.min(lo, pn.ref); hi = Math.max(hi, pn.ref); }
-    if (!isFinite(lo)){ lo = 0; hi = 1; }
-    if (pn.floor0) lo = Math.min(0, lo);
-    if (hi - lo < 1){ hi = lo + 1; }
-    const tk = niceTicks(lo, hi, 3); lo = Math.min(lo, tk.ticks[0]); hi = Math.max(hi, tk.ticks[tk.ticks.length - 1]);
+    if (pn.fixed){ lo = pn.fixed[0]; hi = pn.fixed[1]; }
+    else {
+      P.forEach(p => { if (pn.airOnly && !p.air) return; pn.series.forEach(s => { const v = val(p, s.k); if (v == null) return; if (v < lo) lo = v; if (v > hi) hi = v; }); });
+      if (pn.ref != null){ lo = Math.min(lo, pn.ref); hi = Math.max(hi, pn.ref); }
+      if (!isFinite(lo)){ lo = 0; hi = 1; }
+      if (pn.floor0) lo = Math.min(0, lo);
+      if (hi - lo < 1) hi = lo + 1;
+    }
+    let ticks, step;
+    if (pn.ticks){ ticks = pn.ticks; step = 90; }
+    else { const tk = niceTicks(lo, hi, 3); ticks = tk.ticks; step = tk.step; lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]); }
     const Y = v => y1 - (v - lo) / (hi - lo) * (ph - 4) - 2;
     ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'right';
-    tk.ticks.forEach(v => {
+    ticks.forEach(v => {
       const y = Math.round(Y(v)) + 0.5;
       ctx.strokeStyle = TK.line; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
-      ctx.fillStyle = TK.muted; ctx.fillText(fx(v, tk.step < 1 ? 1 : 0), padL - 6, y);
+      ctx.fillStyle = TK.muted; ctx.fillText(fx(v, step < 1 ? 1 : 0), padL - 6, y);
     });
+    // title + inline legend (text in ink, the swatch carries the series identity)
     ctx.textAlign = 'left'; ctx.fillStyle = TK.muted; ctx.font = '600 10.5px "Barlow Condensed", Arial, sans-serif';
-    ctx.fillText(pn.title.toUpperCase(), padL + 4, y0 - 5);
+    const title = pn.title.toUpperCase();
+    ctx.fillText(title, padL + 4, y0 - 6);
+    if (pn.series.length > 1){
+      let lx = padL + 14 + ctx.measureText(title).width;
+      ctx.font = '10px "JetBrains Mono", monospace';
+      pn.series.slice().reverse().forEach(s => {
+        ctx.strokeStyle = TK[s.c]; ctx.lineWidth = s.w || 2; ctx.setLineDash(s.dash ? [4, 3] : []);
+        ctx.beginPath(); ctx.moveTo(lx, y0 - 6); ctx.lineTo(lx + 14, y0 - 6); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = TK.fg; ctx.fillText(s.label, lx + 18, y0 - 6);
+        lx += 30 + ctx.measureText(s.label).width;
+      });
+    }
     if (pn.ref != null){
       const y = Y(pn.ref); ctx.setLineDash([4, 3]); ctx.strokeStyle = TK.warn; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = TK.muted; ctx.textAlign = 'right'; ctx.font = '10px "JetBrains Mono", monospace'; ctx.fillText(pn.refLabel, w - padR - 2, y - 7);
     }
     ctx.save(); ctx.beginPath(); ctx.rect(padL, y0 - 2, w - padL - padR, ph + 4); ctx.clip();
-    if (pn.sp){
-      ctx.setLineDash([4, 3]); ctx.strokeStyle = TK.muted; ctx.lineWidth = 1.3; ctx.beginPath(); let pen = false;
-      P.forEach(p => { const v = p[pn.sp]; if (v == null){ pen = false; return; } const x = X(p.t), y = Y(v); pen ? ctx.lineTo(x, y) : ctx.moveTo(x, y); pen = true; });
+    pn.series.forEach(s => {
+      ctx.strokeStyle = TK[s.c]; ctx.lineWidth = s.w || 2; ctx.lineJoin = 'round'; ctx.setLineDash(s.dash ? [4, 3] : []);
+      ctx.beginPath(); let pen = false, prev = null;
+      P.forEach(p => {
+        const v = val(p, s.k);
+        if (v == null || (pn.airOnly && !p.air)){ pen = false; prev = null; return; }
+        if (pn.wrap && prev != null && Math.abs(v - prev) > 180) pen = false;   // don't draw across 360→0
+        const x = X(p.t), y = Y(v); pen ? ctx.lineTo(x, y) : ctx.moveTo(x, y); pen = true; prev = v;
+      });
       ctx.stroke(); ctx.setLineDash([]);
-    }
-    ctx.strokeStyle = TK.tele; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath(); let pen = false;
-    P.forEach(p => { if (pn.airOnly && !p.air){ pen = false; return; } const x = X(p.t), y = Y(val(p)); pen ? ctx.lineTo(x, y) : ctx.moveTo(x, y); pen = true; });
-    ctx.stroke();
+    });
     const cp = P[idx];
     if (cp && !(pn.airOnly && !cp.air)){
-      ctx.beginPath(); ctx.arc(X(cp.t), Y(val(cp)), 4, 0, Math.PI*2); ctx.fillStyle = TK.tele; ctx.fill(); ctx.strokeStyle = TK.panel; ctx.lineWidth = 2; ctx.stroke();
+      pn.series.forEach(s => {
+        const v = val(cp, s.k); if (v == null) return;
+        ctx.beginPath(); ctx.arc(X(cp.t), Y(v), s.c === 'tele' ? 4 : 3, 0, Math.PI*2); ctx.fillStyle = TK[s.c]; ctx.fill(); ctx.strokeStyle = TK.panel; ctx.lineWidth = 2; ctx.stroke();
+      });
     }
     ctx.restore();
   });
@@ -3382,6 +3744,61 @@ function rpDrawTl(f, idx, st){
   }
 }
 
+/* ----- response to each weather / payload change ----- */
+function rpResponse(f){
+  const ev = envList(f), P = f.samples;
+  const endT = f.live ? P[P.length - 1].t : f.t1;
+  const avg = (arr, k) => { const v = arr.map(p => p[k]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  return ev.map((e, i) => {
+    // response window: until the next change, the next mode change, or 25 s
+    const tA = e.t;
+    const modeAt = (P.find(p => p.t >= tA) || P[P.length - 1]).st;
+    const modeEnd = f.events.find(x => x.t > tA + 0.05);
+    const tB = Math.min(i + 1 < ev.length ? ev[i + 1].t : Infinity, modeEnd ? modeEnd.t : Infinity, tA + 25, endT);
+    const win = P.filter(p => p.t >= tA && p.t < tB && p.air && p.st === modeAt);
+    const pre = P.filter(p => p.t >= tA - 2 && p.t < tA && p.air);
+    const tail = win.filter(p => p.t >= tB - 3);
+    const hold = win.filter(p => p.herr != null);
+    const hmax = hold.length ? Math.max(...hold.map(p => p.herr)) : null;
+    const vmax = win.some(p => p.verr != null) ? Math.max(...win.filter(p => p.verr != null).map(p => Math.abs(p.verr))) : null;
+    let out = null; win.forEach(p => { if ((p.herr || 0) > 0.3 || Math.abs(p.verr || 0) > 0.3) out = p.t; });
+    const settle = out == null ? 0 : out - tA;
+    const settled = win.length && (win[win.length - 1].t - (out == null ? tA : out) > 1.0);
+    // estimator convergence after a payload change: first time |m̂ − m| < 0.05 kg and staying there
+    // estimator convergence: from the change until the estimate stays within tolerance to the end of the window
+    const ok = e.kind === 'cargo' ? (p => Math.abs(p.mE - p.mT) < 0.05)
+      : (e.kind === 'adapt' || e.kind === 'on') ? null
+      : (p => p.wE != null && Math.abs(p.wE - p.wT) < Math.max(0.5, 0.1 * p.wT) && (p.wT < 1 || (p.wEd != null && p.wTd != null && Math.abs(((p.wEd - p.wTd + 540) % 360) - 180) < 15)));
+    let conv = null;
+    if (ok && win.length && f.adaptive !== false){
+      let j = win.length - 1;
+      while (j >= 0 && ok(win[j])) j--;
+      conv = j === win.length - 1 ? null : (j < 0 ? 0 : win[j + 1].t - tA);
+    }
+    const last = tail[tail.length - 1] || win[win.length - 1] || null;
+    return { e, tA, hmax, vmax, settle, settled, conv, leanA:avg(pre, 'tilt'), leanB:avg(tail, 'tilt'), TA:avg(pre, 'T'), TB:avg(tail, 'T'), last,
+      during: [...new Set(win.map(p => p.st))].join(', ') };
+  });
+}
+function rpRenderResponse(f){
+  const rows = rpResponse(f);
+  $('#rpResp').hidden = !rows.length;
+  if (!rows.length) return;
+  const n1 = v => v == null ? '—' : v.toFixed(1), n2 = v => v == null ? '—' : v.toFixed(2);
+  $('#rpRespBody').innerHTML = rows.map(r => {
+    const L = r.last;
+    const est = r.e.kind === 'cargo'
+      ? 'm̂ ' + (L ? n2(L.mE) : '—') + ' kg (thật ' + (L ? n2(L.mT) : '—') + ')' + (r.conv != null ? ' · khớp sau ' + n1(r.conv) + ' s' : '')
+      : r.e.kind === 'adapt' ? '—'
+      : L && L.wE == null ? 'không ước lượng (PID cố định)'
+      : 'ŵ ' + (L ? n1(L.wE) : '—') + ' m/s từ ' + (L && L.wEd != null ? pad3(L.wEd) + '°' : '—') + ' (thật ' + (L ? n1(L.wT) : '—') + ' từ ' + (L && L.wTd != null ? pad3(L.wTd) + '°' : '—') + ')' + (r.conv != null ? ' · khớp sau ' + n1(r.conv) + ' s' : '');
+    return '<tr data-t="' + r.tA + '"><td>' + mmss(r.tA - f.t0) + '</td><td>' + rpEsc(envLong(r.e)) + '<div class="rp-dim">' + rpEsc(r.during) + '</div></td>' +
+      '<td>' + (r.hmax == null ? '—' : n2(r.hmax) + ' m') + '</td><td>' + (r.vmax == null ? '—' : n2(r.vmax) + ' m') + '</td>' +
+      '<td>' + (r.settle < 0.05 ? 'không lệch quá 0,3 m' : (r.settled ? n1(r.settle) + ' s' : '> ' + n1(r.settle) + ' s')) + '</td>' +
+      '<td>' + n1(r.leanA) + '° → ' + n1(r.leanB) + '°</td><td>' + n1(r.TA) + ' → ' + n1(r.TB) + ' N</td><td>' + est + '</td></tr>';
+  }).join('');
+}
+
 /* ----- HTML parts ----- */
 function rpTile(k, v, s, cls){
   return '<div class="rp-tile' + (cls ? ' ' + cls : '') + '"><span class="k">' + k + '</span><span class="v">' + v + '</span><span class="s">' + (s || '&nbsp;') + '</span></div>';
@@ -3396,9 +3813,18 @@ function rpReadout(f, idx){
     '<span><span class="k">GS</span> <b>' + fx(p.gs, 1) + ' m/s</b></span>' +
     '<span><span class="k">Pin</span> <b>' + p.soc.toFixed(1) + '%</b></span>' +
     '<span><span class="k">Hàng</span> <b>' + p.cargo.toFixed(2) + ' kg</b></span>' +
-    '<span><span class="k">Cách tường</span> <b>' + (p.air ? (p.clr > 40 ? '> 40' : fx(p.clr, 1)) + ' m' : '—') + '</b></span>';
+    '<span><span class="k">Cách tường</span> <b>' + (p.air ? (p.clr > 40 ? '> 40' : fx(p.clr, 1)) + ' m' : '—') + '</b></span>' +
+    (rpTab === 'ctrl' ?
+      '<span><span class="k">Gió</span> <b>' + p.wT.toFixed(1) + (p.wTd != null ? ' từ ' + pad3(p.wTd) + '°' : '') + '</b></span>' +
+      '<span><span class="k">ŵ</span> <b>' + (p.wE != null ? p.wE.toFixed(1) + (p.wEd != null ? ' từ ' + pad3(p.wEd) + '°' : '') : '—') + '</b></span>' +
+      '<span><span class="k">m̂</span> <b>' + p.mE.toFixed(2) + ' kg</b></span>' +
+      '<span><span class="k">Lực đẩy</span> <b>' + p.T.toFixed(1) + ' N</b></span>' +
+      '<span><span class="k">Nghiêng</span> <b>' + p.tilt.toFixed(1) + '°</b></span>' : '');
 }
 function rpRender(light){
+  try { rpRenderInner(light); } catch (err){ console.error('Báo cáo hành trình:', err); }
+}
+function rpRenderInner(light){
   const f = REC.sel;
   const pill = $('#rpStatus');
   $('#rpEmpty').hidden = !!f; $('#rpBody').hidden = !f;
@@ -3411,17 +3837,19 @@ function rpRender(light){
   const st = rpStats(f);
   rpDrawMap(f, idx); rpDrawTl(f, idx, st); rpReadout(f, idx);
   if (light) return;
+  rpRenderResponse(f);
   const resCls = { good:'good', warn:'warn', bad:'bad' }[f.kind] || '';
   const clrCls = st.clr < 1 ? 'bad' : st.clr < f.safe ? 'warn' : '';
   $('#rpTiles').innerHTML =
     rpTile('Kết quả', f.live ? 'Đang bay' : rpEsc(f.outcome.split(' · ')[0]), f.live ? 'cập nhật trong lúc bay' : rpEsc(f.outcome.split(' · ').slice(1).join(' · ')) || 'Chuyến ' + f.id, resCls) +
     rpTile('Tổng thời gian', mmss(st.total), 'trên không ' + mmss(st.air)) +
     rpTile('Quãng đường bay', Math.round(st.dist) + ' m', st.air > 0 ? 'TB ' + (st.dist / st.air).toFixed(1) + ' m/s' : '') +
-    rpTile('Hàng đã giao', f.drops.length + ' trạm', st.kg.toFixed(2) + ' / ' + f.cargo0.toFixed(2) + ' kg') +
+    rpTile('Hàng', f.drops.length ? 'giao ' + f.drops.length + ' trạm' : (f.cargo0 - st.last.cargo > 0.001 ? 'đã thả' : 'chưa giao'), (f.cargo0 - st.last.cargo).toFixed(2) + ' / ' + f.cargo0.toFixed(2) + ' kg rời drone') +
     rpTile('Pin đã dùng', Math.round(st.mAh) + ' mAh', st.socUsed.toFixed(1) + '% · còn ' + st.last.soc.toFixed(0) + '%') +
     rpTile('Cách tường gần nhất', st.clr > 40 ? '> 40 m' : st.clr.toFixed(2) + ' m', st.clrAt ? 'lúc T+' + mmss(st.clrAt.t - f.t0) + ' · ' + st.clrAt.st : '', clrCls) +
     rpTile('Tốc độ tối đa', st.gsMax.toFixed(1) + ' m/s', 'nghiêng tối đa ' + st.tilt.toFixed(0) + '°') +
-    rpTile('Chuyển trạng thái', f.events.length + ' lần', f.plans.length + ' tuyến được lập');
+    rpTile('Chuyển trạng thái', f.events.length + ' lần', f.plans.length + ' tuyến được lập') +
+    rpTile('Bộ điều khiển', f.adaptive ? 'Thích nghi' : 'PID cố định', envList(f).length + ' thay đổi gió/tải');
   const tot = Math.max(1e-6, st.total);
   $('#rpDur').innerHTML = ST_ORDER.filter(s => st.dur[s] > 0).map(s =>
     '<div class="rp-d"><i style="background:' + stCol(s) + '"></i><span>' + s + '</span><span class="bar"><span style="width:' + (st.dur[s] / tot * 100).toFixed(1) + '%;background:' + stCol(s) + '"></span></span><span class="t">' + mmss(st.dur[s]) + ' · ' + Math.round(st.dur[s] / tot * 100) + '%</span></div>').join('');
@@ -3431,7 +3859,23 @@ function rpRender(light){
   $('#rpLegend').innerHTML = used.map(s => '<span><i style="border-color:' + stCol(s) + '"></i>' + s + '</span>').join('') +
     '<span><i class="dash"></i>tuyến dự kiến (A*)</span><span><b class="rp-dia"></b>điểm thả hàng</span><span><b class="rp-dot"></b>đổi trạng thái</span>';
 }
-// click a transition row to jump the replay there
+$$('#rpTab button').forEach(b => b.addEventListener('click', () => {
+  rpTab = b.dataset.tab;
+  $$('#rpTab button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  if (REC.sel) rpRender(true);
+}));
+// click a transition or response row to jump the replay there
+$('#rpRespBody').addEventListener('click', e => {
+  const tr = e.target.closest('tr'); if (!tr) return;
+  if (rpTab !== 'ctrl') $('#rpTab [data-tab="ctrl"]').click();
+  rpJump(+tr.dataset.t);
+});
+function rpJump(t){
+  const f = REC.sel; if (!f) return;
+  let best = 0;
+  f.samples.forEach((p, i) => { if (Math.abs(p.t - t) < Math.abs(f.samples[best].t - t)) best = i; });
+  rpIdx = best; rpRender(true);
+}
 $('#rpTr').addEventListener('click', e => {
   const tr = e.target.closest('tr'); const f = REC.sel; if (!tr || !f) return;
   const t = +tr.dataset.t; let best = 0;
@@ -3472,13 +3916,14 @@ function frame(now){
   const fdt = Math.min(0.1, (now - last)/1000); last = now;
   updateSticks(fdt);
   demoTick();
+  atestTick();
   accT += fdt*simSpeed; let n = 0;
   while (accT >= DT && n < 240){ Sim.step(DT); accT -= DT; n++; }
   if (n >= 240) accT = 0;
   sample();
   if (R3) R3.render(fdt, fdt*simSpeed);
   drawADI(); drawTape(); drawChart();
-  recSample(false);
+  recEnv(); recSample(false);
   if (now - lastDom > 100){ lastDom = now; updateDom(); }
   if (REC.cur && REC.sel === REC.cur && now - rpLastDraw > 500){ rpLastDraw = now; if (rpVisible()) rpRender(); }
   requestAnimationFrame(frame);

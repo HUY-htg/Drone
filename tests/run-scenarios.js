@@ -126,5 +126,32 @@ for (const [name, list] of [['Hub A', ['A']], ['Hub B', ['B']], ['Hub C', ['C']]
   check('Bay ở 36 m (trên mọi nóc nhà): đường thẳng, không cần điểm né', r.avoidCount === 0);
 }
 
+// 8. Adaptive control: hover through wind and payload steps, compare with fixed-gain PID
+function hoverSteps(adaptive){
+  const Sim = makeSim(); const P = Sim.params;
+  Object.assign(P, { drain:1, windOn:true, windSpeed:4, windDir:270, gust:0, adaptive });
+  const run = (sec, cb) => { for (let i = 0; i < sec / DT; i++){ Sim.step(DT); if (cb) cb(Sim.S); } };
+  Sim.command('ARM'); run(1); Sim.command('TAKEOFF'); run(9);
+  const out = { drift:0, alt:0, leanErr:0, mErr:[] };
+  const track = S => { out.drift = Math.max(out.drift, Math.hypot(S.pos[0] - S.hold[0], S.pos[1] - S.hold[1])); out.alt = Math.max(out.alt, Math.abs(S.pos[2] - S.hold[2])); };
+  const steps = [() => { P.windDir = 180; }, () => { P.windSpeed = 9; }, () => { P.cargoMass = 0.5; }, () => { P.cargoMass = 0; }];
+  for (const st of steps){
+    st(); run(14, track);
+    const S = Sim.S, Fd = (Sim.P.kd + Sim.P.kq * S.windSpd) * S.windSpd;
+    const theory = Math.atan(Fd / (Sim.P.m * Sim.P.g)) * 180 / Math.PI;
+    const lean = Math.acos(Math.cos(S.att[0]) * Math.cos(S.att[1])) * 180 / Math.PI;
+    out.leanErr = Math.max(out.leanErr, Math.abs(lean - theory));
+    out.mErr.push(Math.abs(S.est.mHat - Sim.P.m));
+  }
+  return out;
+}
+{
+  const on = hoverSteps(true), off = hoverSteps(false);
+  check('Thích nghi: góc nghiêng giữ vị trí khớp lý thuyết atan(cản/(m·g))', on.leanErr < 0.5, `sai lệch lớn nhất ${on.leanErr.toFixed(2)}°`);
+  check('Thích nghi: m̂ hội tụ về khối lượng thật sau mỗi lần thả hàng', Math.max(...on.mErr) < 0.05, `sai số m̂ ${on.mErr.map(v => v.toFixed(3)).join(', ')} kg`);
+  check('Thích nghi giữ vị trí tốt hơn PID cố định', on.drift < off.drift && on.alt < off.alt,
+    `lệch ngang ${on.drift.toFixed(2)} vs ${off.drift.toFixed(2)} m · lệch cao ${on.alt.toFixed(2)} vs ${off.alt.toFixed(2)} m`);
+}
+
 console.log(failures ? `\n${failures} kiểm tra thất bại` : '\nTất cả kiểm tra đều đạt');
 process.exit(failures ? 1 : 0);
