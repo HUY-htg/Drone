@@ -128,6 +128,24 @@ Click mặt đất 3D trong căn cứ vẫn thêm được điểm vào tuyến;
 
 ![Drone bị phá sóng trong khu quân sự](docs/jammed.png)
 
+## Yêu cầu của các bên liên quan (SCV)
+
+Bảng **Yêu cầu bên liên quan (SCV)** có một thẻ cho mỗi năng lực của dòng Surveillance Drone (Dòng Trinh sát). Trong lúc vận hành, năng lực nào đang được dùng thì thẻ hiện đậm, viền cam và ghi **ĐANG ÁP DỤNG**; năng lực đang chờ thì thẻ mờ đi. Mỗi tiêu chí con có ✓ (mô phỏng đã đáp ứng) hoặc ✗ (còn thiếu) và số liệu trực tiếp.
+
+| Mã | Năng lực | Mô phỏng đáp ứng bằng | Khi nào đang áp dụng |
+|---|---|---|---|
+| CC1 | Thực hiện bay có điều khiển | TAKEOFF/LANDING, HOVER giữ độ cao, PID xếp tầng, điều khiển thích nghi theo gió | Đang cất/hạ cánh, treo, bay theo lệnh, có gió |
+| CC2 | Tránh chướng ngại vật | Lidar 360°, quỹ đạo A*, lực đẩy APF | Đang bay; đang qua điểm né; APF đang đẩy |
+| CC3 | Điều khiển từ xa qua GCS | Lệnh hai chiều với phản hồi chấp nhận/từ chối, mất liên kết, ảnh tĩnh 20MP (≥ 12MP) | Liên kết tốt và drone đã ARM; vừa gửi lệnh |
+| CC4 | Truyền dữ liệu thời gian thực | Tọa độ GPS (giả định Nhà máy ở 10,80000°N 106,65000°E), độ cao, pin, Lidar, IMU | Khi còn liên kết |
+| V1_VC1 | Cung cấp nhận thức tình huống | Ngày/đêm, camera nhiệt, ảnh tĩnh 20MP (nút **Chụp ảnh** hoặc phím `P`), video 1080p@30fps, zoom 1–6× | Khi camera đang truyền hình |
+
+Ảnh chụp có dải thông tin (thời gian, GPS, độ cao, cảm biến, zoom) và nằm trong mục **Ảnh chụp** của bảng Giám sát. Bấm một ảnh để xem lớn và tải bản xem trước 1920 × 1280.
+
+![Bảng yêu cầu SCV khi drone đang tuần tra](docs/requirements.png)
+
+**Còn thiếu:** V1_VC1 yêu cầu nhiệm vụ kéo dài tối thiểu 60 phút. Với pin 6S 12 Ah và khung hiện tại, thời gian bay ước tính chỉ khoảng 37 phút khi không chở hàng và khoảng 19 phút khi chở 1,5 kg, nên thẻ hiện ✗. Tiêu chí video 1080p@30fps lấy theo tốc độ khung hình thật của trình duyệt, nên máy chậm cũng sẽ hiện ✗.
+
 ## Kết quả bay thử: gió và tải trọng thay đổi thì drone ra sao
 
 Phần **Kết quả** (liên kết "Kết quả gió & tải ↓" ở đầu trang) **chỉ tổng hợp từ các chuyến bay đã ghi** trong báo cáo hành trình. Chưa bay thì phần này trống.

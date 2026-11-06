@@ -588,6 +588,47 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
 .sec.folded > .sec-h > :not(h3){display:none}
 .ph-fold{order:98;margin-left:4px;white-space:nowrap}
 @media (max-width:760px){ .ph-fold{order:0} }
+
+/* stakeholder requirement dashboard */
+.rq{grid-area:rq}
+.rq-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px}
+.rq-lead{margin:0;font-size:12.5px;color:var(--muted);line-height:1.45}
+.rq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.rqc{border:1px solid var(--line);border-radius:5px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;opacity:.42;filter:saturate(.25);transition:opacity .35s,filter .35s,background-color .35s,border-color .35s;min-width:0}
+.rqc.on{opacity:1;filter:none;border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 4px 0 0 var(--accent)}
+.rqc header{display:flex;gap:6px;align-items:center}
+.rq-id{font-family:var(--f-mono);font-weight:700;font-size:12px;padding:1px 6px;border-radius:3px;background:var(--fg);color:var(--panel)}
+.rqc.on .rq-id{background:var(--accent);color:var(--on-accent)}
+.rq-type{font-family:var(--f-display);font-weight:600;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.rq-on{margin-left:auto;font-family:var(--f-mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--muted)}
+.rqc.on .rq-on{color:var(--accent-ink)}
+.rqc h3{margin:0;font-size:14px;letter-spacing:.04em;color:var(--fg);text-transform:none;font-weight:700}
+.rq-en{margin:-4px 0 0;font-size:12px;color:var(--muted);font-style:italic}
+.rq-who{margin:0;font-size:12px}
+.rq-need summary{font-size:12px;cursor:pointer;color:var(--muted)}
+.rq-need p{margin:4px 0 0;font-size:12px;line-height:1.45}
+.rq-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.rq-list li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:0 6px;font-size:12.5px;opacity:.6}
+.rq-list li.on{opacity:1;font-weight:600}
+.rq-list li i{font-style:normal;color:var(--good);font-weight:700}
+.rq-list li.miss i{color:var(--bad)}
+.rq-list li em{grid-column:2;font-style:normal;font-family:var(--f-mono);font-size:11.5px;color:var(--muted);font-weight:400;overflow-wrap:anywhere}
+.rqc footer{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:6px;margin-top:auto}
+.rq-cov{color:var(--good)}
+.rqc.gap .rq-cov{color:var(--warn)}
+@media (prefers-reduced-motion: reduce){ .rqc{transition:none} }
+/* photos */
+.sv-ph{display:flex;flex-direction:column;gap:6px}
+.ph-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.ph-t{flex:none;width:150px;padding:0;border:1px solid var(--line);border-radius:4px;background:var(--panel-2);display:flex;flex-direction:column;cursor:pointer;color:var(--fg)}
+.ph-t:hover{border-color:var(--accent)}
+.ph-t img{width:100%;aspect-ratio:3/2;object-fit:cover;display:block;border-radius:3px 3px 0 0}
+.ph-t span{font-family:var(--f-mono);font-size:11px;padding:3px 6px;color:var(--muted);text-align:left}
+.ph-dlg{border:1px solid var(--line-2);border-radius:6px;background:var(--panel);color:var(--fg);padding:12px;width:min(92vw,1000px)}
+.ph-dlg::backdrop{background:rgba(0,0,0,.6)}
+.ph-dlg img{width:100%;height:auto;display:block;border-radius:4px}
+.ph-dlg p{font-size:12px;color:var(--muted);line-height:1.45}
+.cam-flash{position:absolute;inset:0;background:#ffffff;opacity:.45;pointer-events:none}
 @media (prefers-reduced-motion: reduce){ .sec-tg svg{transition:none} }
 @media (prefers-reduced-motion: reduce){ .cam-fx::before{animation:none} }
 .sens-pal[hidden]{display:none}
@@ -619,7 +660,7 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
     <div class="top-meta">
       <a class="src-link" href="https://github.com/HUY-htg/Drone" target="_blank" rel="noopener">Mã nguồn ↗</a>
       <div class="lay">
-        <button class="btn lay-btn" id="layBtn" aria-expanded="false" aria-controls="layMenu" title="Ẩn hoặc hiện các bảng dashboard (phím H)"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M5.5 2.5v11M10.5 2.5v11"/></svg>Bảng <b id="layCount">6/6</b></button>
+        <button class="btn lay-btn" id="layBtn" aria-expanded="false" aria-controls="layMenu" title="Ẩn hoặc hiện các bảng dashboard (phím H)"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M5.5 2.5v11M10.5 2.5v11"/></svg>Bảng <b id="layCount">7/7</b></button>
         <div class="lay-menu" id="layMenu" role="dialog" aria-label="Chọn bảng hiển thị" hidden>
           <p class="lay-h">Hiện các bảng</p>
           <div class="lay-list" id="layList"></div>
@@ -764,6 +805,7 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
             <span><kbd>Q</kbd> <kbd>E</kbd> / <kbd>R</kbd> <kbd>F</kbd></span><span>Xoay mũi / Lên xuống</span>
             <span><kbd>C</kbd> / <kbd>H</kbd></span><span>Camera drone / Ẩn hiện mọi bảng</span>
             <span><kbd>T</kbd> / <kbd>N</kbd></span><span>Camera nhiệt / Ngày ↔ đêm</span>
+            <span><kbd>P</kbd></span><span>Chụp ảnh 20MP</span>
           </div>
         </div>
 
@@ -838,6 +880,7 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
         </div>
         <div class="ov ov-banner" id="banner" hidden></div>
         <div class="ov ov-err" id="glErr" hidden>Trình duyệt không khởi tạo được WebGL nên cảnh 3D không hiển thị. Mô phỏng, dashboard và máy trạng thái vẫn chạy bình thường.</div>
+        <div class="cam-flash" id="camFlash" hidden aria-hidden="true"></div>
         <div class="cam-fx" id="camFx" hidden aria-hidden="true"><b id="camFxTxt">MẤT TÍN HIỆU VIDEO · BỊ PHÁ SÓNG</b></div>
         <svg class="det-svg" id="detSvg" aria-hidden="true"></svg>
         <button class="pip" id="pip" type="button" aria-label="Camera drone thu nhỏ: bấm để xem toàn khung"><span class="pip-lab" id="pipLab">CAMERA DRONE</span><span class="pip-sw" id="pipSw" aria-hidden="true">⤢ phóng to</span></button>
@@ -849,7 +892,7 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
           <div class="osd-top"><span class="osd-c" id="osdSens"></span><span class="osd-c" id="osdRec"></span><span class="osd-c" id="osdState"></span><span class="osd-c" id="osdBat"></span></div>
           <div class="osd-sub"><span class="osd-c" id="osdHdg"></span><span class="osd-c" id="osdGim"></span><span class="osd-c" id="osdDet"></span></div>
           <div class="osd-l"><div class="osd-c osd-v"><span>ĐỘ CAO</span><b id="osdAlt"></b></div><div class="osd-c osd-v nar-hide"><span>LÊN/XUỐNG</span><b id="osdVs"></b></div></div>
-          <div class="osd-r"><div class="osd-c osd-v"><span>TỐC ĐỘ</span><b id="osdGs"></b></div><div class="osd-c osd-v"><span>CÁCH NHÀ MÁY</span><b id="osdHome"></b></div><div class="osd-c osd-v nar-hide"><span>GIÓ</span><b id="osdWind"></b></div></div>
+          <div class="osd-r"><div class="osd-c osd-v"><span>TỐC ĐỘ</span><b id="osdGs"></b></div><div class="osd-c osd-v"><span>CÁCH NHÀ MÁY</span><b id="osdHome"></b></div><div class="osd-c osd-v nar-hide"><span>GIÓ</span><b id="osdWind"></b></div><div class="osd-c osd-v nar-hide"><span>GPS</span><b id="osdGps" style="font-size:12px"></b></div></div>
         </div>
         <div class="stick stick-l" id="stickL" role="application" aria-label="Cần trái: ga lên xuống, xoay mũi"><span class="stick-lab">GA · XOAY</span><span class="knob"></span></div>
         <div class="stick stick-r" id="stickR" role="application" aria-label="Cần phải: tiến lùi, sang ngang"><span class="stick-lab">TIẾN · NGANG</span><span class="knob"></span></div>
@@ -866,6 +909,7 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
         <div class="seg" role="group" aria-label="Cảm biến camera (phím T)" id="sensSeg"><button data-sens="eo" aria-pressed="true" title="Camera quang học (ảnh màu)">Quang học</button><button data-sens="ir" title="Camera nhiệt hồng ngoại (phím T)">Nhiệt</button></div>
         <select id="palSel" class="sens-pal" aria-label="Bảng màu ảnh nhiệt" hidden><option value="wh">Trắng nóng</option><option value="iron">Ironbow</option></select>
         <div class="seg" role="group" aria-label="Thời gian trong ngày (phím N)" id="todSeg"><button data-tod="day" aria-pressed="true">Ngày</button><button data-tod="night" title="Ban đêm (phím N)">Đêm</button></div>
+        <button class="btn mini" id="btnPhoto" title="Chụp ảnh tĩnh 20MP (phím P)">Chụp ảnh</button>
         <label class="chk"><input type="checkbox" id="optPip" checked> Cửa sổ nhỏ</label>
         <span class="cam-g">Gimbal
           <button class="btn mini" data-tilt="up" aria-label="Ngẩng camera lên 10°">▲</button><output id="oGim">−15° · 0°</output><button class="btn mini" data-tilt="down" aria-label="Chúc camera xuống 10°">▼</button>
@@ -1005,8 +1049,20 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
               <tbody id="svTbody"></tbody></table></div>
             <p class="sv-empty" id="svEmpty">Chưa nhận diện được ai. Camera nhận diện người và xe trong khung hình khi drone đã ARM, nếu đủ gần và không bị tòa nhà che. Bấm một dòng để camera bám theo đối tượng đó.</p>
             <label class="chk"><input type="checkbox" id="svCovShow" checked> Tô vùng camera đã quét trên cảnh 3D</label>
+            <div class="sv-ph">
+              <div class="sv-log-h"><h3>Ảnh chụp (20MP)</h3><button class="btn mini" id="btnPhoto2" title="Chụp ảnh tĩnh từ camera drone (phím P)">Chụp ảnh</button></div>
+              <div class="ph-strip" id="svPhotos"></div>
+              <p class="sv-empty" id="svPhotoEmpty">Chưa có ảnh. Bấm "Chụp ảnh" ở hàng Camera hoặc phím P khi drone đã ARM.</p>
+            </div>
           </div>
         </div>
+      </div>
+    </section>
+    <section class="panel rq" id="reqs" aria-labelledby="hRq">
+      <div class="ph"><span class="code">REQ</span><h2 id="hRq">Yêu cầu bên liên quan (SCV)</h2><span class="ph-note" id="rqSum"></span></div>
+      <div class="rq-body">
+        <p class="rq-lead">Năng lực nào đang được dùng trong lúc vận hành thì thẻ hiện đậm; năng lực đang chờ thì thẻ mờ đi. ✓ / ✗ cho biết mô phỏng đã đáp ứng từng tiêu chí chưa, dòng chữ nhỏ là số liệu trực tiếp. Dòng sản phẩm: Surveillance Drone (Dòng Trinh sát).</p>
+        <div class="rq-grid" id="rqGrid"></div>
       </div>
     </section>
     <section class="panel sm" aria-labelledby="hSm">
@@ -1130,6 +1186,7 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
       </div>
     </section>
   </main>
+  <dialog class="ph-dlg" id="phDlg" aria-labelledby="phMeta"><img id="phImg" alt=""><p id="phMeta"></p><div class="row"><a class="btn" id="phDl" href="#">Tải ảnh xem trước</a><button class="btn" id="phClose">Đóng</button></div></dialog>
 </div>
 <div class="toast" id="rpToast" role="status" hidden>
   <span id="rpToastMsg"></span>
@@ -4286,7 +4343,7 @@ function init3D(){
     const rec = REC.cur ? '● REC ' + mmss(S.t - REC.cur.t0) : '○ CHỜ GHI';
     osdSet('osdRec', rec, REC.cur ? 'osd-rec' : '');
     osdSet('osdState', S.state);
-    osdSet('osdSens', (GB.sensor === 'ir' ? 'NHIỆT · ' + (GB.pal === 'wh' ? 'TRẮNG NÓNG' : 'IRONBOW') : 'QUANG HỌC') + (ENV.night ? ' · ĐÊM' : ''));
+    osdSet('osdSens', (GB.sensor === 'ir' ? 'NHIỆT · ' + (GB.pal === 'wh' ? 'TRẮNG NÓNG' : 'IRONBOW') : 'QUANG HỌC') + (ENV.night ? ' · ĐÊM' : '') + ' · 1080p30');
     osdSet('osdBat', 'PIN ' + Math.round(soc) + '%', soc < 25 ? 'osd-warn' : '');
     const hd = bearing(S.att[2]), cb = bearing(S.att[2] + GB.pan * D2R);
     osdSet('osdHdg', 'MŨI ' + pad3(Math.round(hd) % 360) + '° ' + dirVN(hd) + (Math.abs(GB.pan) > 0.5 ? ' · CAMERA ' + pad3(Math.round(cb) % 360) + '°' : ''));
@@ -4295,6 +4352,7 @@ function init3D(){
     osdSet('osdVs', (S.vel[2] >= 0 ? '+' : '') + S.vel[2].toFixed(1) + ' m/s');
     osdSet('osdGs', Math.hypot(S.vel[0], S.vel[1]).toFixed(1) + ' m/s');
     osdSet('osdHome', Math.hypot(S.pos[0], S.pos[1]).toFixed(0) + ' m');
+    osdSet('osdGps', S.jammed ? 'MẤT GNSS' : fmtGps(S.pos[0], S.pos[1]));
     osdSet('osdWind', ws < 0.3 ? 'lặng' : ws.toFixed(1) + ' từ ' + pad3(Math.round(((Math.atan2(w[0], w[1]) / D2R) + 180 + 360) % 360)) + '°');
     $('#osdX').setAttribute('transform', 'translate(' + (W / 2) + ',' + (H / 2) + ')');
     // horizon: directions level with the lens project onto the horizon line
@@ -4315,6 +4373,22 @@ function init3D(){
     osdLine('osdHz1', ...L); osdLine('osdHz1s', ...L); osdLine('osdHz2', ...R); osdLine('osdHz2s', ...R);
   }
   let gimShown = '';
+
+  let photoRT = null;
+  function takePhoto(w, h){
+    if (!photoRT || photoRT.width !== w || photoRT.height !== h){ if (photoRT) photoRT.dispose(); photoRT = new THREE.WebGLRenderTarget(w, h); }
+    const pc = droneCam.clone(); pc.aspect = w / h; pc.fov = camFov(w / h, GB.zoom); pc.updateProjectionMatrix(); pc.updateMatrixWorld();
+    asCamera(() => { renderer.setRenderTarget(photoRT); renderer.clear(); renderer.render(scene, pc); renderer.setRenderTarget(null); }, pc.position);
+    const px = new Uint8Array(w * h * 4); renderer.readRenderTargetPixels(photoRT, 0, 0, w, h, px);
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const ctx = c.getContext('2d'), img = ctx.createImageData(w, h);
+    for (let y = 0; y < h; y++) img.data.set(px.subarray((h - 1 - y) * w * 4, (h - y) * w * 4), y * w * 4);
+    ctx.putImageData(img, 0, 0);
+    const S = Sim.S, stamp = 'T+' + mmss(S.t) + '  ' + fmtGps(S.pos[0], S.pos[1]) + '  ALT ' + S.pos[2].toFixed(1) + ' m  ' + (GB.sensor === 'ir' ? 'IR' : 'EO') + '  ' + GB.zoom.toFixed(1) + 'x  20MP';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, h - 46, w, 46);
+    ctx.fillStyle = '#ffffff'; ctx.font = '600 22px ui-monospace, Menlo, Consolas, monospace'; ctx.fillText(stamp, 18, h - 16);
+    return c.toDataURL('image/jpeg', 0.86);
+  }
   function camRender(dt){
     milTick();
     gimbalPose(dt);
@@ -4350,7 +4424,7 @@ function init3D(){
 
   applyTheme();
   return { render, rebuildMission, clearTrail, applyTheme,
-    cam: { scene, toV, droneCam, GB, camFov, camHide, camera, mode: () => cam.mode, setCam, ENV, arRoots, setNight, setSensor } };
+    cam: { scene, toV, droneCam, GB, camFov, camHide, camera, mode: () => cam.mode, setCam, ENV, arRoots, setNight, setSensor, takePhoto } };
 }
 try { R3 = init3D(); }
 catch (err){ R3 = null; $('#glErr').hidden = false; $('#gl').style.display = 'none'; console.warn(err); }
@@ -5865,8 +5939,148 @@ Sim.on(ev => {
   } else if (ev.type === 'reset'){ SV.incident = null; syncLinkBtn(); }
 });
 
+/* ---------- stakeholder requirements (SCV capabilities): coverage + what is in use right now ---------- */
+const GPS0 = { lat: 10.80000, lon: 106.65000 };   // assumed geodetic position of the factory pad (0,0)
+const gpsOf = (e, n) => ({ lat: GPS0.lat + n / 111320, lon: GPS0.lon + e / (111320 * Math.cos(GPS0.lat * Math.PI / 180)) });
+const fmtGps = (e, n) => { const g = gpsOf(e, n); return g.lat.toFixed(5) + '°N · ' + g.lon.toFixed(5) + '°E'; };
+const SCV = [
+  { id:'CC1', type:'Core', who:'Người vận hành / Phi công (Drone Operator)', vi:'Thực hiện bay có điều khiển', en:'Perform Controlled Flight',
+    need:'Cất cánh thẳng đứng và hạ cánh an toàn, bay treo ổn định ở độ cao xác định, phản hồi chính xác với lệnh điều khiển hướng/tốc độ/độ cao, tự cân bằng trước gió giật hoặc nhiễu động không khí.' },
+  { id:'CC2', type:'Core', who:'Người vận hành / Tổ An toàn Bay (Safety Officer)', vi:'Tránh chướng ngại vật', en:'Obstacle Avoidance',
+    need:'Tự động phát hiện vật cản xung quanh và ngăn ngừa va chạm trong suốt quá trình bay ở các địa hình phức tạp.' },
+  { id:'CC3', type:'Core', who:'Người vận hành Trạm mặt đất (GCS Operator)', vi:'Điều khiển từ xa qua Trạm mặt đất (GCS)', en:'Remote control via Ground Station',
+    need:'Kết nối truyền thông hai chiều ổn định với GCS để gửi lệnh từ xa, nhận phản hồi trạng thái và quan sát hình ảnh cơ bản (tối thiểu 12MP).' },
+  { id:'CC4', type:'Core', who:'Trạm điều khiển & Giám sát (GCS / Mission Control)', vi:'Truyền dữ liệu thời gian thực', en:'Real-time data transmission',
+    need:'Truyền dữ liệu đo xa theo thời gian thực (tọa độ GPS, độ cao, dung lượng pin, thông số cảm biến) về GCS để giám sát tiến độ nhiệm vụ và an toàn bay.' },
+  { id:'V1_VC1', type:'Variant (V1)', who:'Đơn vị Tình báo & Trinh sát (ISR / Reconnaissance Unit)', vi:'Cung cấp nhận thức tình huống (Trinh sát)', en:'Provide situational awareness',
+    need:'Hoạt động cả ngày lẫn đêm, chụp ảnh tĩnh độ nét cao (≥ 20MP), truyền video trực tiếp 1080p@30fps, thu phóng (zoom) để kiểm tra cận cảnh mục tiêu, nhiệm vụ kéo dài tối thiểu 60 phút.' }
+];
+const RQ = { lastCmd:null, fps:60, tPrev:0, tDraw:0, photos:[], built:false };
+Sim.on(ev => {
+  if (ev.type === 'transition' && ev.kind !== 'auto' && ev.kind !== 'fail') RQ.lastCmd = { ok:true, t:ev.t, txt:ev.reason.replace('lệnh ', '') + ' → ' + ev.to };
+  else if (ev.type === 'reject') RQ.lastCmd = { ok:false, t:ev.t, txt:ev.msg };
+});
+// hover current and endurance at the current take-off mass (same battery model as the simulator)
+function rqEndurance(){
+  const P_ = Sim.P, f = P_.m * P_.g / 4, I = 0.9 + 4 * 28 * Math.pow(f / P_.fMax, 1.5);
+  return 0.85 * P_.capacity / 1000 / I * 60;
+}
+function rqEval(){
+  const S = Sim.S, P_ = Sim.params, C = R3 && R3.cam, GB_ = C ? C.GB : {}, ENV_ = C ? C.ENV : {};
+  const air = !S.grounded && ['TAKEOFF','HOVER','MANUAL','MISSION','RTL','LANDING','FAILSAFE'].includes(S.state);
+  const armed = S.state !== 'DISARMED';
+  const link = !P_.linkLost, jam = S.jammed;
+  const wind = Math.hypot(S.windNow[0], S.windNow[1]);
+  const avoidLeg = (S.state === 'MISSION' && Sim.mission[S.wpIdx] && Sim.mission[S.wpIdx].kind === 'avoid') || ((S.state === 'RTL' || S.state === 'FAILSAFE') && Sim.rtlPath.length > 1);
+  const apf = Math.hypot(S.apfVec[0], S.apfVec[1]);
+  const streamFps = Math.min(30, Math.round(RQ.fps));
+  const endu = rqEndurance();
+  const verr = S.sp && S.sp.z != null ? Math.abs(S.pos[2] - S.sp.z) : null;
+  const cam = armed && link && !jam;
+  return {
+    CC1: [
+      { txt:'Cất cánh thẳng đứng, hạ cánh an toàn', ok:true, on: S.state === 'TAKEOFF' || S.state === 'LANDING', live: S.state === 'TAKEOFF' ? 'đang cất cánh · ' + S.pos[2].toFixed(1) + ' m' : S.state === 'LANDING' ? 'đang hạ cánh · ' + S.pos[2].toFixed(1) + ' m' : '' },
+      { txt:'Bay treo ổn định ở độ cao xác định', ok:true, on: S.state === 'HOVER' && air, live: S.state === 'HOVER' && verr != null ? 'sai số độ cao ' + verr.toFixed(2) + ' m' : '' },
+      { txt:'Phản hồi lệnh hướng / tốc độ / độ cao', ok:true, on: air && ['MANUAL','MISSION','RTL'].includes(S.state), live: air ? 'GS ' + Math.hypot(S.vel[0], S.vel[1]).toFixed(1) + ' m/s · HDG ' + String(Math.round(((90 - S.att[2] * 180 / Math.PI) % 360 + 360) % 360)).padStart(3, '0') + '°' : '' },
+      { txt:'Tự cân bằng trước gió giật, nhiễu động', ok:true, on: air && wind > 0.5, live: air && wind > 0.5 ? 'gió ' + wind.toFixed(1) + ' m/s · ' + (P_.adaptive ? 'điều khiển thích nghi' : 'PID cố định') : '' }
+    ],
+    CC2: [
+      { txt:'Lidar 360° phát hiện vật cản xung quanh', ok:true, on: air, live: air ? 'vật cản gần nhất ' + (S.minObsDist > 40 ? '> 40' : S.minObsDist.toFixed(1)) + ' m' + (S.nearObsName && S.minObsDist < 12 ? ' (' + S.nearObsName + ')' : '') : '' },
+      { txt:'Lập quỹ đạo A* vòng tránh cao ốc', ok:true, on: air && avoidLeg, live: avoidLeg ? 'đang bay qua điểm né' : '' },
+      { txt:'Lực đẩy APF tránh va chạm tức thời', ok:true, on: air && apf > 0.05, live: apf > 0.05 ? 'lực đẩy ' + apf.toFixed(2) + ' m/s' : '' }
+    ],
+    CC3: [
+      { txt:'Liên kết hai chiều với GCS', ok:true, on: link && armed, live: jam ? 'bị phá sóng' : link ? 'liên kết tốt' : 'mất liên kết' },
+      { txt:'Gửi lệnh từ xa, nhận phản hồi trạng thái', ok:true, on: link && !!RQ.lastCmd && Sim.S.t - RQ.lastCmd.t < 8, live: RQ.lastCmd ? (RQ.lastCmd.ok ? 'chấp nhận: ' : 'từ chối: ') + RQ.lastCmd.txt : '' },
+      { txt:'Quan sát hình ảnh cơ bản ≥ 12MP', ok:true, on: cam, live: 'ảnh tĩnh 20MP (5472 × 3648)' }
+    ],
+    CC4: [
+      { txt:'Tọa độ GPS', ok:true, on: link && !jam, live: jam ? 'mất GNSS' : fmtGps(S.pos[0], S.pos[1]) },
+      { txt:'Độ cao, tốc độ', ok:true, on: link, live: S.pos[2].toFixed(1) + ' m · V/S ' + S.vel[2].toFixed(1) + ' m/s' },
+      { txt:'Dung lượng pin', ok:true, on: link, live: Math.round(S.soc * 100) + '% · ' + S.V.toFixed(1) + ' V · ' + S.I.toFixed(1) + ' A' },
+      { txt:'Thông số cảm biến (Lidar, IMU, gió ước lượng)', ok:true, on: link && armed, live: 'Lidar ' + (S.minObsDist > 40 ? '> 40' : S.minObsDist.toFixed(1)) + ' m · roll ' + (S.att[0] * 180 / Math.PI).toFixed(1) + '°' }
+    ],
+    V1_VC1: [
+      { txt:'Hoạt động ngày và đêm', ok:true, on: cam, live: (ENV_.night ? 'ban đêm' : 'ban ngày') + ' · ' + (GB_.sensor === 'ir' ? 'camera nhiệt' : 'camera quang học') },
+      { txt:'Chụp ảnh tĩnh ≥ 20MP', ok:true, on: cam && RQ.photos.length > 0 && Sim.S.t - RQ.photos[0].t < 10, live: RQ.photos.length + ' ảnh đã chụp' },
+      { txt:'Video trực tiếp 1080p @ 30fps', ok: streamFps >= 30, on: cam, live: '1920 × 1080 · ' + streamFps + ' fps' + (streamFps < 30 ? ' (máy đang chậm)' : '') },
+      { txt:'Zoom kiểm tra cận cảnh', ok:true, on: cam && GB_.zoom > 1.05, live: 'zoom ' + (GB_.zoom || 1).toFixed(1).replace('.0', '') + '× (1–6×)' },
+      { txt:'Nhiệm vụ kéo dài ≥ 60 phút', ok: endu >= 60, on: air, live: 'ước tính ' + endu.toFixed(0) + ' phút ở ' + Sim.P.m.toFixed(1) + ' kg' }
+    ]
+  };
+}
+function rqBuild(){
+  const g = $('#rqGrid');
+  g.innerHTML = SCV.map(r => '<article class="rqc" id="rq-' + r.id + '" aria-labelledby="rqh-' + r.id + '">'
+    + '<header><span class="rq-id">' + r.id + '</span><span class="rq-type">' + r.type + '</span><span class="rq-on" id="rqon-' + r.id + '"></span></header>'
+    + '<h3 id="rqh-' + r.id + '">' + r.vi + '</h3><p class="rq-en">' + r.en + '</p>'
+    + '<p class="rq-who">' + r.who + '</p>'
+    + '<details class="rq-need"><summary>Nhu cầu vận hành</summary><p>' + r.need + '</p></details>'
+    + '<ul class="rq-list" id="rql-' + r.id + '"></ul>'
+    + '<footer><span>Áp dụng cho: Surveillance Drone</span><b class="rq-cov" id="rqc-' + r.id + '"></b></footer></article>').join('');
+  RQ.built = true;
+}
+function rqRender(){
+  const panel = $('#reqs'); if (!panel || panel.hidden) return;
+  if (!RQ.built) rqBuild();
+  const E = rqEval();
+  let active = 0, full = 0;
+  SCV.forEach(r => {
+    const items = E[r.id], on = items.some(i => i.on), ok = items.every(i => i.ok);
+    if (on) active++; if (ok) full++;
+    const card = $('#rq-' + r.id);
+    card.classList.toggle('on', on); card.classList.toggle('gap', !ok);
+    $('#rqon-' + r.id).textContent = on ? 'ĐANG ÁP DỤNG' : 'CHỜ';
+    $('#rqc-' + r.id).textContent = ok ? '✓ Đáp ứng' : '△ Còn thiếu ' + items.filter(i => !i.ok).length;
+    const html = items.map(i => '<li class="' + (i.on ? 'on' : '') + (i.ok ? '' : ' miss') + '"><i aria-hidden="true">' + (i.ok ? '✓' : '✗') + '</i><span>' + i.txt + '</span>' + (i.live ? '<em>' + i.live + '</em>' : '') + '</li>').join('');
+    const ul = $('#rql-' + r.id); if (ul.innerHTML !== html) ul.innerHTML = html;
+  });
+  $('#rqSum').textContent = active + '/' + SCV.length + ' năng lực đang áp dụng · ' + full + '/' + SCV.length + ' đáp ứng đầy đủ';
+}
+function rqFrame(){
+  const now = performance.now();
+  if (RQ.tPrev){ const dt = now - RQ.tPrev; if (dt > 0) RQ.fps += (1000 / dt - RQ.fps) * 0.05; }
+  RQ.tPrev = now;
+  if (now - RQ.tDraw > 250){ RQ.tDraw = now; rqRender(); }
+}
+
+/* --- still photos (20 MP sensor; a 1920 × 1280 preview is kept in the page) --- */
+function rqPhoto(){
+  if (!R3 || !R3.cam || !R3.cam.takePhoto) return;
+  const S = Sim.S;
+  if (S.state === 'DISARMED'){ addLog('rej', 'Chụp ảnh cần drone đã ARM (camera bật)', '', S.t); return; }
+  if (S.jammed || Sim.params.linkLost){ addLog('rej', 'Không chụp được: mất liên kết video', '', S.t); return; }
+  const url = R3.cam.takePhoto(1920, 1280);
+  const C = R3.cam, seen = SV.agents.filter(a => a.vis).map(a => a.id);
+  const ph = { t:S.t, url, gps:fmtGps(S.pos[0], S.pos[1]), u:S.pos[2], sens: C.GB.sensor === 'ir' ? 'Nhiệt' : 'Quang học', night:C.ENV.night, zoom:C.GB.zoom, tilt:Math.round(C.GB.tilt), seen, n: RQ.photos.length + 1 };
+  RQ.photos.unshift(ph); if (RQ.photos.length > 24) RQ.photos.length = 24;
+  addLog('info', 'Đã chụp ảnh #' + ph.n + ' (20MP, ' + ph.sens.toLowerCase() + ')', ph.gps + ' · cao ' + ph.u.toFixed(0) + ' m' + (seen.length ? ' · trong ảnh: ' + seen.join(', ') : ''), S.t);
+  rqGallery();
+  const f = $('#camFlash'); if (f){ f.hidden = false; setTimeout(() => { f.hidden = true; }, 160); }
+}
+function rqGallery(){
+  const g = $('#svPhotos'); if (!g) return;
+  $('#svPhotoEmpty').hidden = RQ.photos.length > 0;
+  g.innerHTML = RQ.photos.map((p, i) => '<button class="ph-t" data-i="' + i + '" title="Ảnh #' + p.n + ' · T+' + mmss(p.t) + '"><img src="' + p.url + '" alt="Ảnh #' + p.n + ' chụp lúc T+' + mmss(p.t) + '"><span>#' + p.n + ' · ' + mmss(p.t) + (p.sens === 'Nhiệt' ? ' · IR' : '') + '</span></button>').join('');
+}
+$('#svPhotos').addEventListener('click', e => {
+  const b = e.target.closest('.ph-t'); if (!b) return;
+  const p = RQ.photos[+b.dataset.i], d = $('#phDlg');
+  $('#phImg').src = p.url; $('#phImg').alt = 'Ảnh #' + p.n;
+  $('#phMeta').textContent = 'Ảnh #' + p.n + ' · T+' + mmss(p.t) + ' · ' + p.sens + (p.night ? ' · ban đêm' : '') + ' · 5472 × 3648 (20MP), bản xem trước 1920 × 1280 · ' + p.gps + ' · cao ' + p.u.toFixed(0) + ' m · gimbal ' + p.tilt + '° · zoom ' + p.zoom.toFixed(1) + '×' + (p.seen.length ? ' · trong ảnh: ' + p.seen.join(', ') : '');
+  $('#phDl').href = p.url; $('#phDl').download = 'drone-anh-' + p.n + '.jpg';
+  if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+});
+$('#phClose').addEventListener('click', () => { const d = $('#phDlg'); if (d.close) d.close(); else d.removeAttribute('open'); });
+$('#btnPhoto').addEventListener('click', rqPhoto); $('#btnPhoto2').addEventListener('click', rqPhoto);
+addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,select,textarea')) return;
+  if (!e.ctrlKey && !e.metaKey && !e.altKey && e.code === 'KeyP') rqPhoto();
+});
+rqGallery();
+
 /* ---------- panel visibility: every dashboard can be hidden, the 3D view always stays ---------- */
-const LAY_KEYS = ['fn', 'dash', 'sv', 'sm', 'an', 'rp'];
+const LAY_KEYS = ['fn', 'dash', 'sv', 'rq', 'sm', 'an', 'rp'];
 const LAY = { hidden:new Set(), before:null };
 try { (JSON.parse(localStorage.getItem('ucds-hidden') || '[]') || []).forEach(k => { if (LAY_KEYS.includes(k)) LAY.hidden.add(k); }); } catch (e){}
 const layEl = k => $('.grid > .panel.' + k);
@@ -5878,11 +6092,11 @@ function layApply(){
   if (!mqMid.matches){
     const top = [vis('fn') && 'fn', 'view', vis('dash') && 'dash'].filter(Boolean);
     cols = top.map(a => a === 'fn' ? '320px' : a === 'dash' ? '340px' : 'minmax(0,1fr)');
-    rows = [top].concat(['sv', 'sm', 'an', 'rp'].filter(vis).map(a => top.map(() => a)));
+    rows = [top].concat(['sv', 'rq', 'sm', 'an', 'rp'].filter(vis).map(a => top.map(() => a)));
   } else if (!mqNarrow.matches){
     cols = ['minmax(0,1fr)', 'minmax(0,1fr)'];
     const pair = ['fn', 'dash'].filter(vis);
-    rows = [['view', 'view']].concat(pair.length === 2 ? [pair] : pair.map(a => [a, a]), ['sv', 'sm', 'an', 'rp'].filter(vis).map(a => [a, a]));
+    rows = [['view', 'view']].concat(pair.length === 2 ? [pair] : pair.map(a => [a, a]), ['sv', 'rq', 'sm', 'an', 'rp'].filter(vis).map(a => [a, a]));
   } else {
     cols = ['minmax(0,1fr)'];
     rows = [['view']].concat(LAY_KEYS.filter(vis).map(a => [a]));
@@ -5941,7 +6155,7 @@ document.addEventListener('click', e => {
   const el = document.querySelector(a.getAttribute('href'));
   const k = el && LAY_KEYS.find(x => el.classList.contains(x)); if (k) showPanel(k);
 }, true);
-$('#rpToastGo').addEventListener('click', () => { const t = $('#rpToastGo').dataset.target || 'report'; showPanel({ analysis:'an', report:'rp', surv:'sv' }[t] || 'rp'); }, true);
+$('#rpToastGo').addEventListener('click', () => { const t = $('#rpToastGo').dataset.target || 'report'; showPanel({ analysis:'an', report:'rp', surv:'sv', reqs:'rq' }[t] || 'rp'); }, true);
 mqMid.addEventListener('change', layApply); mqNarrow.addEventListener('change', layApply);
 layApply();
 
@@ -6007,7 +6221,7 @@ function frameBody(now){
   while (accT >= DT && n < 240){ Sim.step(DT); accT -= DT; n++; }
   if (n >= 240) accT = 0;
   sample();
-  svFrame();
+  svFrame(); rqFrame();
   if (R3) R3.render(fdt, fdt*simSpeed);
   drawADI(); drawTape(); drawChart();
   recEnv(); recSample(false);
