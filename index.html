@@ -1,0 +1,2953 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Urban Cargo Drone Sim</title>
+<meta name="description" content="Mô phỏng drone chở hàng trong đô thị chạy trên trình duyệt: động lực học quadcopter, PID xếp tầng, lập quỹ đạo né cao ốc A* + APF, máy trạng thái 10 trạng thái, dashboard telemetry và cảnh 3D.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%2314202a' stroke-width='2.6'%3E%3Cpath d='M10 10L30 30M30 10L10 30'/%3E%3Ccircle cx='9' cy='9' r='6'/%3E%3Ccircle cx='31' cy='9' r='6'/%3E%3Ccircle cx='9' cy='31' r='6'/%3E%3Ccircle cx='31' cy='31' r='6'/%3E%3C/g%3E%3Crect x='14' y='14' width='12' height='12' rx='2' fill='%23e2891a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Base */
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<style>
+/* Layout: ground-control cockpit — function rail | 3D viewport | telemetry rail, state-machine strip spanning below. */
+:root{
+  --bg:#e7ebef; --panel:#fafbfc; --panel-2:#eff2f5; --line:#d2d9e0; --line-2:#b6c0ca;
+  --fg:#14202a; --muted:#55626f; --faint:#8a95a0;
+  --accent:#e2891a; --accent-ink:#965400; --accent-soft:rgba(226,137,26,.16); --on-accent:#1d1306;
+  --tele:#0b7ba0; --tele-soft:rgba(11,123,160,.12);
+  --good:#1c8748; --good-soft:rgba(28,135,72,.12);
+  --warn:#a86b00; --warn-soft:rgba(200,130,0,.15);
+  --bad:#c4302a; --bad-soft:rgba(196,48,42,.12); --on-bad:#ffffff;
+  --ov:rgba(250,251,252,.88);
+  --scene-sky:#cfdbe6; --scene-ground:#b5bec4; --scene-grid:#8b969e; --scene-grid2:#a3adb5;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1318; --panel:#141c23; --panel-2:#1a232c; --line:#25313b; --line-2:#35444f;
+    --fg:#e1e7ec; --muted:#8b98a4; --faint:#5f6c77;
+    --accent:#f2a33a; --accent-ink:#f6b860; --accent-soft:rgba(242,163,58,.16); --on-accent:#1d1306;
+    --tele:#52c2e4; --tele-soft:rgba(82,194,228,.13);
+    --good:#45c17a; --good-soft:rgba(69,193,122,.14);
+    --warn:#e6aa33; --warn-soft:rgba(230,170,51,.15);
+    --bad:#f0605a; --bad-soft:rgba(240,96,90,.15); --on-bad:#1a0605;
+    --ov:rgba(20,28,35,.88);
+    --scene-sky:#0d151d; --scene-ground:#161d24; --scene-grid:#2d3b47; --scene-grid2:#1f2933;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1318; --panel:#141c23; --panel-2:#1a232c; --line:#25313b; --line-2:#35444f;
+  --fg:#e1e7ec; --muted:#8b98a4; --faint:#5f6c77;
+  --accent:#f2a33a; --accent-ink:#f6b860; --accent-soft:rgba(242,163,58,.16); --on-accent:#1d1306;
+  --tele:#52c2e4; --tele-soft:rgba(82,194,228,.13);
+  --good:#45c17a; --good-soft:rgba(69,193,122,.14);
+  --warn:#e6aa33; --warn-soft:rgba(230,170,51,.15);
+  --bad:#f0605a; --bad-soft:rgba(240,96,90,.15); --on-bad:#1a0605;
+  --ov:rgba(20,28,35,.88);
+  --scene-sky:#0d151d; --scene-ground:#161d24; --scene-grid:#2d3b47; --scene-grid2:#1f2933;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--tele);outline-offset:2px}
+.app{max-width:1720px;margin:0 auto;padding-block:12px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:12px}
+
+/* top bar */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:6px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-ic{width:36px;height:36px;color:var(--fg);flex:none}
+h1{font-family:var(--f-display);font-weight:700;font-size:23px;letter-spacing:.03em;margin:0;line-height:1;text-transform:uppercase;text-wrap:balance}
+.brand-t p{margin:3px 0 0;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.top-state{display:flex;align-items:center;gap:10px;flex:1;min-width:240px}
+.top-sub{color:var(--muted);font-size:13px;min-width:0}
+.top-meta{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.meta{display:flex;align-items:baseline;gap:6px}
+.meta span{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.meta b{font-family:var(--f-mono);font-weight:500;font-size:15px;font-variant-numeric:tabular-nums}
+
+.pill{display:inline-block;font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.09em;padding:4px 10px 3px;border-radius:3px;border:1px solid currentColor;line-height:1.1;white-space:nowrap}
+.s-idle{color:var(--muted);background:transparent}
+.s-armed{color:var(--warn);background:var(--warn-soft)}
+.s-air{color:var(--tele);background:var(--tele-soft)}
+.s-land{color:var(--good);background:var(--good-soft)}
+.s-fs{color:var(--warn);background:var(--warn-soft);border-style:dashed}
+.s-emg{color:var(--on-bad);background:var(--bad);border-color:var(--bad)}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;flex:none}
+.seg button{border:0;border-right:1px solid var(--line);background:var(--panel-2);padding:4px 9px;font-size:12px;font-weight:500;line-height:1.3}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--panel)}
+
+/* grid */
+.grid{display:grid;gap:12px;grid-template-columns:320px minmax(0,1fr) 340px;grid-template-areas:"fn view dash" "sm sm sm"}
+.fn{grid-area:fn}.view{grid-area:view}.dash{grid-area:dash}.sm{grid-area:sm}
+.fn,.view,.dash{height:clamp(620px,calc(100vh - 110px),900px)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;min-width:0;min-height:0}
+.scroll{overflow-y:auto;flex:1;min-height:0}
+.ph{display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;padding:9px 12px;border-bottom:1px solid var(--line)}
+.code{font-family:var(--f-mono);font-size:10px;font-weight:600;letter-spacing:.06em;padding:1px 5px;border:1px solid var(--line-2);border-radius:3px;color:var(--muted)}
+h2{font-family:var(--f-display);font-weight:700;font-size:16px;letter-spacing:.08em;text-transform:uppercase;margin:0;line-height:1.2}
+.ph-note{margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--f-mono)}
+.sec{padding:12px 14px;border-bottom:1px solid var(--line)}
+.sec:last-child{border-bottom:0}
+h3{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 9px}
+.sec-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.sec-h h3{margin:0}
+.note{font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.45}
+.sub{font-size:11px;color:var(--muted);font-family:var(--f-mono)}
+
+/* function panel */
+.cmds{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cmd{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:7px 10px 6px;background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;text-align:left;transition:opacity .15s,border-color .15s}
+.cmd .cn{font-family:var(--f-display);font-weight:700;font-size:16px;letter-spacing:.07em;line-height:1.1}
+.cmd small{font-size:11px;font-weight:500;color:var(--muted);line-height:1.25}
+.cmd:hover{border-color:var(--fg)}
+.cmd.off{opacity:.42;border-color:var(--line)}
+.cmd.off:hover{border-color:var(--line-2)}
+.cmd.kill{grid-column:1/-1;background:var(--bad-soft);border-color:var(--bad);color:var(--bad);flex-direction:row;align-items:baseline;gap:10px}
+.cmd.kill small{color:inherit;opacity:.85}
+.cmd.kill.confirm{background:var(--bad);color:var(--on-bad)}
+.valid{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:9px;font-size:12px;color:var(--muted)}
+.chip{font-family:var(--f-mono);font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--tele-soft);color:var(--tele)}
+.chip-avoid{background:var(--accent-soft);color:var(--accent-ink)}
+.chip-good{background:var(--good-soft);color:var(--good)}
+.none{font-size:12px;color:var(--muted)}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:12.5px;align-items:center}
+kbd{font-family:var(--f-mono);font-size:11px;padding:1px 5px;border:1px solid var(--line-2);border-bottom-width:2px;border-radius:3px;background:var(--panel-2);white-space:nowrap}
+.field{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;margin-bottom:10px}
+.field:last-child{margin-bottom:0}
+.field label{font-size:13px}
+.field output{font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums}
+.field input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.btn{border:1px solid var(--line-2);background:var(--panel-2);border-radius:4px;padding:5px 9px;font-size:12px;font-weight:500}
+.btn:hover{border-color:var(--fg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.tele{background:var(--tele-soft);border-color:var(--tele);color:var(--tele);font-weight:600}
+.btn[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:var(--on-bad)}
+.btn:disabled,.btn:disabled:hover{opacity:.45;cursor:not-allowed;border-color:var(--line-2)}
+input[type=range]:disabled{opacity:.45;cursor:not-allowed}
+.chk{display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer}
+.chk input{accent-color:var(--accent);width:15px;height:15px;margin:0}
+select{background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;padding:3px 6px;font-size:12.5px}
+.wp-wrap{overflow-x:auto;margin:8px 0;max-height:210px;overflow-y:auto;border:1px solid var(--line);border-radius:4px}
+table.wp{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+table.wp th{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:4px 5px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+table.wp td{padding:2px 4px;border-bottom:1px solid var(--line)}
+table.wp tr.active td{background:var(--tele-soft)}
+table.wp tr.done td{color:var(--faint)}
+table.wp tr.wp-avoid td{background:var(--accent-soft);font-size:11.5px}
+.wp-n{font-family:var(--f-mono);font-weight:600;width:28px;text-align:center}
+.wp-tag{font-family:var(--f-mono);font-size:9.5px;padding:1px 4px;border-radius:2px;background:var(--panel-2);color:var(--muted);display:inline-block;white-space:nowrap}
+.wp-tag.avoid{background:var(--accent);color:var(--on-accent);font-weight:600}
+.wp-tag.hub{background:var(--tele);color:#fff;font-weight:600}
+table.wp input{width:100%;min-width:42px;background:transparent;border:1px solid transparent;border-radius:3px;padding:2px 3px;font-family:var(--f-mono);font-size:12px}
+table.wp input:hover{border-color:var(--line)}
+table.wp input:focus{border-color:var(--tele);outline:none;background:var(--panel-2)}
+.wp-del{border:0;background:transparent;color:var(--muted);font-size:16px;line-height:1;padding:2px 6px;border-radius:3px}
+.wp-del:hover{color:var(--bad);background:var(--bad-soft)}
+.wp-empty{font-size:12px;color:var(--muted);padding:8px 10px}
+.planner-stat{display:flex;flex-wrap:wrap;gap:6px 10px;padding:7px 9px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;font-size:11.5px;margin-top:8px}
+
+/* 3D view */
+.stage{position:relative;flex:1;min-height:0;overflow:hidden;background:var(--scene-sky)}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#gl.drag{cursor:grabbing}
+.ov{position:absolute;background:var(--ov);border:1px solid var(--line);border-radius:4px;font-family:var(--f-mono);font-size:11px;color:var(--fg);padding:4px 8px;pointer-events:none;backdrop-filter:blur(3px)}
+.ov-hint{left:10px;top:10px;color:var(--muted);max-width:calc(58% - 20px)}
+.ov-hud{right:10px;top:10px;display:grid;grid-template-columns:auto auto;gap:1px 10px;font-variant-numeric:tabular-nums}
+.ov-hud span{color:var(--muted)}
+.ov-wind{right:10px;top:88px;display:flex;align-items:center;gap:10px;padding:7px 10px;border-color:var(--tele);box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.ov-wind[hidden]{display:none!important}
+.wind-dial{width:46px;height:46px;flex:none;display:block}
+.wind-info{display:flex;flex-direction:column;gap:1px;font-variant-numeric:tabular-nums;line-height:1.28}
+.wind-title{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.1em;color:var(--tele);text-transform:uppercase}
+.wind-dir{font-weight:600;color:var(--fg)}
+.wind-sub{font-size:10.5px;color:var(--muted)}
+.wind-sub.over{color:var(--bad);font-weight:600}
+.ov-banner{left:50%;top:48px;transform:translateX(-50%);font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.08em;padding:5px 12px;text-transform:uppercase;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+.ov-banner.warn{color:var(--warn);border-color:var(--warn);background:var(--ov)}
+.ov-banner.bad{color:var(--on-bad);background:var(--bad);border-color:var(--bad)}
+.ov-banner.good{color:var(--good);border-color:var(--good);background:var(--ov)}
+.ov-err{left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--f-body);font-size:13px;padding:12px 14px;max-width:320px;text-align:center}
+.stick{position:absolute;bottom:14px;width:104px;height:104px;border-radius:50%;border:1px solid var(--line-2);background:var(--ov);touch-action:none;cursor:pointer;transition:opacity .2s}
+.stick::before,.stick::after{content:"";position:absolute;background:var(--line-2)}
+.stick::before{left:50%;top:14px;bottom:14px;width:1px}
+.stick::after{top:50%;left:14px;right:14px;height:1px}
+.stick-l{left:14px}.stick-r{right:14px}
+.stick.dim{opacity:.45}
+.knob{position:absolute;left:50%;top:50%;width:36px;height:36px;margin:-18px 0 0 -18px;border-radius:50%;background:var(--panel);border:2px solid var(--accent);z-index:1;pointer-events:none}
+.stick-lab{position:absolute;left:-10px;right:-10px;top:-17px;text-align:center;font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.12em;color:var(--muted);pointer-events:none}
+.view-foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 12px;border-top:1px solid var(--line)}
+.view-foot .sub{margin-left:auto}
+.linkbtn{border:0;background:none;padding:0;color:var(--tele);font-size:12.5px;text-decoration:underline;text-underline-offset:2px}
+
+/* dashboard */
+.ro-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.ro{background:var(--panel);padding:7px 9px 6px;display:flex;flex-direction:column;min-width:0}
+.ro-k{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.13em;color:var(--muted)}
+.ro-v{white-space:nowrap}
+.ro-v b{font-family:var(--f-mono);font-size:18px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.25}
+.ro-v i{font-style:normal;font-size:11px;color:var(--muted);margin-left:3px}
+.att{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;align-items:center}
+.adi{width:132px;height:132px;display:block}
+.kv{margin:0;display:grid;gap:6px}
+.kv div{display:flex;flex-direction:column;min-width:0}
+.kv dt{font-size:11px;color:var(--muted);font-family:var(--f-display);font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.kv dd{margin:0;font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kv dd .sub{margin-left:6px}
+.kv-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 10px;margin-top:10px}
+.tape{width:100%;height:30px;display:block;margin-top:10px;border-radius:3px}
+.big{font-family:var(--f-mono);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.batbar{position:relative;height:14px;border-radius:3px;background:var(--panel-2);border:1px solid var(--line-2);overflow:hidden}
+.batbar span{position:absolute;left:0;top:0;bottom:0;width:100%;background:var(--good);transition:width .2s}
+.batbar.low span{background:var(--warn)}
+.batbar.crit span{background:var(--bad)}
+.batbar i{position:absolute;top:0;bottom:0;width:1px;background:var(--fg);opacity:.55}
+.batlegend{position:relative;height:15px;font-family:var(--f-mono);font-size:10px;color:var(--muted)}
+.batlegend span{position:absolute;top:2px;transform:translateX(-50%);white-space:nowrap}
+.mot{display:grid;grid-template-columns:minmax(0,1fr) 54px minmax(0,1fr);grid-template-rows:auto auto;gap:10px 8px;align-items:center}
+.mot-ic{grid-column:2;grid-row:1/3;width:54px;height:84px;display:block}
+#m3{grid-column:1;grid-row:1}#m1{grid-column:3;grid-row:1}#m2{grid-column:1;grid-row:2}#m4{grid-column:3;grid-row:2}
+.m-h{display:flex;align-items:baseline;justify-content:space-between;gap:4px}
+.m-h b{font-family:var(--f-display);font-size:14px;letter-spacing:.06em}
+.m-h span{font-family:var(--f-mono);font-size:10px;color:var(--muted)}
+.m-bar{height:7px;background:var(--panel-2);border:1px solid var(--line);border-radius:2px;overflow:hidden;margin:3px 0}
+.m-bar span{display:block;height:100%;width:0;background:var(--tele)}
+.m-bar.hot span{background:var(--warn)}
+.m-v{font-family:var(--f-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.m-v b{color:var(--fg);font-weight:500}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin-bottom:4px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{display:inline-block;width:14px;height:0;border-top:2px solid}
+.legend i.dash{border-top-style:dashed}
+.chart{width:100%;height:132px;display:block}
+table.ctl{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+table.ctl th,table.ctl td{padding:3px 4px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--f-mono)}
+table.ctl th{font-family:var(--f-body);font-weight:500;text-align:left;color:var(--muted);font-size:12px}
+table.ctl thead th{font-family:var(--f-display);font-weight:600;letter-spacing:.1em;text-align:right;font-size:11px}
+table.ctl thead th:first-child{text-align:left}
+
+/* state machine */
+.sm-body{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(0,1fr);gap:0}
+.sm-dia{padding:12px 14px;border-right:1px solid var(--line);min-width:0}
+.sm-scroll{overflow-x:auto}
+#smSvg{display:block;width:100%;min-width:720px;height:auto}
+.sm-side{padding:12px 14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.sm-card{border:1px solid var(--line);border-radius:4px;padding:10px 12px;background:var(--panel-2)}
+.sm-cur{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sm-t{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.sm-card p{margin:8px 0 0;font-size:13px;line-height:1.5;max-width:60ch}
+.sm-prev{font-size:12px;color:var(--muted);margin-top:6px}
+.log{list-style:none;margin:0;padding:0;max-height:260px;overflow-y:auto;border-top:1px solid var(--line)}
+.lg{display:grid;grid-template-columns:62px minmax(0,1fr);gap:0 10px;padding:5px 2px;border-bottom:1px solid var(--line);font-size:12px}
+.lg-t{font-family:var(--f-mono);font-size:11px;color:var(--muted);grid-row:1/3;padding-top:1px;font-variant-numeric:tabular-nums}
+.lg-m{font-family:var(--f-mono);font-weight:600;font-size:12px}
+.lg-s{color:var(--muted);font-size:12px}
+.lg-s:empty{display:none}
+.lg-warn .lg-m{color:var(--warn)}
+.lg-rej .lg-m{color:var(--bad);font-weight:500}
+.lg-fail .lg-m{color:var(--bad)}
+.lg-info .lg-m{font-weight:500;font-family:var(--f-body)}
+
+/* svg diagram */
+.grp{fill:none;stroke:var(--line-2);stroke-dasharray:4 4}
+.grp-t{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.14em;fill:var(--muted)}
+.nd rect{fill:var(--panel);stroke:var(--line-2);stroke-width:1.2;transition:fill .2s,stroke .2s}
+.nd .nt{font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.07em;fill:var(--fg)}
+.nd .ns{font-family:var(--f-body);font-size:10.5px;fill:var(--muted)}
+.nd.prev rect{stroke:var(--accent);stroke-dasharray:3 3}
+.nd.cur rect{fill:var(--accent);stroke:var(--accent)}
+.nd.cur .nt,.nd.cur .ns{fill:var(--on-accent)}
+.nd.cur.emg rect{fill:var(--bad);stroke:var(--bad)}
+.nd.cur.emg .nt,.nd.cur.emg .ns{fill:var(--on-bad)}
+.eg path{fill:none;stroke:var(--line-2);stroke-width:1.3}
+.eg text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
+.eg.on path{stroke:var(--accent);stroke-width:2.4}
+.eg.on text{fill:var(--accent-ink);font-weight:600}
+.ah{fill:var(--line-2)}
+.ah-on{fill:var(--accent)}
+
+@media (max-width:1240px){
+  .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"view view" "fn dash" "sm sm"}
+  .fn,.dash{height:auto}
+  .view{height:clamp(460px,65vh,680px)}
+  .scroll{overflow:visible}
+}
+@media (max-width:980px){
+  .sm-body{grid-template-columns:minmax(0,1fr)}
+  .sm-dia{border-right:0;border-bottom:1px solid var(--line)}
+}
+@media (max-width:760px){
+  .grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"view" "fn" "dash" "sm"}
+  .view{height:min(76vh,480px)}
+  .top-state{min-width:0;flex-basis:100%;order:3}
+  .ph-note{margin-left:0;flex-basis:100%}
+  .view .ph .seg{margin-left:auto}
+  .ov-hint{display:none}
+  .stick{width:92px;height:92px}
+  .ov-wind{left:10px;right:auto;top:10px;padding:5px 8px;gap:8px;max-width:calc(100% - 150px)}
+  .wind-dial{width:34px;height:34px}
+  .wind-title{font-size:10.5px}
+  .ov-wind .wind-sub{display:none}
+  .ov-wind .wind-sub.over{display:block}
+  .ov-banner{top:auto;bottom:118px;font-size:12px;padding:4px 9px}
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none!important}
+}
+.src-link{font-size:12.5px;color:var(--tele);text-underline-offset:2px}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg class="brand-ic" viewBox="0 0 40 40" aria-hidden="true">
+        <g fill="none" stroke="currentColor" stroke-width="2"><path d="M10 10L30 30M30 10L10 30"/><circle cx="9" cy="9" r="6"/><circle cx="31" cy="9" r="6"/><circle cx="9" cy="31" r="6"/><circle cx="31" cy="31" r="6"/></g>
+        <rect x="14" y="14" width="12" height="12" rx="2" fill="var(--accent)"/>
+        <path d="M17 17h6v6h-6z" fill="var(--panel)"/>
+      </svg>
+      <div class="brand-t">
+        <h1>Urban Cargo Drone Sim</h1>
+        <p id="brandSpec">X4 Heavy-Lift · khung 800 mm · tự trọng 2,4 kg + hàng 1,5 kg · pin 6S 12000 mAh · Lidar 360°</p>
+      </div>
+    </div>
+    <div class="top-state">
+      <span class="pill s-idle" id="statePill">DISARMED</span>
+      <span class="top-sub" id="stateSub">Tại Nhà Máy Sản Xuất — Động cơ tắt</span>
+    </div>
+    <div class="top-meta">
+      <a class="src-link" href="https://github.com/HUY-htg/Drone" target="_blank" rel="noopener">Mã nguồn ↗</a>
+      <div class="meta"><span>Hàng</span><b id="metaCargo">1.5 kg</b></div>
+      <div class="meta"><span>T+</span><b id="metaTime">00:00</b></div>
+      <div class="meta"><span>Pin</span><b id="metaBat">100%</b></div>
+      <div class="seg" role="group" aria-label="Tốc độ mô phỏng" id="speedSeg">
+        <button data-speed="0" id="sp0">Dừng</button><button data-speed="0.5" id="sp05">0.5×</button><button data-speed="1" id="sp1" aria-pressed="true">1×</button><button data-speed="2" id="sp2">2×</button><button data-speed="4" id="sp4">4×</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- FUNCTION -->
+    <section class="panel fn" aria-labelledby="hFn">
+      <div class="ph"><span class="code">FN</span><h2 id="hFn">Điều hành giao hàng</h2><span class="ph-note">lệnh · quỹ đạo né · tải hàng</span></div>
+      <div class="scroll">
+        <div class="sec">
+          <h3>Lệnh bay</h3>
+          <div class="cmds">
+            <button class="cmd" data-cmd="ARM"><span class="cn">ARM</span><small>Khởi động tại Nhà máy</small></button>
+            <button class="cmd" data-cmd="DISARM"><span class="cn">DISARM</span><small>Tắt động cơ</small></button>
+            <button class="cmd" data-cmd="TAKEOFF"><span class="cn">TAKEOFF</span><small>Cất cánh tải hàng</small></button>
+            <button class="cmd" data-cmd="LAND"><span class="cn">LAND</span><small>Hạ cánh / Giao hàng</small></button>
+            <button class="cmd" data-cmd="HOLD"><span class="cn">HOLD</span><small>Treo giữ vị trí</small></button>
+            <button class="cmd" data-cmd="MANUAL"><span class="cn">MANUAL</span><small>Lái tay (có APF bảo vệ)</small></button>
+            <button class="cmd" data-cmd="MISSION"><span class="cn">MISSION</span><small>Bay giao hàng tự động</small></button>
+            <button class="cmd" data-cmd="RTL"><span class="cn">RTL</span><small>Về Nhà Máy (né tòa nhà)</small></button>
+            <button class="cmd kill" data-cmd="KILL" id="killBtn"><span class="cn">KILL</span><small id="killTxt">Ngắt động cơ khẩn cấp</small></button>
+          </div>
+          <div class="valid"><span>Hợp lệ lúc này:</span><span id="validFn" class="row"></span></div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-h"><h3>Kiện hàng &amp; Né vật cản (A* + APF)</h3><span class="chip chip-avoid" id="avoidBadge">A* ON</span></div>
+          <div class="field">
+            <label for="pCargo">Khối lượng kiện hàng</label><output id="oCargo"></output>
+            <input type="range" id="pCargo" min="0" max="3" step="0.25" value="1.5">
+          </div>
+          <label class="chk" style="margin-bottom:8px">
+            <input type="checkbox" id="pAutoAvoid" checked> Tự động sinh quỹ đạo né tòa nhà (A* + APF)
+          </label>
+          <label class="chk" style="margin-bottom:10px">
+            <input type="checkbox" id="pAutoDrop" checked> Tự động thả kiện hàng khi tới Trạm đích
+          </label>
+          <div class="field">
+            <label for="pSafe">Khoảng cách an toàn né tòa nhà</label><output id="oSafe"></output>
+            <input type="range" id="pSafe" min="2" max="8" step="0.5" value="4.5">
+          </div>
+          <div class="row" style="margin-top:6px">
+            <button class="btn tele" id="btnReplan">Tái lập quỹ đạo né ngay</button>
+            <button class="btn" id="btnReloadCargo">Nạp lại hàng (1.5 kg)</button>
+          </div>
+          <div class="planner-stat" id="plannerStat">
+            <span>Điểm đích: <b id="stDest">1</b></span>
+            <span>Điểm né A*: <b id="stAvoid">0</b></span>
+            <span>Đoạn bị chắn: <b id="stBlocked">0</b></span>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="sec-h"><h3>Tuyến giao hàng đô thị</h3><span class="sub" id="wpCount"></span></div>
+          <label class="chk"><input type="checkbox" id="wpMode" checked> Click mặt đất 3D để thêm điểm giao hàng</label>
+          <div class="field" style="margin-top:9px"><label for="pWpAlt">Độ cao hành trình đô thị</label><output id="oWpAlt"></output><input type="range" id="pWpAlt" min="8" max="36" step="1" value="12"></div>
+          <div class="row" style="margin-bottom:6px"><label for="pEnd" style="font-size:13px">Khi giao xong</label>
+            <select id="pEnd">
+              <option value="RTL" selected>Về Nhà Máy Sản Xuất (RTL)</option>
+              <option value="HOVER">Treo tại Trạm giao (HOVER)</option>
+              <option value="LAND">Hạ cánh tại Trạm (LAND)</option>
+            </select>
+          </div>
+          <div class="row" style="margin-bottom:6px">
+            <button class="btn primary" id="btnDemo">Chạy Demo Giao Hàng</button>
+            <button class="btn" id="btnHubA">Giao Hub A (Bắc)</button>
+            <button class="btn" id="btnHubB">Giao Hub B (Đông)</button>
+            <button class="btn" id="btnHubC">Giao Hub C (Nam)</button>
+            <button class="btn" id="btnMultiHub">Liên trạm A→B→C</button>
+            <button class="btn" id="btnClear">Xoá hết</button>
+          </div>
+          <div class="wp-wrap">
+            <table class="wp"><thead><tr><th>#</th><th>Loại</th><th>E (m)</th><th>N (m)</th><th>Cao</th><th><span style="position:absolute;left:-9999px">Xoá</span></th></tr></thead><tbody id="wpBody"></tbody></table>
+            <div class="wp-empty" id="wpEmpty" hidden>Chưa có điểm giao. Click mặt đất đô thị hoặc chọn một Trạm Giao Hàng (Hub A/B/C).</div>
+          </div>
+          <p class="note">Đường nét đứt đỏ là đường thẳng xuyên qua cao ốc bị cấm; đường xanh/cam là quỹ đạo tự động vòng qua hành lang đô thị an toàn.</p>
+        </div>
+
+        <div class="sec">
+          <h3>Tham số bay &amp; Lái tay</h3>
+          <div class="field"><label for="pTo">Độ cao cất cánh (Nhà máy)</label><output id="oTo"></output><input type="range" id="pTo" min="8" max="24" step="1" value="10"></div>
+          <div class="field"><label for="pRtl">Độ cao hành trình RTL</label><output id="oRtl"></output><input type="range" id="pRtl" min="8" max="40" step="1" value="14"></div>
+          <div class="field"><label for="pV">Tốc độ ngang tối đa</label><output id="oV"></output><input type="range" id="pV" min="3" max="14" step="0.5" value="8"></div>
+          <div class="keys" style="margin-top:8px">
+            <span><kbd>W</kbd> <kbd>S</kbd> / <kbd>A</kbd> <kbd>D</kbd></span><span>Tiến lùi / Sang trái phải</span>
+            <span><kbd>Q</kbd> <kbd>E</kbd> / <kbd>R</kbd> <kbd>F</kbd></span><span>Xoay mũi / Lên xuống</span>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h3>Gió đô thị &amp; Giả lập sự cố</h3>
+          <label class="chk" style="margin-bottom:10px"><input type="checkbox" id="pWindOn" checked> Bật gió luồn giữa các tòa nhà (hiển thị hướng gió)</label>
+          <div class="field"><label for="pWind">Tốc độ gió</label><output id="oWind"></output><input type="range" id="pWind" min="0" max="12" step="1" value="5"></div>
+          <div class="field"><label for="pWdir">Gió thổi từ hướng</label><output id="oWdir"></output><input type="range" id="pWdir" min="0" max="355" step="5" value="270"></div>
+          <div class="field"><label for="pGust">Giật</label><output id="oGust"></output><input type="range" id="pGust" min="0" max="60" step="5" value="30"></div>
+          <div class="field"><label for="pDrain">Hệ số xả pin</label><output id="oDrain"></output><input type="range" id="pDrain" min="1" max="20" step="1" value="5"></div>
+          <div class="row" style="margin-top:4px">
+            <button class="btn" id="btnLink" aria-pressed="false">Mô phỏng mất liên kết</button>
+            <button class="btn" id="btnReset">Đặt lại về Nhà máy</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3D -->
+    <section class="panel view" aria-labelledby="h3d">
+      <div class="ph"><span class="code">3D</span><h2 id="h3d">Đô thị &amp; Nhà máy sản xuất</h2>
+        <div class="seg" role="group" aria-label="Góc camera" id="camSeg" style="margin-left:auto">
+          <button data-cam="orbit" aria-pressed="true">Quỹ đạo</button><button data-cam="follow">Bám đuôi</button><button data-cam="top">Bản đồ quy hoạch</button>
+        </div>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="gl" aria-label="Cảnh 3D đô thị và nhà máy của drone chở hàng"></canvas>
+        <div class="ov ov-hint" id="hint">Kéo: xoay · cuộn: zoom · click mặt đất: đặt điểm giao hàng (tự động sinh quỹ đạo né cao ốc)</div>
+        <div class="ov ov-hud" id="hud">
+          <span>ALT</span><b id="hudAlt">0.0 m</b>
+          <span>GS</span><b id="hudGs">0.0 m/s</b>
+          <span>LIDAR</span><b id="hudObs">—</b>
+          <span>WP</span><b id="hudWp">—</b>
+        </div>
+        <div class="ov ov-wind" id="windHud" aria-label="Chỉ báo hướng gió trên màn hình">
+          <svg class="wind-dial" viewBox="0 0 56 56" aria-hidden="true">
+            <circle cx="28" cy="28" r="24" fill="var(--panel-2)" stroke="var(--line-2)" stroke-width="1.5"/>
+            <text x="28" y="10" text-anchor="middle" font-size="7.5" font-weight="700" fill="var(--fg)">N</text>
+            <text x="48" y="30.5" text-anchor="middle" font-size="7" fill="var(--muted)">E</text>
+            <text x="28" y="50" text-anchor="middle" font-size="7" fill="var(--muted)">S</text>
+            <text x="8" y="30.5" text-anchor="middle" font-size="7" fill="var(--muted)">W</text>
+            <g id="windArrowG" transform="translate(28,28) rotate(90)">
+              <line x1="0" y1="14" x2="0" y2="-13" stroke="var(--tele)" stroke-width="2.6" stroke-linecap="round"/>
+              <polygon points="0,-17 -4.5,-8 4.5,-8" fill="var(--accent)"/>
+              <line x1="-4" y1="11" x2="4" y2="11" stroke="var(--tele)" stroke-width="1.8"/>
+              <line x1="-3" y1="14" x2="3" y2="14" stroke="var(--tele)" stroke-width="1.8"/>
+            </g>
+          </svg>
+          <div class="wind-info">
+            <span class="wind-title">LUỒNG GIÓ ĐÔ THỊ</span>
+            <span class="wind-dir" id="windHudDir">Từ 270° (Tây) → Đông</span>
+            <span class="wind-sub" id="windHudSpd">5.0 m/s · giật 30%</span>
+            <span class="wind-sub" id="windHudLim">Drone chịu được ~18.6 m/s</span>
+          </div>
+        </div>
+        <div class="ov ov-banner" id="banner" hidden></div>
+        <div class="ov ov-err" id="glErr" hidden>Trình duyệt không khởi tạo được WebGL nên cảnh 3D không hiển thị. Mô phỏng, dashboard và máy trạng thái vẫn chạy bình thường.</div>
+        <div class="stick stick-l" id="stickL" role="application" aria-label="Cần trái: ga lên xuống, xoay mũi"><span class="stick-lab">GA · XOAY</span><span class="knob"></span></div>
+        <div class="stick stick-r" id="stickR" role="application" aria-label="Cần phải: tiến lùi, sang ngang"><span class="stick-lab">TIẾN · NGANG</span><span class="knob"></span></div>
+      </div>
+      <div class="view-foot">
+        <label class="chk"><input type="checkbox" id="optTrail" checked> Vệt bay</label>
+        <label class="chk"><input type="checkbox" id="optLidar" checked> Tia Lidar &amp; Vùng đệm</label>
+        <label class="chk"><input type="checkbox" id="optSp" checked> Điểm đặt</label>
+        <button class="linkbtn" id="clearTrail">Xoá vệt</button>
+        <span class="sub">Home (0,0) = NHÀ MÁY · Hub A/B/C = Trạm nhận hàng</span>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section class="panel dash" aria-labelledby="hDash">
+      <div class="ph"><span class="code">TLM</span><h2 id="hDash">Telemetry Giao Hàng</h2><span class="ph-note">ENU · Nhà Máy = (0,0,0)</span></div>
+      <div class="scroll">
+        <div class="sec">
+          <div class="ro-grid">
+            <div class="ro"><span class="ro-k">ALT</span><span class="ro-v"><b id="roAlt">0.0</b><i>m</i></span></div>
+            <div class="ro"><span class="ro-k">V/S</span><span class="ro-v"><b id="roVs">0.0</b><i>m/s</i></span></div>
+            <div class="ro"><span class="ro-k">GS</span><span class="ro-v"><b id="roGs">0.0</b><i>m/s</i></span></div>
+            <div class="ro"><span class="ro-k">HDG</span><span class="ro-v"><b id="roHdg">090</b><i>°</i></span></div>
+            <div class="ro"><span class="ro-k">NHÀ MÁY</span><span class="ro-v"><b id="roHome">0.0</b><i>m</i></span></div>
+            <div class="ro"><span class="ro-k">VẬT CẢN</span><span class="ro-v"><b id="roObs">14.0</b><i>m</i></span></div>
+          </div>
+        </div>
+        <div class="sec">
+          <h3>Tư thế &amp; Tải trọng</h3>
+          <div class="att">
+            <canvas id="adi" class="adi" role="img" aria-label="Đồng hồ chân trời nhân tạo"></canvas>
+            <dl class="kv">
+              <div><dt>Roll φ</dt><dd><b id="kvRoll">0.0°</b><span class="sub" id="kvRollSp">đặt 0.0°</span></dd></div>
+              <div><dt>Pitch θ</dt><dd><b id="kvPitch">0.0°</b><span class="sub" id="kvPitchSp">đặt 0.0°</span></dd></div>
+              <div><dt>Tổng khối lượng</dt><dd><b id="kvMass">3.90 kg</b><span class="sub" id="kvCargoSub">hàng 1.5 kg</span></dd></div>
+              <div><dt>Lực đẩy tổng</dt><dd><b id="kvT">0.0 N</b><span class="sub" id="kvTW">T/W 0.00</span></dd></div>
+            </dl>
+          </div>
+          <canvas id="tape" class="tape" role="img" aria-label="Băng hướng mũi"></canvas>
+        </div>
+        <div class="sec">
+          <div class="sec-h"><h3>Pin 6S Heavy-Lift</h3><span class="big" id="batPct">100%</span></div>
+          <div class="batbar" id="batBar"><span id="batFill"></span><i style="left:15%"></i><i style="left:25%"></i></div>
+          <div class="batlegend"><span style="left:15%">FS 15</span><span style="left:25%;transform:translateX(-10%)">cảnh báo 25</span></div>
+          <dl class="kv kv-grid">
+            <div><dt>Điện áp</dt><dd id="batV">25.20 V</dd></div>
+            <div><dt>Mỗi cell</dt><dd id="batCell">4.20 V</dd></div>
+            <div><dt>Dòng</dt><dd id="batI">0.0 A</dd></div>
+            <div><dt>Đã dùng</dt><dd id="batUsed">0 mAh</dd></div>
+            <div><dt>Còn ~</dt><dd id="batRem">—</dd></div>
+            <div><dt>Thời bay</dt><dd id="batFt">00:00</dd></div>
+          </dl>
+        </div>
+        <div class="sec">
+          <div class="sec-h"><h3>Động cơ tải nặng</h3><span class="sub">quad X · 4 × 22 N max</span></div>
+          <div class="mot">
+            <div class="m" id="m3"><div class="m-h"><b>M3</b><span>FL · CW</span></div><div class="m-bar"><span></span></div><div class="m-v"><b>0</b> rpm · <span>0</span>%</div></div>
+            <svg class="mot-ic" viewBox="0 0 54 84" aria-hidden="true"><path d="M27 4l5 8h-10z" fill="var(--accent)"/><g stroke="var(--line-2)" stroke-width="2"><path d="M12 28L42 70M42 28L12 70"/></g><rect x="18" y="40" width="18" height="18" rx="2" fill="var(--accent)" stroke="var(--line-2)"/><g fill="none" stroke="var(--muted)" stroke-width="1.4"><circle cx="11" cy="27" r="8"/><circle cx="43" cy="27" r="8"/><circle cx="11" cy="71" r="8"/><circle cx="43" cy="71" r="8"/></g><g font-family="JetBrains Mono, monospace" font-size="8" fill="var(--muted)" text-anchor="middle"><text x="11" y="30">3</text><text x="43" y="30">1</text><text x="11" y="74">2</text><text x="43" y="74">4</text></g></svg>
+            <div class="m" id="m1"><div class="m-h"><b>M1</b><span>FR · CCW</span></div><div class="m-bar"><span></span></div><div class="m-v"><b>0</b> rpm · <span>0</span>%</div></div>
+            <div class="m" id="m2"><div class="m-h"><b>M2</b><span>RL · CCW</span></div><div class="m-bar"><span></span></div><div class="m-v"><b>0</b> rpm · <span>0</span>%</div></div>
+            <div class="m" id="m4"><div class="m-h"><b>M4</b><span>RR · CW</span></div><div class="m-bar"><span></span></div><div class="m-v"><b>0</b> rpm · <span>0</span>%</div></div>
+          </div>
+        </div>
+        <div class="sec">
+          <div class="sec-h"><h3>30 giây gần nhất</h3>
+            <div class="seg" role="group" aria-label="Chọn biểu đồ" id="chartSeg"><button data-ch="alt" aria-pressed="true">Độ cao</button><button data-ch="spd">Tốc độ</button><button data-ch="att">Góc</button></div>
+          </div>
+          <div class="legend" id="legend"></div>
+          <canvas id="chart" class="chart" role="img" aria-label="Biểu đồ telemetry"></canvas>
+        </div>
+        <div class="sec">
+          <h3>Bộ điều khiển &amp; Dẫn đường né</h3>
+          <table class="ctl">
+            <thead><tr><th></th><th>E</th><th>N</th><th>U</th></tr></thead>
+            <tbody>
+              <tr><th>Vị trí đặt</th><td id="cSpE">—</td><td id="cSpN">—</td><td id="cSpU">—</td></tr>
+              <tr><th>Vị trí thật</th><td id="cPE">0.0</td><td id="cPN">0.0</td><td id="cPU">0.0</td></tr>
+              <tr><th>Vận tốc đặt</th><td id="cVE">—</td><td id="cVN">—</td><td id="cVU">—</td></tr>
+            </tbody>
+          </table>
+          <p class="note">Bộ lập kế hoạch A* tìm đường vòng qua các tòa nhà cao hơn độ cao bay + kết hợp trường lực đẩy APF thời gian thực từ cảm biến Lidar 360°.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATE -->
+    <section class="panel sm" aria-labelledby="hSm">
+      <div class="ph"><span class="code">SM</span><h2 id="hSm">Máy trạng thái</h2><span class="ph-note">10 trạng thái · tự động né cao ốc khi MISSION, RTL và FAILSAFE</span></div>
+      <div class="sm-body">
+        <div class="sm-dia">
+          <div class="sm-scroll"><svg id="smSvg" viewBox="0 0 1020 340" role="img" aria-label="Sơ đồ máy trạng thái của drone giao hàng"></svg></div>
+          <p class="note">Ô cam là trạng thái hiện tại, viền đứt là trạng thái ngay trước, mũi tên sáng là lần chuyển gần nhất. Khi vào RTL hoặc FAILSAFE trong đô thị, drone tự động sinh quỹ đạo né các tòa nhà cao tầng để quay về Nhà Máy Sản Xuất.</p>
+        </div>
+        <div class="sm-side">
+          <div class="sm-card">
+            <div class="sm-cur"><span class="pill s-idle" id="smPill">DISARMED</span><span class="sm-t" id="smTime">0.0 s</span></div>
+            <p id="smDesc"></p>
+            <div class="sm-prev" id="smPrev">Chưa có chuyển trạng thái.</div>
+            <div class="valid"><span>Lệnh hợp lệ:</span><span id="validSm" class="row"></span></div>
+          </div>
+          <div>
+            <h3>Nhật ký điều hành &amp; Cảm biến</h3>
+            <ol class="log" id="log" aria-live="polite"></ol>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script id="sim-core">
+/* ===== Urban Cargo Drone Simulation Core:
+   Heavy-lift 6S dynamics, cascaded PID, 2.5D A* obstacle-avoidance trajectory planner,
+   real-time Lidar + Artificial Potential Field (APF), and urban obstacle database ===== */
+var Sim = (function(){
+  const P = {
+    mBase: 2.4, cargoMass: 1.5, m: 3.9, g: 9.81, L: 0.40,
+    Ixx: 0.048, Iyy: 0.048, Izz: 0.082,
+    fMax: 22.0, fIdle: 0.9, fMin: 0.35,
+    km: 0.022, tauM: 0.04, kd: 0.55, kq: 0.045,
+    rpmMax: 9200, capacity: 12000, cells: 6, rPack: 0.014, fenceAlt: 65,
+    rDrone: 0.6
+  };
+  P.d = P.L / Math.SQRT2;
+
+  const K = {
+    pXY: 1.05, pZ: 1.45, vXY: 2.5, iXY: 0.7, vZ: 4.2, iZ: 1.3,
+    att: 78, attD: 14, yaw: 7.0, yawD: 4.5,
+    tilt: 34 * Math.PI / 180, aXY: 6.8, iMax: [9, 9, 3.5]
+  };
+
+  const MOT = [
+    { name:'M1', pos:'FR', x: P.d, y:-P.d, s:-1 },
+    { name:'M2', pos:'RL', x:-P.d, y: P.d, s:-1 },
+    { name:'M3', pos:'FL', x: P.d, y: P.d, s: 1 },
+    { name:'M4', pos:'RR', x:-P.d, y:-P.d, s: 1 },
+  ];
+
+  const AIR = ['TAKEOFF','HOVER','MANUAL','MISSION','RTL','LANDING','FAILSAFE'];
+  const FLYING_CMD = ['TAKEOFF','HOVER','MANUAL','MISSION','RTL'];
+
+  const params = {
+    takeoffAlt: 10, rtlAlt: 14, vMax: 8, missionAlt: 12, missionEnd: 'RTL',
+    cargoMass: 1.5, autoAvoid: true, autoDrop: true, safeMargin: 4.5,
+    windOn: true, windSpeed: 5, windDir: 270, gust: 0.3, drain: 5, linkLost: false
+  };
+
+  // Delivery Hubs in the urban environment
+  const HUBS = {
+    A: { code:'A', name:'Hub A (Chung Cư Bắc)', e: 6,   n: 54,  u: 12 },
+    B: { code:'B', name:'Hub B (TTTM Đông)',    e: 56,  n: 10,  u: 12 },
+    C: { code:'C', name:'Hub C (Bệnh Viện Nam)',e: -46, n: -48, u: 12 }
+  };
+
+  // Urban + Factory Obstacles: { id, name, e (center East), n (center North), rx (half-width E), ry (half-depth N), h (height Up), kind }
+  // Carefully laid out around Factory (0,0) and along corridors to Hubs A, B, C so straight paths intersect buildings!
+  const obstacles = [
+    // Manufacturing Factory structures near Home (0,0) - leaving (0,0) launch pad wide open
+    { id:'F1', name:'Xưởng Lắp Ráp Chính', e:-13, n: 2,   rx:5.5, ry:8.5, h:11, kind:'factory' },
+    { id:'F2', name:'Kho Linh Kiện Bắc',   e:-12, n: 15,  rx:5.0, ry:3.5, h:8.5, kind:'factory' },
+    { id:'F3', name:'Trạm Năng Lượng & Silo', e: -4, n:-12, rx:3.5, ry:3.5, h:19, kind:'silo' },
+
+    // Inner ring urban buildings (blocking direct straight lines from (0,0) to Hub A, Hub B, Hub C)
+    { id:'B1', name:'Tháp Văn Phòng Bắc 1', e: 3,   n: 21,  rx:5.0, ry:4.5, h:28, kind:'tower' },
+    { id:'B2', name:'Cao Ốc Thương Mại B2', e: 16,  n: 25,  rx:4.5, ry:4.5, h:22, kind:'office' },
+    { id:'B3', name:'Tòa Nhà Viễn Thông',   e:-9,   n: 32,  rx:4.5, ry:4.5, h:31, kind:'tower' },
+    { id:'B4', name:'Chung Cư Xanh B4',     e: 8,   n: 38,  rx:5.5, ry:4.0, h:25, kind:'apart' },
+    { id:'B5', name:'Cao Ốc Đông B5',       e: 22,  n: 4,   rx:4.5, ry:5.5, h:27, kind:'tower' },
+    { id:'B6', name:'Tòa Nhà Tài Chính B6', e: 37,  n: 9,   rx:5.0, ry:4.5, h:34, kind:'tower' },
+    { id:'B7', name:'Khu Phức Hợp Đông Bắc',e: 34,  n: 26,  rx:5.5, ry:5.0, h:24, kind:'office' },
+    { id:'B8', name:'Khách Sạn Đô Thị B8',  e: 48,  n:-6,   rx:4.5, ry:4.5, h:26, kind:'apart' },
+    { id:'B9', name:'Cao Ốc Nam B9',        e:-18,  n:-19,  rx:5.0, ry:4.5, h:26, kind:'tower' },
+    { id:'B10',name:'Trung Tâm Dữ Liệu B10',e:-31,  n:-33,  rx:5.5, ry:4.5, h:30, kind:'office' },
+    { id:'B11',name:'Chung Cư Nam B11',     e:-8,   n:-36,  rx:4.5, ry:5.0, h:23, kind:'apart' },
+    { id:'B12',name:'Tháp Đôi Tây Nam',     e:-34,  n:-12,  rx:4.5, ry:5.5, h:29, kind:'tower' },
+    { id:'B13',name:'Cao Ốc Tây Bắc B13',   e:-28,  n: 18,  rx:5.0, ry:5.0, h:24, kind:'apart' },
+    { id:'B14',name:'Tòa Nhà Công Nghệ B14',e: 18,  n:-20,  rx:5.5, ry:4.5, h:28, kind:'office' },
+    { id:'B15',name:'Tháp Nam Sài Gòn B15', e: 36,  n:-32,  rx:5.0, ry:5.0, h:32, kind:'tower' },
+    { id:'B16',name:'Chung Cư Bắc B16',     e:-16,  n: 50,  rx:4.5, ry:4.5, h:22, kind:'apart' },
+    { id:'B17',name:'Cao Ốc Đông Bắc B17',  e: 24,  n: 48,  rx:4.5, ry:4.5, h:26, kind:'office' },
+    { id:'B18',name:'Tháp Thương Mại B18',  e: 56,  n: 30,  rx:5.0, ry:4.5, h:30, kind:'tower' },
+    { id:'B19',name:'Khu Y Tế Cao Tầng B19',e:-24,  n:-52,  rx:4.5, ry:4.5, h:21, kind:'apart' }
+  ];
+
+  // Primary destinations requested by user/presets vs full expanded mission (with A* avoidance waypoints)
+  let destinations = [ { e: HUBS.A.e, n: HUBS.A.n, u: 12, label: 'Hub A' } ];
+  const mission = [];
+  const blockedSegments = []; // [{ from:[e,n,u], to:[e,n,u], hitName }]
+  let rtlPath = [];
+  let rtlIdx = 0;
+  let missionStart = null;
+
+  const sticks = { thr:0, yaw:0, pitch:0, roll:0 };
+  const listeners = [];
+  const clamp = (x,a,b) => x<a?a:x>b?b:x;
+  const wrap = a => { while (a > Math.PI) a -= 2*Math.PI; while (a < -Math.PI) a += 2*Math.PI; return a; };
+  let S;
+
+  function syncMass(){
+    P.cargoMass = clamp(params.cargoMass, 0, 3.5);
+    P.m = P.mBase + P.cargoMass;
+  }
+
+  function fresh(){
+    syncMass();
+    return {
+      t:0, pos:[0,0,0], vel:[0,0,0], acc:[0,0,0], att:[0,0,Math.PI/2], rate:[0,0,0],
+      f:[0,0,0,0], fCmd:[0,0,0,0], rpm:[0,0,0,0], T:0, Tcmd:0,
+      soc:1, mAh:0, I:0, V:25.2,
+      state:'DISARMED', prevState:null, lastReason:'', stateT:0, armT:0, flightT:0,
+      integ:[0,0,0], grounded:true, impact:0,
+      sp:null, tgtAtt:[0,0], hold:[0,0,0], yawSp:Math.PI/2, toXY:[0,0], landXY:[0,0],
+      rtlPhase:'climb', rtlAlt:14, wpIdx:0, touchT:0, braking:false,
+      windNow:[0,0,0], flags:{ low:false }, fsReason:'',
+      minObsDist: 12.0, nearObsName: '', hitObs: null, lidarRays: [], lidarT: -1, apfVec: [0,0], cargoDelivered: false,
+      destDone: 0, legFrom: null, dwell: 0, rtlVer: 0, windWarnT: -99
+    };
+  }
+  S = fresh();
+
+  function on(fn){ listeners.push(fn); }
+  function emit(ev){ ev.t = S.t; for (const f of listeners) f(ev); }
+
+  /* ===== Geometry & 2.5D A* Obstacle-Avoidance Trajectory Planner ===== */
+  // A building matters at altitude u while u is below its roof + 1.5 m.
+  const relevant = (o, u) => u < o.h + 1.5;
+  const HARD_CLEAR = 1.6;   // m: grid cells closer than this to a facade are impassable
+
+  function pointInObs(e, n, u, margin){
+    for (let i = 0; i < obstacles.length; i++){
+      const o = obstacles[i];
+      if (relevant(o, u) && Math.abs(e - o.e) < o.rx + margin && Math.abs(n - o.n) < o.ry + margin) return o;
+    }
+    return null;
+  }
+
+  // Horizontal distance from (e,n) to the nearest facade of a building taller than altitude u (0 = inside)
+  function clearanceAt(e, n, u){
+    let best = 999, who = null;
+    for (let i = 0; i < obstacles.length; i++){
+      const o = obstacles[i];
+      if (!relevant(o, u)) continue;
+      const dx = Math.max(0, Math.abs(e - o.e) - o.rx), dy = Math.max(0, Math.abs(n - o.n) - o.ry);
+      const d = Math.hypot(dx, dy);
+      if (d < best){ best = d; who = o; }
+    }
+    return { d: best, o: who };
+  }
+
+  // Move a target that lies inside (or too close to) a building to the nearest spot clear of every building
+  function sanitizePoint(e, n, u, margin){
+    const hit = pointInObs(e, n, u, margin);
+    if (!hit) return { e, n, u, adjusted: false };
+    for (let r = 0.5; r <= 60; r += 0.5){
+      const steps = Math.max(12, Math.ceil(2 * Math.PI * r / 0.5));
+      for (let k = 0; k < steps; k++){
+        const a = k / steps * 2 * Math.PI;
+        const ce = Math.round((e + r * Math.cos(a)) * 2) / 2, cn = Math.round((n + r * Math.sin(a)) * 2) / 2;
+        if (!pointInObs(ce, cn, u, margin + 0.5)) return { e: ce, n: cn, u, adjusted: true, hitName: hit.name };
+      }
+    }
+    return { e, n, u, adjusted: false };
+  }
+
+  // Does the straight segment pass within `margin` of a building taller than the flight altitude?
+  function segmentHitsObstacle(e1, n1, u1, e2, n2, u2, margin){
+    const dist = Math.hypot(e2 - e1, n2 - n1);
+    const steps = Math.max(8, Math.ceil(dist / 0.8));
+    const u = Math.min(u1, u2);
+    for (let s = 1; s < steps; s++){
+      const t = s / steps;
+      const hit = pointInObs(e1 + (e2 - e1) * t, n1 + (n2 - n1) * t, u, margin);
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  // True when every point of segment a→b keeps at least `need` metres from facades
+  function segmentClear(a, b, u, need){
+    const dist = Math.hypot(b.e - a.e, b.n - a.n);
+    const steps = Math.max(2, Math.ceil(dist / 0.5));
+    for (let s = 0; s <= steps; s++){
+      const t = s / steps;
+      if (clearanceAt(a.e + (b.e - a.e) * t, a.n + (b.n - a.n) * t, u).d < need) return false;
+    }
+    return true;
+  }
+
+  // Minimal binary heap keyed by f-score for the A* open set
+  function Heap(){ this.k = []; this.f = []; }
+  Heap.prototype.push = function(key, f){
+    const K = this.k, F = this.f; let i = K.length; K.push(key); F.push(f);
+    while (i > 0){ const p = (i - 1) >> 1; if (F[p] <= f) break; K[i] = K[p]; F[i] = F[p]; i = p; }
+    K[i] = key; F[i] = f;
+  };
+  Heap.prototype.pop = function(){
+    const K = this.k, F = this.f, top = K[0], lk = K.pop(), lf = F.pop(), n = K.length;
+    if (n){
+      let i = 0;
+      for (;;){
+        let c = 2*i + 1; if (c >= n) break;
+        if (c + 1 < n && F[c + 1] < F[c]) c++;
+        if (F[c] >= lf) break;
+        K[i] = K[c]; F[i] = F[c]; i = c;
+      }
+      K[i] = lk; F[i] = lf;
+    }
+    return top;
+  };
+
+  // 2D A* on a 2 m grid over −84…+84 m. Cells next to facades are impassable; cells inside the
+  // safety margin are allowed but expensive, so routes keep to street centrelines yet can still
+  // reach a hub that sits close to a building. Line-of-sight pruning then keeps only the corners.
+  function planSegmentAStar(p1, p2, margin){
+    const uF = Math.min(p1.u, p2.u);
+    const directHit = segmentHitsObstacle(p1.e, p1.n, uF, p2.e, p2.n, uF, margin);
+    if (!directHit) return { points: [], blockedBy: null };
+
+    const STEP = 2.0, HALF = 42, NG = 85;
+    const toG = v => clamp(Math.round(v / STEP) + HALF, 0, NG - 1);
+    const toW = g => (g - HALF) * STEP;
+    const key = (x, y) => y * NG + x;
+    const sx = toG(p1.e), sy = toG(p1.n), gx = toG(p2.e), gy = toG(p2.n);
+    const startK = key(sx, sy), goalK = key(gx, gy);
+
+    const pen = new Float32Array(NG * NG);
+    for (let y = 0; y < NG; y++){
+      const wn = toW(y);
+      for (let x = 0; x < NG; x++){
+        const c = clearanceAt(toW(x), wn, uF).d;
+        pen[key(x, y)] = c < HARD_CLEAR ? Infinity : c < margin ? 12 + 24 * (margin - c) / margin : c < margin + 2 ? 0.15 : 0;
+      }
+    }
+    pen[startK] = 0; pen[goalK] = 0;
+
+    const g = new Float32Array(NG * NG).fill(Infinity);
+    const parent = new Int32Array(NG * NG).fill(-1);
+    const closed = new Uint8Array(NG * NG);
+    const H = (x, y) => { const dx = Math.abs(x - gx), dy = Math.abs(y - gy); return Math.max(dx, dy) + 0.414 * Math.min(dx, dy); };
+    const DIRS = [[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,1.414],[1,-1,1.414],[-1,1,1.414],[-1,-1,1.414]];
+    const open = new Heap();
+    g[startK] = 0; open.push(startK, H(sx, sy));
+    let found = false;
+    while (open.k.length){
+      const cur = open.pop();
+      if (closed[cur]) continue;
+      if (cur === goalK){ found = true; break; }
+      closed[cur] = 1;
+      const cx = cur % NG, cy = (cur / NG) | 0;
+      for (let d = 0; d < 8; d++){
+        const dx = DIRS[d][0], dy = DIRS[d][1], nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || ny < 0 || nx >= NG || ny >= NG) continue;
+        const nk = key(nx, ny);
+        if (closed[nk] || pen[nk] === Infinity) continue;
+        if (dx && dy && (pen[key(cx + dx, cy)] === Infinity || pen[key(cx, cy + dy)] === Infinity)) continue;
+        const ng = g[cur] + DIRS[d][2] * (1 + pen[nk]);
+        if (ng < g[nk]){ g[nk] = ng; parent[nk] = cur; open.push(nk, ng + H(nx, ny)); }
+      }
+    }
+
+    if (!found){
+      // Boxed in horizontally: climb straight up above the tallest building on the line, cross, then descend at the target
+      let top = directHit.h;
+      const steps = Math.max(8, Math.ceil(Math.hypot(p2.e - p1.e, p2.n - p1.n) / 0.8));
+      for (let s = 0; s <= steps; s++){
+        const t = s / steps, o = pointInObs(p1.e + (p2.e - p1.e) * t, p1.n + (p2.n - p1.n) * t, uF, margin);
+        if (o && o.h > top) top = o.h;
+      }
+      const safeAlt = Math.min(P.fenceAlt - 2, Math.ceil(top + 4));
+      return {
+        points: [
+          { e: p1.e, n: p1.n, u: safeAlt, kind:'avoid', label:'Leo vượt' },
+          { e: p2.e, n: p2.n, u: safeAlt, kind:'avoid', label:'Vượt đỉnh' }
+        ],
+        blockedBy: directHit.name, climb: true
+      };
+    }
+
+    // Raw grid path, start → goal, with exact end points
+    const raw = [];
+    for (let c = goalK; c !== -1 && c !== startK; c = parent[c]) raw.push({ e: toW(c % NG), n: toW((c / NG) | 0) });
+    raw.reverse();
+    raw.unshift({ e: p1.e, n: p1.n });
+    if (raw.length < 2) return { points: [], blockedBy: directHit.name };
+    raw[raw.length - 1] = { e: p2.e, n: p2.n };
+
+    // Line-of-sight pruning: a shortcut may never come closer to a facade than the grid path does on that stretch
+    const clr = raw.map(p => clearanceAt(p.e, p.n, uF).d);
+    const cum = [0];
+    for (let i = 1; i < raw.length; i++) cum.push(cum[i - 1] + Math.hypot(raw[i].e - raw[i - 1].e, raw[i].n - raw[i - 1].n));
+    const total = cum[cum.length - 1] || 1;
+    const points = [];
+    let i = 0;
+    while (i < raw.length - 1){
+      const run = [clr[i]];
+      for (let k = i + 1; k < raw.length; k++) run.push(Math.min(run[run.length - 1], clr[k]));
+      let best = i + 1;
+      for (let k = raw.length - 1; k > i + 1; k--){
+        const need = Math.min(margin - 0.3, run[k - i]) - 0.1;
+        if (segmentClear(raw[i], raw[k], uF, need)){ best = k; break; }
+      }
+      if (best < raw.length - 1){
+        const r = cum[best] / total;
+        points.push({
+          e: Math.round(raw[best].e * 2) / 2, n: Math.round(raw[best].n * 2) / 2,
+          u: Math.round((p1.u + (p2.u - p1.u) * r) * 2) / 2, kind: 'avoid', label: 'Né tòa nhà'
+        });
+      }
+      i = best;
+    }
+    return { points, blockedBy: directHit.name };
+  }
+
+  // Rebuild the delivery trajectory from the drone's position through the destinations not yet served
+  function rebuildTrajectory(silent){
+    mission.length = 0;
+    blockedSegments.length = 0;
+    S.wpIdx = 0;
+    const from0 = Math.min(S.destDone || 0, destinations.length);
+    if (from0 >= destinations.length){ missionStart = null; return { destCount: destinations.length, avoidCount: 0, blockedCount: 0 }; }
+
+    const airborne = !S.grounded && S.pos[2] > 1.5;
+    const startPt = {
+      e: S.pos[0], n: S.pos[1],
+      u: airborne ? Math.max(S.pos[2], params.takeoffAlt) : Math.max(params.takeoffAlt, destinations[from0].u)
+    };
+    missionStart = startPt;
+    S.legFrom = airborne ? { e: S.pos[0], n: S.pos[1], u: S.pos[2] } : { e: startPt.e, n: startPt.n, u: startPt.u };
+
+    let prev = startPt;
+    let avoidCount = 0;
+    for (let i = from0; i < destinations.length; i++){
+      const rawDest = destinations[i];
+      const clean = sanitizePoint(rawDest.e, rawDest.n, rawDest.u, params.safeMargin * 0.7);
+      if (clean.adjusted){
+        rawDest.e = clean.e; rawDest.n = clean.n;
+        if (!silent) emit({ type:'info', msg:'Điểm giao trùng vào ' + clean.hitName + ', đã dịch ra rìa an toàn (' + clean.e + ', ' + clean.n + ')' });
+      }
+      const target = { e: rawDest.e, n: rawDest.n, u: rawDest.u, kind: 'dest', destIdx: i, label: rawDest.label || ('Đích ' + (i + 1)) };
+
+      if (params.autoAvoid){
+        const res = planSegmentAStar(prev, target, params.safeMargin);
+        if (res.blockedBy) blockedSegments.push({ from:[prev.e, prev.n, prev.u], to:[target.e, target.n, target.u], hitName: res.blockedBy });
+        for (let k = 0; k < res.points.length; k++){ mission.push(res.points[k]); avoidCount++; }
+      } else {
+        const hit = segmentHitsObstacle(prev.e, prev.n, prev.u, target.e, target.n, target.u, 1.5);
+        if (hit) blockedSegments.push({ from:[prev.e, prev.n, prev.u], to:[target.e, target.n, target.u], hitName: hit.name });
+      }
+      mission.push(target);
+      prev = target;
+    }
+    return { destCount: destinations.length, avoidCount, blockedCount: blockedSegments.length };
+  }
+
+  // Safe RTL path from the current position back to the Factory pad (0,0)
+  function buildRtlPath(){
+    const uRtl = S.rtlAlt;
+    const start = { e: S.pos[0], n: S.pos[1], u: uRtl };
+    const home = { e: 0, n: 0, u: uRtl };
+    rtlPath = [];
+    if (params.autoAvoid && Math.hypot(start.e, start.n) > 3){
+      const res = planSegmentAStar(start, home, params.safeMargin);
+      for (let i = 0; i < res.points.length; i++) rtlPath.push({ e: res.points[i].e, n: res.points[i].n, u: Math.max(uRtl, res.points[i].u) });
+      if (res.points.length) emit({ type:'info', msg:'RTL tự động sinh ' + res.points.length + ' điểm né cao ốc về Nhà máy' });
+    }
+    rtlPath.push(home);
+    rtlIdx = 0;
+    S.rtlVer = (S.rtlVer || 0) + 1;
+  }
+
+  /* ===== Path following: track the straight leg A→B, slowing in time for the turn onto B→C ===== */
+  const A_BRAKE = 2.4;   // m/s² planned deceleration (kept well below the tilt limit to leave room for wind)
+  const K_XT = 1.1;      // 1/s cross-track correction gain
+  const TURN_ACC = 3.0, CORNER_DEV = 1.0;   // m/s², m: lateral budget for each corner
+  function trackLeg(A, B, C, vCap, stopAtB){
+    const p = S.pos;
+    let ux = B.e - A.e, uy = B.n - A.n;
+    const L = Math.hypot(ux, uy), toB = Math.hypot(B.e - p[0], B.n - p[1]);
+    let along = 0, xt = 0, remain;
+    if (L < 0.5){
+      if (toB > 0.05){ ux = (B.e - p[0]) / toB; uy = (B.n - p[1]) / toB; } else { ux = Math.cos(S.att[2]); uy = Math.sin(S.att[2]); }
+      remain = toB;
+    } else {
+      ux /= L; uy /= L;
+      const rx = p[0] - A.e, ry = p[1] - A.n;
+      along = rx*ux + ry*uy; xt = -uy*rx + ux*ry;
+      remain = Math.max(0, L - along);
+    }
+    // Corner speed: the velocity component across the next leg, v·sinθ, must be cancelled within
+    // CORNER_DEV metres at TURN_ACC, so v ≤ √(2·a·δ)/sinθ; reversals slow towards a stop.
+    let vEnd = 0;
+    if (!stopAtB && C){
+      const cx = C.e - B.e, cy = C.n - B.n, cl = Math.hypot(cx, cy);
+      if (cl > 0.5){
+        const cosT = clamp((cx*ux + cy*uy) / cl, -1, 1), sinT = Math.sqrt(1 - cosT*cosT);
+        const vTurn = Math.sqrt(2 * TURN_ACC * CORNER_DEV);
+        vEnd = cosT >= 0 ? Math.min(vCap, vTurn / Math.max(sinT, 1e-3)) : vTurn * (1 + cosT);
+      }
+    }
+    let vAlong = Math.min(vCap, Math.sqrt(vEnd*vEnd + 2*A_BRAKE*remain));
+    if (stopAtB || !C) vAlong = Math.min(vAlong, 0.9*remain + 0.15);
+    const vX = clamp(-K_XT*xt, -3, 3);
+    const frac = L < 0.5 ? 1 : clamp(along / L, 0, 1);
+    return {
+      vxy: [ux*vAlong - uy*vX + S.apfVec[0], uy*vAlong + ux*vX + S.apfVec[1]],
+      z: A.u + (B.u - A.u) * frac, toB, remain, xt, L, heading: Math.atan2(uy, ux)
+    };
+  }
+  const legPassed = tr => tr.L >= 0.5 && tr.remain < 0.2 && Math.abs(tr.xt) < 4;
+
+  // Strongest steady wind the drone can hold position against: drag at max tilt = m·g·tan(tilt)
+  function windLimit(){
+    const F = P.m * P.g * Math.tan(K.tilt);
+    return (-P.kd + Math.sqrt(P.kd*P.kd + 4*P.kq*F)) / (2*P.kq);
+  }
+
+  // Real-time 360° Lidar (8 rays) + Artificial Potential Field (APF) repulsion + collision test
+  function updateLidarAndAPF(){
+    const e = S.pos[0], n = S.pos[1], u = S.pos[2];
+    let minD = 99.0, nearName = '', hit = null;
+    let repE = 0, repN = 0;
+    const influence = params.safeMargin + 3.5;
+
+    for (let i = 0; i < obstacles.length; i++){
+      const o = obstacles[i];
+      const dx = Math.max(0, Math.abs(e - o.e) - o.rx);
+      const dy = Math.max(0, Math.abs(n - o.n) - o.ry);
+      const dHoriz = Math.hypot(dx, dy);
+      // Frame + propeller tips reach ~0.6 m from the centre; skids sit just under the body
+      if (u < o.h + 0.15 && dHoriz < P.rDrone) hit = o;
+      if (u < o.h + 1.2){
+        if (dHoriz < minD){ minD = dHoriz; nearName = o.name; }
+        if (params.autoAvoid && dHoriz < influence && dHoriz > 0.05 && !S.grounded){
+          // Repulsive velocity away from the nearest point of the facade: ~0.6 m/s at the margin, ~3.3 m/s at 1.5 m
+          const cx = clamp(e, o.e - o.rx, o.e + o.rx), cy = clamp(n, o.n - o.ry, o.n + o.ry);
+          let vx = e - cx, vy = n - cy;
+          const vn = Math.hypot(vx, vy) || 1;
+          const strength = clamp(6.0 * (1 / dHoriz - 1 / influence), 0, 4.5);
+          repE += vx / vn * strength;
+          repN += vy / vn * strength;
+        }
+      }
+    }
+    S.minObsDist = minD;
+    S.nearObsName = nearName;
+    S.hitObs = hit;
+    S.apfVec = [clamp(repE, -5, 5), clamp(repN, -5, 5)];
+
+    // 8 Lidar rays around the drone in world ENU (scan at 25 Hz is plenty for display)
+    if (S.t - (S.lidarT || -1) < 0.04) return;
+    S.lidarT = S.t;
+    const MAX_RAY = 18.0;
+    const rays = [];
+    for (let r = 0; r < 8; r++){
+      const ang = r * Math.PI / 4, ce = Math.cos(ang), cn = Math.sin(ang);
+      let hitDist = MAX_RAY;
+      for (let d = 0.4; d <= MAX_RAY; d += 0.5){
+        if (pointInObs(e + ce * d, n + cn * d, u, 0.0)){ hitDist = d; break; }
+      }
+      rays.push({ ang, dist: hitDist, hit: hitDist < MAX_RAY });
+    }
+    S.lidarRays = rays;
+  }
+
+  const CMDS = {
+    ARM:     { from:['DISARMED'], to:'ARMED', guard(){ if (S.soc < 0.2) return 'pin dưới 20%'; if (!S.grounded) return 'không ở trên mặt đất'; } },
+    DISARM:  { from:['ARMED'], to:'DISARMED' },
+    TAKEOFF: { from:['ARMED'], to:'TAKEOFF', guard(){ if (S.soc < 0.2) return 'pin dưới 20%'; } },
+    HOLD:    { from:['TAKEOFF','MANUAL','MISSION','RTL','LANDING','FAILSAFE'], to:'HOVER',
+               guard(){ if (S.state==='FAILSAFE' && S.soc < 0.15) return 'pin dưới 15%, failsafe không thể huỷ'; } },
+    MANUAL:  { from:['HOVER','MISSION','RTL'], to:'MANUAL' },
+    MISSION: { from:['HOVER','MANUAL'], to:'MISSION', guard(){ if (!mission.length) return 'chưa có điểm giao hàng'; } },
+    RTL:     { from:['TAKEOFF','HOVER','MANUAL','MISSION','LANDING'], to:'RTL' },
+    LAND:    { from:['TAKEOFF','HOVER','MANUAL','MISSION','RTL','FAILSAFE'], to:'LANDING' },
+    KILL:    { from:['ARMED'].concat(AIR), to:'EMERGENCY' },
+  };
+
+  function check(name){
+    const c = CMDS[name]; if (!c) return 'lệnh không tồn tại';
+    if (params.linkLost) return 'mất liên kết, lệnh không tới được drone';
+    if (c.from.indexOf(S.state) < 0) return 'không dùng được ở ' + S.state;
+    return (c.guard && c.guard()) || null;
+  }
+  function command(name, src){
+    const why = check(name);
+    if (why){ emit({ type:'reject', msg: name + ' bị từ chối: ' + why }); return false; }
+    setState(CMDS[name].to, 'lệnh ' + name, src || 'cmd');
+    return true;
+  }
+
+  function setState(next, reason, kind){
+    const prev = S.state; if (prev === next) return;
+    S.prevState = prev; S.lastReason = reason;
+    S.state = next; S.stateT = 0;
+    onEnter(next, prev);
+    emit({ type:'transition', from:prev, to:next, reason, kind: kind || 'auto' });
+  }
+
+  function onEnter(st, prev){
+    const p = S.pos, v = S.vel;
+    switch (st){
+      case 'DISARMED': S.integ = [0,0,0]; break;
+      case 'ARMED': S.integ = [0,0,0]; S.touchT = 0; if (prev === 'LANDING') S.destDone = 0; break;
+      case 'TAKEOFF': S.toXY = [p[0], p[1]]; S.yawSp = S.att[2]; S.integ = [0,0,0]; break;
+      case 'HOVER': {
+        const xy = prev === 'TAKEOFF' ? S.toXY : [p[0] + v[0]*0.45, p[1] + v[1]*0.45];
+        S.hold = [xy[0], xy[1], clamp(p[2] + v[2]*0.35, 1.0, P.fenceAlt)];
+        S.yawSp = S.att[2]; break;
+      }
+      case 'MANUAL': S.hold = [p[0], p[1], Math.max(1.0, p[2])]; S.yawSp = S.att[2]; S.braking = true; break;
+      case 'MISSION':
+        // Resume from where the drone is, skipping hubs already served on this run
+        S.dwell = 0;
+        rebuildTrajectory(true);
+        break;
+      case 'RTL': case 'FAILSAFE':
+        S.rtlPhase = 'climb'; S.rtlAlt = Math.max(params.rtlAlt, p[2]);
+        S.hold = [p[0], p[1], p[2]]; S.yawSp = S.att[2]; S.dwell = 0;
+        buildRtlPath();
+        break;
+      case 'LANDING': {
+        const nearHome = Math.hypot(p[0], p[1]) < 1.5 && (prev === 'RTL' || prev === 'FAILSAFE');
+        S.landXY = nearHome ? [0,0] : [p[0] + v[0]*0.35, p[1] + v[1]*0.35];
+        S.touchT = 0; S.yawSp = S.att[2]; break;
+      }
+    }
+  }
+
+  function updateWind(){
+    if (!params.windOn){ S.windNow = [0,0,0]; return; }
+    const t = S.t, g = params.gust;
+    const n = Math.sin(t*0.7)*0.5 + Math.sin(t*1.9 + 1.3)*0.3 + Math.sin(t*4.3 + 0.4)*0.2;
+    const sp = Math.max(0, params.windSpeed * (1 + g*n));
+    const toward = (params.windDir + 180 + 12*Math.sin(t*0.37)) * Math.PI/180;
+    S.windNow = [sp*Math.sin(toward), sp*Math.cos(toward), 0.06*g*params.windSpeed*Math.sin(t*1.3)];
+  }
+
+  function advanceWaypoint(){
+    const w = mission[S.wpIdx];
+    S.legFrom = { e:w.e, n:w.n, u:w.u };
+    S.dwell = 0;
+    S.wpIdx++;
+    if (S.wpIdx >= mission.length){
+      S.wpIdx = 0; S.destDone = 0;
+      const end = params.missionEnd;
+      setState(end === 'RTL' ? 'RTL' : end === 'LAND' ? 'LANDING' : 'HOVER', 'hoàn thành chuyến giao hàng', 'auto');
+      return true;
+    }
+    return false;
+  }
+
+  function guidance(dt){
+    const p = S.pos, v = S.vel, st = S.state, gs = Math.hypot(v[0], v[1]);
+    const sk = sticks;
+    const moving = Math.abs(sk.pitch) > 0.08 || Math.abs(sk.roll) > 0.08 || Math.abs(sk.thr) > 0.08 || Math.abs(sk.yaw) > 0.08;
+    switch (st){
+      case 'TAKEOFF':
+        if (p[2] >= params.takeoffAlt - 0.3){ setState('HOVER', 'đạt độ cao cất cánh ' + params.takeoffAlt + ' m tại Nhà máy', 'auto'); return guidance(dt); }
+        return { xy:S.toXY, z:params.takeoffAlt, vUp:2.4, yaw:S.yawSp };
+      case 'HOVER':
+        if (moving && !params.linkLost){ setState('MANUAL', 'chạm cần điều khiển', 'auto'); return guidance(dt); }
+        return { xy:[S.hold[0], S.hold[1]], z:S.hold[2], yaw:S.yawSp };
+      case 'MANUAL': {
+        S.yawSp = wrap(S.yawSp - sk.yaw*1.6*dt);
+        const g = { yaw:S.yawSp };
+        if (Math.abs(sk.pitch) > 0.05 || Math.abs(sk.roll) > 0.05){
+          const c = Math.cos(S.att[2]), s = Math.sin(S.att[2]);
+          const fw = sk.pitch*params.vMax, rt = sk.roll*params.vMax;
+          g.vxy = [c*fw + s*rt + S.apfVec[0], s*fw - c*rt + S.apfVec[1]];
+          S.braking = true; S.hold[0] = p[0]; S.hold[1] = p[1];
+        } else if (S.braking){
+          g.vxy = [S.apfVec[0], S.apfVec[1]];
+          if (gs < 0.45){ S.braking = false; S.hold[0] = p[0]; S.hold[1] = p[1]; }
+        } else g.xy = [S.hold[0], S.hold[1]];
+        if (Math.abs(sk.thr) > 0.05){
+          let vz = sk.thr > 0 ? sk.thr*3.2 : sk.thr*2.2;
+          if (vz < 0 && p[2] < 1.5) vz = Math.max(vz, -0.4);
+          if (vz < 0 && p[2] < 0.8) vz = 0;
+          if (vz > 0 && p[2] > P.fenceAlt) vz = 0;
+          g.vz = vz; S.hold[2] = clamp(p[2] + v[2]*0.3, 0.8, P.fenceAlt);
+        } else g.z = S.hold[2];
+        return g;
+      }
+      case 'MISSION': {
+        if (!mission.length){ setState('HOVER', 'nhiệm vụ trống', 'auto'); return guidance(dt); }
+        if (S.wpIdx >= mission.length) S.wpIdx = 0;
+        if (!S.legFrom) S.legFrom = { e:p[0], n:p[1], u:p[2] };
+        const w = mission[S.wpIdx];
+        const isDest = w.kind !== 'avoid';
+        if (S.dwell > 0){
+          // Hovering over the hub while the parcel is released
+          S.dwell -= dt;
+          if (S.dwell > 0) return { xy:[w.e, w.n], z:w.u, yaw:S.yawSp };
+          advanceWaypoint();
+          return guidance(dt);
+        }
+        const tr = trackLeg(S.legFrom, w, mission[S.wpIdx + 1] || null, params.vMax, isDest);
+        if (tr.toB > 1.5) S.yawSp = tr.heading;
+        const dz = Math.abs(w.u - p[2]);
+        if (isDest){
+          if (tr.toB < 1.0 && dz < 0.8 && gs < 1.2){
+            emit({ type:'info', msg:'Đã tới ' + (w.label || ('Đích ' + (w.destIdx + 1))) });
+            S.destDone = w.destIdx + 1;
+            S.dwell = 0.6;
+            if (params.autoDrop && params.cargoMass > 0.001){
+              // Split the load evenly over the hubs still to be served on this route
+              const share = params.cargoMass / Math.max(1, destinations.length - w.destIdx);
+              params.cargoMass = Math.max(0, params.cargoMass - share);
+              if (params.cargoMass < 0.001) params.cargoMass = 0;
+              syncMass(); S.cargoDelivered = params.cargoMass === 0;
+              S.dwell = 1.8;
+              emit({ type:'delivery', msg:'Đã thả ' + share.toFixed(2) + ' kg hàng tại ' + (w.label || 'Trạm đích') + (params.cargoMass > 0 ? ' · còn ' + params.cargoMass.toFixed(2) + ' kg' : '') });
+            }
+            return { xy:[w.e, w.n], z:w.u, yaw:S.yawSp };
+          }
+        } else if ((tr.toB < 1.6 || legPassed(tr)) && dz < 1.2){
+          emit({ type:'info', msg:'Đã qua điểm né cao ốc (' + w.e + ', ' + w.n + ')' });
+          advanceWaypoint();
+          return guidance(dt);
+        }
+        return { vxy:tr.vxy, z:tr.z, yaw:S.yawSp, vUp:3.2, vDown:2.2 };
+      }
+      case 'RTL': case 'FAILSAFE': {
+        if (S.soc < 0.06){ setState('LANDING', 'pin cạn, hạ cánh khẩn cấp tại chỗ', 'fail'); return guidance(dt); }
+        const dhHome = Math.hypot(p[0], p[1]);
+        if (S.rtlPhase === 'climb'){
+          if (p[2] >= S.rtlAlt - 0.45 || dhHome < 1.2){ S.rtlPhase = 'cruise'; S.legFrom = { e:p[0], n:p[1], u:p[2] }; }
+          else return { xy:[S.hold[0], S.hold[1]], z:S.rtlAlt, vUp:3.0, yaw:S.yawSp };
+        }
+        const tgt = rtlPath[rtlIdx] || { e:0, n:0, u:S.rtlAlt };
+        const last = rtlIdx >= rtlPath.length - 1;
+        const tr = trackLeg(S.legFrom, tgt, last ? null : rtlPath[rtlIdx + 1], params.vMax, last);
+        if (tr.toB > 1.8) S.yawSp = tr.heading;
+        if (!last && (tr.toB < 1.6 || legPassed(tr)) && Math.abs(tgt.u - p[2]) < 1.2){
+          S.legFrom = { e:tgt.e, n:tgt.n, u:tgt.u }; rtlIdx++;
+          return guidance(dt);
+        }
+        if (last && dhHome < 0.7 && gs < 0.85){
+          setState('LANDING', 'đã về tới bãi đáp Nhà máy (0,0)', 'auto');
+          return guidance(dt);
+        }
+        return { vxy:tr.vxy, z:tr.z, yaw:S.yawSp };
+      }
+      case 'LANDING': {
+        const vz = p[2] > 3.5 ? -1.6 : p[2] > 0.9 ? -0.75 : -0.35;
+        if (S.grounded){
+          S.touchT += dt;
+          if (S.touchT > 0.4){ setState('ARMED', 'đã đáp xuống bãi', 'auto'); return null; }
+        } else S.touchT = 0;
+        return { xy:S.landXY, vz, yaw:S.yawSp };
+      }
+      case 'ARMED':
+        if (S.stateT > 12) setState('DISARMED', 'tự DISARM sau 12 s không cất cánh', 'auto');
+        return null;
+      case 'EMERGENCY':
+        if (S.grounded && S.stateT > 0.3 && Math.hypot(v[0], v[1], v[2]) < 0.3) setState('DISARMED', 'drone đã nằm yên trên đất', 'auto');
+        return null;
+      default: return null;
+    }
+  }
+
+  function mix(T, tx, ty, tz){
+    const d = P.d, fmin = P.fMin, fmax = P.fMax, b = [0,0,0,0];
+    for (let i = 0; i < 4; i++){ const M = MOT[i]; b[i] = T/4 + tx*Math.sign(M.y)/(4*d) - ty*Math.sign(M.x)/(4*d); }
+    let mx = Math.max(b[0],b[1],b[2],b[3]); if (mx > fmax){ const sh = mx - fmax; for (let i = 0; i < 4; i++) b[i] -= sh; }
+    let mn = Math.min(b[0],b[1],b[2],b[3]); if (mn < fmin){ const sh = fmin - mn; for (let i = 0; i < 4; i++) b[i] += sh; }
+    for (let i = 0; i < 4; i++) b[i] = clamp(b[i], fmin, fmax);
+    let y = tz/(4*P.km); const sg = Math.sign(y); let room = Infinity;
+    for (let i = 0; i < 4; i++){ const dir = MOT[i].s*sg; room = Math.min(room, dir > 0 ? fmax - b[i] : b[i] - fmin); }
+    y = sg*Math.min(Math.abs(y), Math.max(0, room));
+    for (let i = 0; i < 4; i++) S.fCmd[i] = clamp(b[i] + MOT[i].s*y, 0, fmax);
+  }
+
+  function control(dt, g){
+    const st = S.state;
+    if (st === 'DISARMED' || st === 'EMERGENCY'){ S.fCmd.fill(0); S.tgtAtt = [0,0]; S.Tcmd = 0; S.sp = null; return; }
+    if (st === 'ARMED' || !g){ S.fCmd.fill(P.fIdle); S.integ = [0,0,0]; S.tgtAtt = [0,0]; S.Tcmd = 4*P.fIdle; S.sp = null; return; }
+    const p = S.pos, v = S.vel, ps = S.att[2];
+    const vd = [0,0,0];
+    if (g.vxy){ vd[0] = g.vxy[0]; vd[1] = g.vxy[1]; }
+    else {
+      vd[0] = K.pXY*(g.xy[0] - p[0]) + S.apfVec[0];
+      vd[1] = K.pXY*(g.xy[1] - p[1]) + S.apfVec[1];
+    }
+    const vh = Math.hypot(vd[0], vd[1]); if (vh > params.vMax){ vd[0] *= params.vMax/vh; vd[1] *= params.vMax/vh; }
+    if (g.vz != null) vd[2] = g.vz; else vd[2] = clamp(K.pZ*(g.z - p[2]), -(g.vDown || 2.2), g.vUp || 3.2);
+    const e = [vd[0]-v[0], vd[1]-v[1], vd[2]-v[2]];
+    for (let i = 0; i < 3; i++) if (Math.abs(e[i]) < 2.2) S.integ[i] = clamp(S.integ[i] + e[i]*dt, -K.iMax[i], K.iMax[i]);
+    if (S.grounded){ S.integ[0] = 0; S.integ[1] = 0; }
+    const a = [ K.vXY*e[0] + K.iXY*S.integ[0] + P.kd/P.m*vd[0],
+                K.vXY*e[1] + K.iXY*S.integ[1] + P.kd/P.m*vd[1],
+                K.vZ*e[2] + K.iZ*S.integ[2] ];
+    const ah = Math.hypot(a[0], a[1]); if (ah > K.aXY){ a[0] *= K.aXY/ah; a[1] *= K.aXY/ah; }
+    a[2] = clamp(a[2], -0.6*P.g, 6.5);
+    const az = a[2] + P.g, c = Math.cos(ps), s = Math.sin(ps);
+    const af = c*a[0] + s*a[1], al = -s*a[0] + c*a[1];
+    const an = Math.hypot(af, al, az);
+    let thD = clamp(Math.atan2(af, az), -K.tilt, K.tilt);
+    let phD = clamp(Math.asin(clamp(-al/an, -1, 1)), -K.tilt, K.tilt);
+    if (S.grounded && st === 'LANDING'){ thD = 0; phD = 0; }
+    const T = clamp(P.m*az/(Math.cos(phD)*Math.cos(thD)), 4*P.fMin, 4*P.fMax*0.98);
+    const yawD = g.yaw != null ? g.yaw : ps;
+    const ey = clamp(wrap(yawD - ps), -0.9, 0.9);
+    const tx = P.Ixx*(K.att*(phD - S.att[0]) - K.attD*S.rate[0]);
+    const ty = P.Iyy*(K.att*(thD - S.att[1]) - K.attD*S.rate[1]);
+    const tz = clamp(P.Izz*(K.yaw*ey - K.yawD*S.rate[2]), -0.35, 0.35);
+    mix(T, tx, ty, tz);
+    S.tgtAtt = [phD, thD]; S.Tcmd = T;
+    S.sp = { xy: g.xy ? [g.xy[0], g.xy[1]] : null, z: g.z != null ? g.z : null, vd: vd, yaw: yawD };
+  }
+
+  function physics(dt){
+    syncMass();
+    const f = S.f, a = Math.min(1, dt/P.tauM);
+    let T = 0, tx = 0, ty = 0, tz = 0;
+    for (let i = 0; i < 4; i++){
+      f[i] += (S.fCmd[i] - f[i])*a;
+      const M = MOT[i];
+      T += f[i]; tx += f[i]*M.y; ty -= f[i]*M.x; tz += P.km*M.s*f[i];
+      S.rpm[i] = P.rpmMax*Math.sqrt(Math.max(0, f[i])/P.fMax);
+    }
+    S.T = T;
+    const ph = S.att[0], th = S.att[1], ps = S.att[2];
+    const cph = Math.cos(ph), sph = Math.sin(ph), cth = Math.cos(th), sth = Math.sin(th), cps = Math.cos(ps), sps = Math.sin(ps);
+    const zb = [cps*sth*cph + sps*sph, sps*sth*cph - cps*sph, cth*cph];
+    const w = S.pos[2] > 0.05 ? S.windNow : [0,0,0];
+    const vr = [S.vel[0]-w[0], S.vel[1]-w[1], S.vel[2]-w[2]];
+    const vrn = Math.hypot(vr[0], vr[1], vr[2]);
+    const acc = [0,0,0];
+    for (let i = 0; i < 3; i++) acc[i] = zb[i]*T/P.m - (P.kd + P.kq*vrn)*vr[i]/P.m;
+    acc[2] -= P.g;
+    const r = S.rate;
+    r[0] += (tx/P.Ixx - 0.8*r[0])*dt;
+    r[1] += (ty/P.Iyy - 0.8*r[1])*dt;
+    r[2] += (tz/P.Izz - 0.5*r[2])*dt;
+    S.att[0] += r[0]*dt; S.att[1] += r[1]*dt; S.att[2] = wrap(S.att[2] + r[2]*dt);
+    for (let i = 0; i < 3; i++){ S.vel[i] += acc[i]*dt; S.pos[i] += S.vel[i]*dt; }
+    S.acc = acc;
+    if (S.pos[2] <= 0){
+      S.pos[2] = 0;
+      if (S.vel[2] < 0){ if (-S.vel[2] > 0.5) S.impact = Math.max(S.impact, -S.vel[2]); S.vel[2] = 0; }
+      const k = Math.exp(-dt*8); S.vel[0] *= k; S.vel[1] *= k;
+      if (T*zb[2] <= P.m*P.g*1.02){
+        const kk = Math.exp(-dt*20); S.att[0] *= kk; S.att[1] *= kk; r[0] = 0; r[1] = 0; r[2] *= Math.exp(-dt*6);
+      }
+      S.grounded = true;
+    } else S.grounded = false;
+  }
+
+  function battery(dt){
+    let I = S.state === 'DISARMED' ? 0.25 : 0.9;
+    for (let i = 0; i < 4; i++) I += 28.0*Math.pow(Math.max(0, S.f[i])/P.fMax, 1.5);
+    S.I = I;
+    S.mAh += I*dt/3.6*params.drain;
+    S.soc = Math.max(0, 1 - S.mAh/P.capacity);
+    const s = S.soc, vc = 3.3 + 0.6*s + 0.3*s*s*s*s;
+    S.V = P.cells*vc - I*P.rPack;
+  }
+
+  function checks(){
+    if (!S.flags.low && S.soc < 0.25){ S.flags.low = true; emit({ type:'warn', msg:'Pin yếu: còn dưới 25%' }); }
+    if (FLYING_CMD.indexOf(S.state) >= 0 && S.soc < 0.15){ S.fsReason = 'pin dưới 15%'; setState('FAILSAFE', 'pin dưới 15%', 'fail'); }
+    if (S.soc <= 0 && S.state !== 'DISARMED' && S.state !== 'EMERGENCY') setState(S.grounded ? 'DISARMED' : 'EMERGENCY', 'hết pin', 'fail');
+
+    // Urban building collision: frame or propeller tips touch a facade below its roof
+    if (S.hitObs && !S.grounded && S.state !== 'EMERGENCY' && S.state !== 'DISARMED'){
+      const name = S.hitObs.name;
+      emit({ type:'warn', msg:'Va chạm tòa nhà: ' + name + '!' });
+      setState('EMERGENCY', 'va chạm công trình ' + name, 'fail');
+    }
+
+    // Gusts stronger than the tilt limit can hold against push the drone off its path
+    const wNow = Math.hypot(S.windNow[0], S.windNow[1]), wLim = windLimit();
+    if (!S.grounded && wNow > 0.92 * wLim && S.t - S.windWarnT > 45){
+      S.windWarnT = S.t;
+      emit({ type:'warn', msg:'Gió giật ' + wNow.toFixed(1) + ' m/s sát giới hạn giữ vị trí (~' + wLim.toFixed(1) + ' m/s): drone có thể bị đẩy lệch khỏi đường bay' });
+    }
+
+    if (S.impact > 0){
+      const imp = S.impact; S.impact = 0;
+      if (imp > 3.5){
+        emit({ type:'warn', msg:'Va chạm mặt đất ' + imp.toFixed(1) + ' m/s' });
+        if (AIR.indexOf(S.state) >= 0 || S.state === 'ARMED') setState('EMERGENCY', 'va chạm ' + imp.toFixed(1) + ' m/s', 'fail');
+      }
+    }
+  }
+
+  function step(dt){
+    S.t += dt; S.stateT += dt;
+    if (S.state !== 'DISARMED') S.armT += dt;
+    if (!S.grounded) S.flightT += dt;
+    updateWind();
+    updateLidarAndAPF();
+    const g = guidance(dt);
+    control(dt, g);
+    physics(dt);
+    battery(dt);
+    checks();
+  }
+
+  function setLink(lost){
+    if (params.linkLost === lost) return;
+    params.linkLost = lost;
+    emit({ type: lost ? 'warn' : 'info', msg: lost ? 'Mất liên kết RC/telemetry' : 'Đã khôi phục liên kết' });
+    if (lost){
+      if (FLYING_CMD.indexOf(S.state) >= 0){ S.fsReason = 'mất liên kết'; setState('FAILSAFE', 'mất liên kết', 'fail'); }
+      else if (S.state === 'ARMED') setState('DISARMED', 'mất liên kết khi đang trên đất', 'fail');
+    }
+  }
+
+  function setDestinations(list, silent){
+    destinations = list.map(d => ({ e: d.e, n: d.n, u: d.u, label: d.label || '' }));
+    S.destDone = 0;
+    return rebuildTrajectory(silent);
+  }
+  function addDestination(d, silent){
+    destinations.push({ e: d.e, n: d.n, u: d.u, label: d.label || '' });
+    return rebuildTrajectory(silent);
+  }
+  function removeDestination(i, silent){
+    if (i < 0 || i >= destinations.length) return null;
+    destinations.splice(i, 1);
+    if (i < S.destDone) S.destDone--;
+    return rebuildTrajectory(silent);
+  }
+
+  function reset(){
+    S = fresh(); params.linkLost = false;
+    for (const k in sticks) sticks[k] = 0;
+    rebuildTrajectory(true);
+    updateLidarAndAPF();
+    emit({ type:'reset', msg:'Đặt lại drone về Nhà Máy Sản Xuất (0,0)' });
+  }
+
+  // Initial trajectory build
+  rebuildTrajectory(true);
+  updateLidarAndAPF();
+
+  return {
+    P, K, MOT, AIR, CMDS, HUBS, obstacles, params, mission, blockedSegments, sticks,
+    on, step, command, check, setLink, reset, syncMass,
+    rebuildTrajectory, setDestinations, addDestination, removeDestination, sanitizePoint,
+    planSegmentAStar, clearanceAt, windLimit,
+    get destinations(){ return destinations; },
+    get missionStart(){ return missionStart; },
+    get rtlPath(){ return rtlPath; },
+    get S(){ return S; }
+  };
+})();
+</script>
+
+<script>
+(function(){
+'use strict';
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const clamp = (x,a,b) => x<a?a:x>b?b:x;
+const DEG = 180/Math.PI;
+const fx = (x, d) => { d = d == null ? 1 : d; const v = Number(x.toFixed(d)); if (v === 0) return (0).toFixed(d); return (v < 0 ? '−' : '') + Math.abs(v).toFixed(d); };
+const pad3 = n => String(Math.round(n) % 360).padStart(3, '0');
+const mmss = s => { s = Math.max(0, Math.floor(s)); return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0'); };
+const tstamp = t => { const m = Math.floor(t/60), s = t - m*60; return String(m).padStart(2,'0') + ':' + s.toFixed(1).padStart(4,'0'); };
+const hdgOf = psi => ((90 - psi*DEG) % 360 + 360) % 360;
+
+const META = {
+  DISARMED: { cls:'idle',  sub:'tắt động cơ',    top:'Tại Nhà Máy Sản Xuất — Động cơ tắt', desc:'Drone chở hàng đang đỗ trên bãi phóng H của Nhà Máy Sản Xuất (0,0). Bấm ARM hoặc "Chạy Demo Giao Hàng" để khởi hành.' },
+  ARMED:    { cls:'armed', sub:'chờ tại xưởng',  top:'Động cơ quay không tải — Sẵn sàng cất cánh', desc:'4 động cơ heavy-lift quay không tải, kiện hàng đã khóa dưới bụng. Sẵn sàng TAKEOFF. Tự DISARM sau 12 giây nếu không cất cánh.' },
+  TAKEOFF:  { cls:'air',   sub:'cất cánh tải',   top:'Đang cất cánh khỏi Nhà Máy Sản Xuất', desc:'Leo thẳng đứng lên độ cao hành trình an toàn trước khi rời khuôn viên Nhà Máy. Tới độ cao đặt sẽ tự chuyển sang HOVER.' },
+  HOVER:    { cls:'air',   sub:'treo giữ vị trí', top:'Treo giữ vị trí ổn định', desc:'Giữ cố định toạ độ E/N/U và hướng mũi, tự động bù tải trọng kiện hàng và gió đô thị. Bấm MISSION để bay giao hàng.' },
+  MANUAL:   { cls:'air',   sub:'lái tay + APF',  top:'Lái bằng tay (có trường lực APF bảo vệ)', desc:'Lái tự do bằng bàn phím hoặc cần ảo. Khi bật né vật cản, cảm biến Lidar 360° tạo lực đẩy APF giúp hạn chế va vào cao ốc.' },
+  MISSION:  { cls:'air',   sub:'giao hàng A*',   top:'Đang bay theo quỹ đạo giao hàng tự động', desc:'Bay qua chuỗi điểm dẫn đường đã được thuật toán A* tối ưu hóa để vòng tránh các tòa nhà cao tầng và giao kiện hàng tới Hub.' },
+  RTL:      { cls:'air',   sub:'về Nhà Máy',     top:'Quay về Nhà Máy Sản Xuất (có né cao ốc)', desc:'Tự động tính toán hành lang né các tòa nhà cao tầng từ vị trí hiện tại về lại bãi đáp Nhà Máy Sản Xuất (0,0) rồi hạ cánh.' },
+  LANDING:  { cls:'land',  sub:'hạ cánh',        top:'Đang hạ cánh chính xác', desc:'Hạ cánh tốc độ giảm dần để bảo vệ kiện hàng. Chạm đất ổn định 0,4 giây thì chuyển về ARMED.' },
+  FAILSAFE: { cls:'fs',    sub:'tự bảo vệ',      top:'Failsafe — Tự động né vật cản về Nhà Máy', desc:'Kích hoạt khi pin dưới 15% hoặc mất sóng. Drone tự lập đường né cao ốc về Nhà Máy; nếu pin dưới 6% sẽ đáp khẩn cấp tại chỗ.' },
+  EMERGENCY:{ cls:'emg',   sub:'ngắt khẩn cấp',  top:'Động cơ bị ngắt khẩn cấp', desc:'Cả 4 động cơ bị ngắt do lệnh KILL hoặc va chạm công trình. Khi nằm yên trên mặt đất sẽ về DISARMED.' },
+};
+
+let TK = {};
+let R3 = null;
+let lastActiveWp = -2;
+let replanTimer = 0;
+let cargoLocked = null;
+function readTokens(){
+  const cs = getComputedStyle(document.documentElement);
+  ['bg','panel','panel-2','line','line-2','fg','muted','faint','accent','accent-ink','tele','good','warn','bad','scene-sky','scene-ground','scene-grid','scene-grid2']
+    .forEach(k => { TK[k] = cs.getPropertyValue('--' + k).trim() || '#888888'; });
+  const hex = TK.bg.replace('#',''); const n = parseInt(hex.length === 3 ? hex.split('').map(c => c+c).join('') : hex, 16);
+  TK.dark = (((n >> 16) & 255)*0.299 + ((n >> 8) & 255)*0.587 + (n & 255)*0.114) < 110;
+}
+readTokens();
+
+/* ---------- event log ---------- */
+const logEl = $('#log');
+function addLog(kind, main, sub, t){
+  const li = document.createElement('li');
+  li.className = 'lg lg-' + kind;
+  const a = document.createElement('span'); a.className = 'lg-t'; a.textContent = tstamp(t || 0);
+  const b = document.createElement('span'); b.className = 'lg-m'; b.textContent = main;
+  const c = document.createElement('span'); c.textContent = sub || ''; c.className = 'lg-s';
+  li.append(a, b, c);
+  logEl.prepend(li);
+  while (logEl.children.length > 80) logEl.lastChild.remove();
+}
+
+/* ---------- state machine diagram ---------- */
+const NODES = { DISARMED:[75,185], ARMED:[240,185], TAKEOFF:[400,185], HOVER:[560,185], MANUAL:[560,75],
+  MISSION:[760,75], RTL:[760,185], LANDING:[760,295], EMERGENCY:[950,75], FAILSAFE:[950,205] };
+const NW = 112, NH = 44;
+const EDGES = [
+  { k:'DISARMED>ARMED', off:-7, label:'ARM' }, { k:'ARMED>DISARMED', off:-7, label:'DISARM · 12 s' },
+  { k:'ARMED>TAKEOFF', off:0, label:'TAKEOFF', side:-1 },
+  { k:'TAKEOFF>HOVER', off:0, label:'đạt độ cao', side:-1 },
+  { k:'HOVER>MANUAL', off:-7, label:'cần/MANUAL' }, { k:'MANUAL>HOVER', off:-7, label:'HOLD' },
+  { k:'HOVER>MISSION', off:-7, label:'MISSION' }, { k:'MISSION>HOVER', off:-7, label:'xong · HOLD' },
+  { k:'MANUAL>MISSION', off:-7, label:'MISSION' }, { k:'MISSION>MANUAL', off:-7, label:'MANUAL' },
+  { k:'HOVER>RTL', off:-7, label:'RTL' }, { k:'RTL>HOVER', off:-7, label:'HOLD' },
+  { k:'MISSION>RTL', off:0, label:'giao xong · RTL', side:-1 },
+  { k:'HOVER>LANDING', off:-7, label:'LAND' }, { k:'LANDING>HOVER', off:-7, label:'HOLD' },
+  { k:'RTL>LANDING', off:0, label:'về Nhà máy', side:-1 },
+  { k:'LANDING>ARMED', d:'M704 295 H240 V207', lx:470, ly:287, label:'chạm đất' },
+  { k:'AIR>FAILSAFE', d:'M830 205 H894', lx:862, ly:196, label:'pin · link' },
+  { k:'FAILSAFE>LANDING', d:'M950 227 V295 H816', lx:886, ly:287, label:'về Nhà máy' },
+  { k:'AIR>EMERGENCY', d:'M830 75 H894', lx:862, ly:66, label:'KILL · va chạm' },
+  { k:'EMERGENCY>DISARMED', d:'M950 53 V18 H75 V163', lx:520, ly:31, label:'nằm yên trên đất' },
+];
+function rectHit(c, dx, dy){
+  const tx = dx !== 0 ? (NW/2)/Math.abs(dx) : Infinity, ty = dy !== 0 ? (NH/2)/Math.abs(dy) : Infinity;
+  const t = Math.min(tx, ty); return [c[0] + dx*t, c[1] + dy*t];
+}
+function buildDiagram(){
+  let s = '<defs>'
+    + '<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>'
+    + '<marker id="ahOn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="ah-on" d="M0 0L10 5L0 10z"/></marker>'
+    + '</defs>';
+  s += '<rect class="grp" x="330" y="38" width="500" height="290" rx="8"/><text class="grp-t" x="342" y="57">TRÊN KHÔNG · ĐÔ THỊ (CÓ NÉ VẬT CẢN A*)</text>';
+  for (const e of EDGES){
+    let d, lx, ly, anchor = 'middle';
+    if (e.d){ d = e.d; lx = e.lx; ly = e.ly; }
+    else {
+      const [a, b] = e.k.split('>'); const A = NODES[a], B = NODES[b];
+      let dx = B[0]-A[0], dy = B[1]-A[1]; const L = Math.hypot(dx, dy); dx /= L; dy /= L;
+      const nx = -dy, ny = dx, o = e.off;
+      const p1 = rectHit([A[0]+nx*o, A[1]+ny*o], dx, dy), p2 = rectHit([B[0]+nx*o, B[1]+ny*o], -dx, -dy);
+      const gap = 3; p2[0] -= dx*gap; p2[1] -= dy*gap;
+      d = 'M' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1) + ' L' + p2[0].toFixed(1) + ' ' + p2[1].toFixed(1);
+      const m = [(p1[0]+p2[0])/2, (p1[1]+p2[1])/2];
+      const lo = o !== 0 ? Math.sign(o)*11 : (e.side || -1)*11;
+      lx = m[0] + nx*lo; ly = m[1] + ny*lo + 3.5;
+      if (Math.abs(nx*lo) > 4) anchor = nx*lo > 0 ? 'start' : 'end';
+    }
+    s += '<g class="eg" id="e-' + e.k.replace('>','_') + '"><path d="' + d + '" marker-end="url(#ah)"/>'
+      + '<text x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + anchor + '">' + e.label + '</text></g>';
+  }
+  for (const k in NODES){
+    const [x, y] = NODES[k];
+    s += '<g class="nd' + (k === 'EMERGENCY' ? ' emg' : '') + '" id="n-' + k + '"><rect x="' + (x-NW/2) + '" y="' + (y-NH/2) + '" width="' + NW + '" height="' + NH + '" rx="4"/>'
+      + '<text class="nt" x="' + x + '" y="' + (y-1) + '" text-anchor="middle">' + k + '</text>'
+      + '<text class="ns" x="' + x + '" y="' + (y+13) + '" text-anchor="middle">' + META[k].sub + '</text></g>';
+  }
+  $('#smSvg').innerHTML = s;
+}
+buildDiagram();
+function edgeKey(from, to){
+  if (to === 'FAILSAFE') return 'AIR>FAILSAFE';
+  if (to === 'EMERGENCY') return 'AIR>EMERGENCY';
+  return from + '>' + to;
+}
+function highlightDiagram(from, to){
+  $$('#smSvg .nd').forEach(n => n.classList.remove('cur','prev'));
+  const cur = $('#n-' + to); if (cur) cur.classList.add('cur');
+  if (from){ const pv = $('#n-' + from); if (pv) pv.classList.add('prev'); }
+  $$('#smSvg .eg').forEach(g => { g.classList.remove('on'); g.querySelector('path').setAttribute('marker-end','url(#ah)'); });
+  if (from){
+    const eg = document.getElementById('e-' + edgeKey(from, to).replace('>','_'));
+    if (eg){ eg.classList.add('on'); eg.querySelector('path').setAttribute('marker-end','url(#ahOn)'); }
+  }
+}
+
+/* ---------- state display ---------- */
+function setPill(el, st){ el.textContent = st; el.className = 'pill s-' + META[st].cls; }
+function onStateChanged(){
+  const S = Sim.S, st = S.state;
+  setPill($('#statePill'), st); setPill($('#smPill'), st);
+  $('#stateSub').textContent = st === 'FAILSAFE' ? 'Failsafe: ' + S.fsReason + ', đang né tòa nhà về Nhà Máy' : META[st].top;
+  $('#smDesc').textContent = META[st].desc;
+  $('#smPrev').textContent = S.prevState ? 'Trước đó: ' + S.prevState + ' · lý do: ' + S.lastReason : 'Chưa có chuyển trạng thái.';
+  highlightDiagram(S.prevState, st);
+  refreshValidity(true);
+}
+
+/* ---------- validity of commands ---------- */
+let lastValid = '';
+function refreshValidity(force){
+  const valid = [];
+  $$('.cmd').forEach(b => {
+    const why = Sim.check(b.dataset.cmd);
+    b.classList.toggle('off', !!why);
+    b.setAttribute('aria-disabled', why ? 'true' : 'false');
+    b.title = why ? 'Không dùng được: ' + why : '';
+    if (!why) valid.push(b.dataset.cmd);
+  });
+  const key = valid.join(',');
+  if (!force && key === lastValid) return;
+  lastValid = key;
+  const html = valid.length ? valid.map(c => '<span class="chip">' + c + '</span>').join('')
+    : '<span class="none">' + (Sim.params.linkLost ? 'không có (mất liên kết)' : 'không có, drone đang tự xử lý') + '</span>';
+  $('#validFn').innerHTML = html; $('#validSm').innerHTML = html;
+}
+
+/* ---------- sim events ---------- */
+let deliveryBannerTimer = 0;
+let deliveryBannerText = '';
+Sim.on(ev => {
+  if (ev.type === 'transition'){
+    addLog(ev.kind === 'fail' ? 'fail' : 'tr', ev.from + ' → ' + ev.to, ev.reason, ev.t);
+    onStateChanged();
+  } else if (ev.type === 'delivery'){
+    const left = Sim.params.cargoMass;
+    addLog('info', ev.msg, left > 0 ? 'Tải trọng giảm, bay tiếp tới trạm sau' : 'Đã giao hết hàng', ev.t);
+    $('#pCargo').value = String(left);
+    $('#oCargo').textContent = left.toFixed(2) + ' kg';
+    updateCargoSpecUI();
+    deliveryBannerText = ev.msg;
+    clearTimeout(deliveryBannerTimer);
+    deliveryBannerTimer = setTimeout(() => { deliveryBannerText = ''; }, 5000);
+  } else if (ev.type === 'info') addLog('info', ev.msg, '', ev.t);
+  else if (ev.type === 'warn') addLog('warn', ev.msg, '', ev.t);
+  else if (ev.type === 'reject') addLog('rej', ev.msg, '', ev.t);
+  else if (ev.type === 'reset'){ addLog('info', ev.msg, '', ev.t); }
+});
+
+/* ---------- demo sequence ---------- */
+const demo = { on:false, step:0, t0:0 };
+function startDemo(){
+  const st = Sim.S.state;
+  if (st === 'DISARMED') demo.step = 0; else if (st === 'ARMED') demo.step = 1; else if (st === 'HOVER') demo.step = 2;
+  else { addLog('rej', 'Demo cần drone ở DISARMED, ARMED hoặc HOVER', '', Sim.S.t); return; }
+  if (Sim.params.cargoMass <= 0 && Sim.S.grounded){
+    Sim.params.cargoMass = 1.5; Sim.syncMass();
+    $('#pCargo').value = '1.5'; $('#oCargo').textContent = '1.50 kg'; updateCargoSpecUI();
+  }
+  if (!Sim.destinations.length) loadHubPreset('A');
+  else replanAndRender();
+  demo.on = true; demo.t0 = Sim.S.t;
+  addLog('info', 'Bắt đầu Demo Giao Hàng tự động từ Nhà Máy Sản Xuất', '', Sim.S.t);
+}
+function demoTick(){
+  if (!demo.on) return;
+  const S = Sim.S, st = S.state;
+  if (st === 'EMERGENCY' || st === 'FAILSAFE'){ demo.on = false; return; }
+  if (demo.step === 0){ if (Sim.command('ARM', 'demo')){ demo.step = 1; demo.t0 = S.t; } else demo.on = false; }
+  else if (demo.step === 1 && st === 'ARMED' && S.stateT > 0.9){ Sim.command('TAKEOFF', 'demo'); demo.step = 2; }
+  else if (demo.step === 2 && st === 'HOVER' && S.stateT > 1.0){ Sim.command('MISSION', 'demo'); demo.step = 3; }
+  else if (demo.step === 3){ if (st === 'HOVER' && S.stateT > 1.3){ Sim.command('RTL', 'demo'); demo.step = 4; } else if (st === 'RTL' || st === 'LANDING') demo.step = 4; }
+  else if (demo.step === 4 && (st === 'ARMED' || st === 'DISARMED')){ demo.on = false; addLog('info', 'Hoàn tất chu trình Giao Hàng & Quay về Nhà Máy!', '', S.t); }
+}
+
+/* ---------- commands ---------- */
+let killArm = false, killTimer = 0;
+function resetKill(){ killArm = false; clearTimeout(killTimer); $('#killBtn').classList.remove('confirm'); $('#killTxt').textContent = 'Ngắt động cơ khẩn cấp'; }
+$$('.cmd').forEach(b => b.addEventListener('click', () => {
+  const c = b.dataset.cmd;
+  demo.on = false;
+  if (c === 'KILL'){
+    if (Sim.check('KILL')){ Sim.command('KILL'); return; }
+    if (!killArm){ killArm = true; b.classList.add('confirm'); $('#killTxt').textContent = 'Bấm lần nữa trong 3 s để xác nhận'; killTimer = setTimeout(resetKill, 3000); return; }
+    resetKill();
+  }
+  Sim.command(c);
+}));
+
+/* ---------- parameters & cargo ---------- */
+function compassDirVN(deg){
+  const dirs = ['Bắc','Đông Bắc','Đông','Đông Nam','Nam','Tây Nam','Tây','Tây Bắc'];
+  return dirs[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+}
+function updateWindHudUI(){
+  const hud = $('#windHud');
+  if (!hud) return;
+  const P = Sim.params, S = Sim.S;
+  const show = P.windOn && P.windSpeed > 0;
+  hud.hidden = !show;
+  if (!show) return;
+  const fromDeg = ((P.windDir % 360) + 360) % 360;
+  const toDeg = (fromDeg + 180) % 360;
+  const wNow = Math.hypot(S.windNow[0], S.windNow[1]);
+  const liveTowardDeg = wNow > 0.05 ? hdgOf(Math.atan2(S.windNow[1], S.windNow[0])) : toDeg;
+  const arrow = $('#windArrowG');
+  if (arrow) arrow.setAttribute('transform', 'translate(28,28) rotate(' + liveTowardDeg.toFixed(1) + ')');
+  $('#windHudDir').textContent = 'Từ ' + pad3(fromDeg) + '° (' + compassDirVN(fromDeg) + ') → ' + compassDirVN(toDeg);
+  $('#windHudSpd').textContent = 'Hiện tại ' + fx(wNow || P.windSpeed, 1) + ' m/s · gốc ' + P.windSpeed + ' m/s · giật ' + Math.round(P.gust*100) + '%';
+  const lim = Sim.windLimit(), limEl = $('#windHudLim');
+  limEl.textContent = (wNow > 0.92 * lim ? 'Vượt sức chịu gió ' : 'Drone chịu được ') + '~' + fx(lim, 1) + ' m/s';
+  limEl.classList.toggle('over', wNow > 0.92 * lim);
+}
+function updateCargoSpecUI(){
+  const cm = Sim.params.cargoMass;
+  $('#metaCargo').textContent = cm.toFixed(2) + ' kg';
+  $('#brandSpec').textContent = 'X4 Heavy-Lift · khung 800 mm · tự trọng 2,4 kg + hàng ' + cm.toFixed(2) + ' kg · pin 6S 12000 mAh · Lidar 360°';
+}
+function bindRange(id, outId, fmt, apply){
+  const i = $('#' + id), o = $('#' + outId);
+  const up = () => { const v = parseFloat(i.value); o.textContent = fmt(v); apply(v); };
+  i.addEventListener('input', up); up();
+}
+const P = Sim.params;
+bindRange('pCargo', 'oCargo', v => v.toFixed(2) + ' kg', v => { P.cargoMass = v; Sim.syncMass(); updateCargoSpecUI(); });
+bindRange('pSafe', 'oSafe', v => v.toFixed(1) + ' m', v => { P.safeMargin = v; scheduleReplan(); });
+bindRange('pTo', 'oTo', v => v + ' m', v => P.takeoffAlt = v);
+bindRange('pRtl', 'oRtl', v => v + ' m', v => P.rtlAlt = v);
+bindRange('pV', 'oV', v => v.toFixed(1) + ' m/s', v => P.vMax = v);
+bindRange('pWpAlt', 'oWpAlt', v => v + ' m', v => {
+  P.missionAlt = v;
+  // Also update destinations to the new cruise altitude and replan so user sees altitude effect on obstacle avoidance
+  Sim.destinations.forEach(d => { d.u = v; });
+  scheduleReplan();
+});
+bindRange('pWind', 'oWind', v => v + ' m/s', v => {
+  P.windSpeed = v;
+  if (v > 0 && !$('#pWindOn').checked){ $('#pWindOn').checked = true; P.windOn = true; }
+  updateWindHudUI();
+});
+bindRange('pWdir', 'oWdir', v => pad3(v) + '° (' + compassDirVN(v) + ')', v => {
+  P.windDir = v;
+  if (!$('#pWindOn').checked){ $('#pWindOn').checked = true; P.windOn = true; }
+  updateWindHudUI();
+});
+bindRange('pGust', 'oGust', v => v + '%', v => { P.gust = v/100; updateWindHudUI(); });
+bindRange('pDrain', 'oDrain', v => '×' + v, v => P.drain = v);
+
+$('#pAutoAvoid').addEventListener('change', e => {
+  P.autoAvoid = e.target.checked;
+  $('#avoidBadge').textContent = P.autoAvoid ? 'A* ON' : 'A* OFF';
+  $('#avoidBadge').className = 'chip ' + (P.autoAvoid ? 'chip-avoid' : '');
+  replanAndRender();
+  addLog('info', P.autoAvoid ? 'Đã bật tự động sinh quỹ đạo né tòa nhà (A* + APF)' : 'Đã tắt tự động né vật cản (đường bay thẳng)', '', Sim.S.t);
+});
+$('#pAutoDrop').addEventListener('change', e => { P.autoDrop = e.target.checked; });
+$('#btnReplan').addEventListener('click', () => {
+  const st = replanAndRender();
+  addLog('info', 'Tái lập quỹ đạo A*: ' + st.destCount + ' đích, ' + st.avoidCount + ' điểm né cao ốc', '', Sim.S.t);
+});
+$('#btnReloadCargo').addEventListener('click', () => {
+  if (!Sim.S.grounded){ addLog('rej', 'Chỉ nạp hàng khi drone đang đỗ trên mặt đất', '', Sim.S.t); return; }
+  P.cargoMass = 1.5; Sim.syncMass();
+  $('#pCargo').value = '1.5'; $('#oCargo').textContent = '1.50 kg';
+  updateCargoSpecUI();
+  addLog('info', 'Đã nạp lại kiện hàng 1.50 kg tại Nhà máy', '', Sim.S.t);
+});
+$('#pWindOn').addEventListener('change', e => {
+  P.windOn = e.target.checked;
+  updateWindHudUI();
+  addLog('info', P.windOn ? 'Bật gió đô thị ' + P.windSpeed + ' m/s từ ' + pad3(P.windDir) + '° (' + compassDirVN(P.windDir) + ')' : 'Tắt gió', '', Sim.S.t);
+});
+$('#pEnd').addEventListener('change', e => { P.missionEnd = e.target.value; });
+$('#btnLink').addEventListener('click', e => {
+  const lost = !P.linkLost; Sim.setLink(lost);
+  e.currentTarget.setAttribute('aria-pressed', String(lost));
+  e.currentTarget.textContent = lost ? 'Khôi phục liên kết' : 'Mô phỏng mất liên kết';
+  demo.on = false; refreshValidity(true);
+});
+function syncLinkBtn(){ const b = $('#btnLink'); b.setAttribute('aria-pressed', String(P.linkLost)); b.textContent = P.linkLost ? 'Khôi phục liên kết' : 'Mô phỏng mất liên kết'; }
+$('#btnReset').addEventListener('click', () => {
+  demo.on = false; resetKill();
+  P.cargoMass = 1.5; $('#pCargo').value = '1.5'; $('#oCargo').textContent = '1.50 kg'; updateCargoSpecUI();
+  Sim.reset(); syncLinkBtn(); clearHistory();
+  if (R3) R3.clearTrail();
+  renderMission();
+  onStateChanged();
+  $$('#smSvg .nd').forEach(n => n.classList.remove('prev'));
+});
+
+/* ---------- speed ---------- */
+let simSpeed = 1;
+$$('#speedSeg button').forEach(b => b.addEventListener('click', () => {
+  simSpeed = parseFloat(b.dataset.speed);
+  $$('#speedSeg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+}));
+
+/* ---------- urban delivery mission & obstacle avoidance UI ---------- */
+function loadHubPreset(code){
+  const u = P.missionAlt;
+  const H = Sim.HUBS;
+  if (code === 'A') Sim.setDestinations([{ e:H.A.e, n:H.A.n, u, label:'Hub A (Bắc)' }]);
+  else if (code === 'B') Sim.setDestinations([{ e:H.B.e, n:H.B.n, u, label:'Hub B (Đông)' }]);
+  else if (code === 'C') Sim.setDestinations([{ e:H.C.e, n:H.C.n, u, label:'Hub C (Nam)' }]);
+  else if (code === 'MULTI') Sim.setDestinations([
+    { e:H.A.e, n:H.A.n, u, label:'Hub A (Bắc)' },
+    { e:H.B.e, n:H.B.n, u, label:'Hub B (Đông)' },
+    { e:H.C.e, n:H.C.n, u, label:'Hub C (Nam)' }
+  ]);
+  renderMission();
+  addLog('info', 'Đã lập tuyến giao hàng (' + Sim.mission.length + ' mốc dẫn đường, né ' + Sim.blockedSegments.length + ' cụm cao ốc chắn ngang)', '', Sim.S.t);
+}
+function scheduleReplan(){ clearTimeout(replanTimer); replanTimer = setTimeout(() => replanAndRender(true), 90); }
+function replanAndRender(silent){
+  const stats = Sim.rebuildTrajectory(silent);
+  renderMission(stats);
+  return stats;
+}
+function missionLength(){
+  const ms = Sim.missionStart;
+  let L = 0, prev = ms ? [ms.e, ms.n, ms.u] : [0, 0, P.takeoffAlt];
+  Sim.mission.forEach(w => { L += Math.hypot(w.e-prev[0], w.n-prev[1], w.u-prev[2]); prev = [w.e,w.n,w.u]; });
+  return L;
+}
+function renderMission(stats){
+  const M = Sim.mission, tb = $('#wpBody');
+  const avoidCount = M.filter(w => w.kind === 'avoid').length;
+  const destCount = Sim.destinations.length;
+  $('#stDest').textContent = destCount;
+  $('#stAvoid').textContent = avoidCount;
+  $('#stBlocked').textContent = Sim.blockedSegments.length;
+
+  tb.innerHTML = M.map((w, i) => {
+    const isAvoid = w.kind === 'avoid';
+    const tag = isAvoid
+      ? '<span class="wp-tag avoid">NÉ A*</span>'
+      : '<span class="wp-tag hub">' + (w.label || ('ĐÍCH ' + (w.destIdx + 1))) + '</span>';
+    if (isAvoid){
+      return '<tr class="wp-avoid" data-i="' + i + '"><td class="wp-n">' + (i+1) + '</td>'
+        + '<td>' + tag + '</td>'
+        + '<td>' + fx(w.e, 1) + '</td>'
+        + '<td>' + fx(w.n, 1) + '</td>'
+        + '<td>' + fx(w.u, 1) + '</td>'
+        + '<td></td></tr>';
+    }
+    const dIdx = w.destIdx;
+    return '<tr data-i="' + i + '" data-d="' + dIdx + '"><td class="wp-n">' + (i+1) + '</td>'
+      + '<td>' + tag + '</td>'
+      + '<td><input data-k="e" type="number" step="1" value="' + w.e + '" aria-label="Đích E"></td>'
+      + '<td><input data-k="n" type="number" step="1" value="' + w.n + '" aria-label="Đích N"></td>'
+      + '<td><input data-k="u" type="number" step="1" min="8" max="60" value="' + w.u + '" aria-label="Đích Cao"></td>'
+      + '<td><button class="wp-del" data-del="' + dIdx + '" aria-label="Xoá đích">×</button></td></tr>';
+  }).join('');
+
+  $('#wpEmpty').hidden = M.length > 0;
+  $('#wpCount').textContent = M.length ? (destCount + ' đích + ' + avoidCount + ' điểm né · ~' + Math.round(missionLength()) + ' m') : '0 điểm';
+  if (R3) R3.rebuildMission();
+  lastActiveWp = -2;
+}
+$('#wpBody').addEventListener('change', e => {
+  const inp = e.target.closest('input'); if (!inp) return;
+  const tr = inp.closest('tr'); if (!tr || tr.dataset.d == null) return;
+  const dIdx = +tr.dataset.d, k = inp.dataset.k;
+  let v = parseFloat(inp.value); if (!isFinite(v)) { renderMission(); return; }
+  if (k === 'u') v = clamp(v, 8, 60); else v = clamp(v, -82, 82);
+  Sim.destinations[dIdx][k] = v;
+  replanAndRender();
+});
+$('#wpBody').addEventListener('click', e => {
+  const b = e.target.closest('.wp-del'); if (!b) return;
+  Sim.removeDestination(+b.dataset.del, true);
+  renderMission();
+});
+$('#btnHubA').addEventListener('click', () => loadHubPreset('A'));
+$('#btnHubB').addEventListener('click', () => loadHubPreset('B'));
+$('#btnHubC').addEventListener('click', () => loadHubPreset('C'));
+$('#btnMultiHub').addEventListener('click', () => loadHubPreset('MULTI'));
+$('#btnClear').addEventListener('click', () => { Sim.setDestinations([], true); renderMission(); });
+$('#btnDemo').addEventListener('click', startDemo);
+$('#wpMode').addEventListener('change', e => {
+  $('#hint').textContent = e.target.checked
+    ? 'Kéo: xoay · cuộn: zoom · click mặt đất: đặt điểm giao hàng (tự động sinh quỹ đạo né cao ốc)'
+    : 'Kéo: xoay · cuộn/chụm: zoom';
+});
+function addWaypointAt(e, n){
+  if (Sim.destinations.length >= 10){ addLog('rej', 'Tối đa 10 điểm giao hàng chính', '', Sim.S.t); return; }
+  e = clamp(Math.round(e*2)/2, -80, 80);
+  n = clamp(Math.round(n*2)/2, -80, 80);
+  Sim.addDestination({ e, n, u: P.missionAlt, label: 'Điểm giao ' + (Sim.destinations.length + 1) });
+  renderMission();
+}
+
+/* ---------- sticks: keyboard + on-screen ---------- */
+const KEYMAP = { KeyW:['pitch',1], ArrowUp:['pitch',1], KeyS:['pitch',-1], ArrowDown:['pitch',-1],
+  KeyA:['roll',-1], ArrowLeft:['roll',-1], KeyD:['roll',1], ArrowRight:['roll',1],
+  KeyQ:['yaw',-1], KeyE:['yaw',1], KeyR:['thr',1], KeyF:['thr',-1] };
+const keys = new Set(), kStick = { thr:0, yaw:0, pitch:0, roll:0 }, jStick = { thr:0, yaw:0, pitch:0, roll:0 };
+addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,select,textarea')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (KEYMAP[e.code]){
+    keys.add(e.code);
+    if (e.code.startsWith('Arrow') && (Sim.S.state === 'HOVER' || Sim.S.state === 'MANUAL')) e.preventDefault();
+  }
+});
+addEventListener('keyup', e => keys.delete(e.code));
+addEventListener('blur', () => keys.clear());
+function updateSticks(dt){
+  const tgt = { thr:0, yaw:0, pitch:0, roll:0 };
+  keys.forEach(k => { const m = KEYMAP[k]; if (m) tgt[m[0]] += m[1]; });
+  for (const a in tgt){
+    tgt[a] = clamp(tgt[a], -1, 1);
+    kStick[a] += clamp(tgt[a] - kStick[a], -dt*4, dt*4);
+    if (Math.abs(kStick[a]) < 0.01 && tgt[a] === 0) kStick[a] = 0;
+    Sim.sticks[a] = clamp(kStick[a] + jStick[a], -1, 1);
+  }
+}
+function makeStick(el, onChange){
+  const knob = el.querySelector('.knob'); let id = null;
+  const set = (x, y) => { const R = el.clientWidth/2*0.62; knob.style.transform = 'translate(' + (x*R).toFixed(1) + 'px,' + (y*R).toFixed(1) + 'px)'; };
+  const move = e => {
+    const r = el.getBoundingClientRect(), R = r.width/2*0.62;
+    let x = (e.clientX - (r.left + r.width/2))/R, y = (e.clientY - (r.top + r.height/2))/R;
+    const n = Math.hypot(x, y); if (n > 1){ x /= n; y /= n; }
+    set(x, y); onChange(x, -y);
+  };
+  el.addEventListener('pointerdown', e => { id = e.pointerId; el.setPointerCapture(id); move(e); e.preventDefault(); e.stopPropagation(); });
+  el.addEventListener('pointermove', e => { if (e.pointerId === id) move(e); });
+  const end = e => { if (e.pointerId !== id) return; id = null; set(0, 0); onChange(0, 0); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+}
+makeStick($('#stickL'), (x, y) => { jStick.yaw = x; jStick.thr = y; });
+makeStick($('#stickR'), (x, y) => { jStick.roll = x; jStick.pitch = y; });
+
+/* ---------- telemetry history ---------- */
+const H = { t:[], alt:[], altSp:[], gs:[], vs:[], roll:[], rollSp:[], pitch:[], pitchSp:[] };
+let lastSample = -1;
+function clearHistory(){ for (const k in H) H[k].length = 0; lastSample = -1; }
+function sample(){
+  const S = Sim.S; if (S.t - lastSample < 0.1) return; lastSample = S.t;
+  H.t.push(S.t); H.alt.push(S.pos[2]); H.altSp.push(S.sp && S.sp.z != null ? S.sp.z : null);
+  H.gs.push(Math.hypot(S.vel[0], S.vel[1])); H.vs.push(S.vel[2]);
+  H.roll.push(S.att[0]*DEG); H.rollSp.push(S.sp ? S.tgtAtt[0]*DEG : null);
+  H.pitch.push(-S.att[1]*DEG); H.pitchSp.push(S.sp ? -S.tgtAtt[1]*DEG : null);
+  if (H.t.length > 320) for (const k in H) H[k].shift();
+}
+
+/* ---------- canvases ---------- */
+function fitCanvas(c){
+  const dpr = Math.min(2, window.devicePixelRatio || 1), w = c.clientWidth, h = c.clientHeight;
+  const W = Math.max(1, Math.round(w*dpr)), Hh = Math.max(1, Math.round(h*dpr));
+  if (c.width !== W || c.height !== Hh){ c.width = W; c.height = Hh; }
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return [ctx, w, h];
+}
+const adi = $('#adi'), tape = $('#tape'), chart = $('#chart');
+function drawADI(){
+  const [ctx, w, h] = fitCanvas(adi); const S = Sim.S;
+  const r = Math.min(w, h)/2 - 2, cx = w/2, cy = h/2, roll = S.att[0], pitch = -S.att[1]*DEG, ppd = r/32;
+  ctx.clearRect(0, 0, w, h);
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.clip();
+  ctx.translate(cx, cy); ctx.rotate(-roll); ctx.translate(0, pitch*ppd);
+  ctx.fillStyle = '#3a76b0'; ctx.fillRect(-3*r, -6*r, 6*r, 6*r);
+  ctx.fillStyle = '#7a5130'; ctx.fillRect(-3*r, 0, 6*r, 6*r);
+  ctx.strokeStyle = '#ffffff'; ctx.fillStyle = '#ffffff'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-2*r, 0); ctx.lineTo(2*r, 0); ctx.stroke();
+  ctx.lineWidth = 1; ctx.font = '9px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle';
+  for (let k = -40; k <= 40; k += 5){
+    if (k === 0) continue;
+    const y = -k*ppd, len = k % 10 === 0 ? r*0.42 : r*0.2;
+    ctx.beginPath(); ctx.moveTo(-len/2, y); ctx.lineTo(len/2, y); ctx.stroke();
+    if (k % 10 === 0){ ctx.textAlign = 'right'; ctx.fillText(Math.abs(k), -len/2 - 3, y); ctx.textAlign = 'left'; ctx.fillText(Math.abs(k), len/2 + 3, y); }
+  }
+  ctx.restore();
+  ctx.save(); ctx.translate(cx, cy); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.2;
+  [-60,-45,-30,-20,-10,0,10,20,30,45,60].forEach(a => {
+    const t = (a - 90)*Math.PI/180, l = a % 30 === 0 ? 9 : 5;
+    ctx.beginPath(); ctx.moveTo(Math.cos(t)*(r-2), Math.sin(t)*(r-2)); ctx.lineTo(Math.cos(t)*(r-2-l), Math.sin(t)*(r-2-l)); ctx.stroke();
+  });
+  ctx.rotate(-roll); ctx.fillStyle = TK.accent;
+  ctx.beginPath(); ctx.moveTo(0, -r + 13); ctx.lineTo(-5, -r + 21); ctx.lineTo(5, -r + 21); ctx.closePath(); ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.translate(cx, cy); ctx.strokeStyle = TK.accent; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-r*0.55, 0); ctx.lineTo(-r*0.2, 0); ctx.lineTo(-r*0.1, r*0.09); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(r*0.55, 0); ctx.lineTo(r*0.2, 0); ctx.lineTo(r*0.1, r*0.09); ctx.stroke();
+  ctx.fillStyle = TK.accent; ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = TK['line-2']; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+}
+function drawTape(){
+  const [ctx, w, h] = fitCanvas(tape); const S = Sim.S, hd = hdgOf(S.att[2]), ppd = 3;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = TK['panel-2']; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = TK['line-2']; ctx.fillStyle = TK.muted; ctx.lineWidth = 1;
+  ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  const span = w/2/ppd;
+  for (let d = Math.floor((hd - span)/5)*5; d <= hd + span; d += 5){
+    const x = w/2 + (d - hd)*ppd, dd = ((d % 360) + 360) % 360, major = dd % 30 === 0;
+    ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, major ? 9 : 5); ctx.stroke();
+    if (major){
+      const lab = dd === 0 ? 'N' : dd === 90 ? 'E' : dd === 180 ? 'S' : dd === 270 ? 'W' : String(dd);
+      ctx.fillStyle = (lab.length === 1) ? TK.fg : TK.muted; ctx.fillText(lab, x, h - 6);
+    }
+  }
+  if (S.sp && S.sp.yaw != null){
+    let dh = hdgOf(S.sp.yaw) - hd; dh = ((dh + 540) % 360) - 180;
+    const x = clamp(w/2 + dh*ppd, 4, w - 4);
+    ctx.fillStyle = TK.tele; ctx.fillRect(x - 3, 0, 6, 4);
+  }
+  ctx.fillStyle = TK.accent; ctx.beginPath(); ctx.moveTo(w/2 - 5, 0); ctx.lineTo(w/2 + 5, 0); ctx.lineTo(w/2, 7); ctx.closePath(); ctx.fill();
+  ctx.fillRect(w/2 - 0.75, 7, 1.5, h - 7);
+}
+let chartTab = 'alt';
+const CHARTS = {
+  alt: { unit:'m', series:[ { k:'alt', c:'tele', l:'Độ cao' }, { k:'altSp', c:'accent', l:'Độ cao đặt', dash:true } ] },
+  spd: { unit:'m/s', series:[ { k:'gs', c:'tele', l:'Tốc độ ngang' }, { k:'vs', c:'accent', l:'Tốc độ đứng' } ] },
+  att: { unit:'°', series:[ { k:'roll', c:'tele', l:'Roll' }, { k:'rollSp', c:'tele', l:'Roll đặt', dash:true }, { k:'pitch', c:'accent', l:'Pitch' }, { k:'pitchSp', c:'accent', l:'Pitch đặt', dash:true } ] },
+};
+function renderLegend(){
+  $('#legend').innerHTML = CHARTS[chartTab].series.map(s => '<span><i class="' + (s.dash ? 'dash' : '') + '" style="border-color:var(--' + s.c + ')"></i>' + s.l + '</span>').join('');
+}
+$$('#chartSeg button').forEach(b => b.addEventListener('click', () => {
+  chartTab = b.dataset.ch; $$('#chartSeg button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderLegend();
+}));
+renderLegend();
+function niceStep(range){ const raw = range/3, p = Math.pow(10, Math.floor(Math.log10(raw))), n = raw/p; return (n < 1.5 ? 1 : n < 3.5 ? 2 : n < 7.5 ? 5 : 10)*p; }
+function drawChart(){
+  const [ctx, w, h] = fitCanvas(chart); const def = CHARTS[chartTab];
+  ctx.clearRect(0, 0, w, h);
+  const padL = 34, padR = 6, padT = 6, padB = 16, pw = w - padL - padR, phh = h - padT - padB;
+  const tNow = Sim.S.t, t0 = tNow - 30;
+  let lo = Infinity, hi = -Infinity;
+  def.series.forEach(s => H[s.k].forEach(v => { if (v != null){ if (v < lo) lo = v; if (v > hi) hi = v; } }));
+  if (!isFinite(lo)){ lo = 0; hi = 1; }
+  if (chartTab !== 'att'){ lo = Math.min(lo, 0); }
+  if (hi - lo < 1){ const m = (hi + lo)/2; lo = m - 0.5; hi = m + 0.5; if (chartTab !== 'att' && lo < 0 && Math.min(...def.series.map(s => Math.min(...H[s.k].filter(v => v != null).concat([0])))) >= 0){ hi -= lo; lo = 0; } }
+  const step = niceStep(hi - lo); lo = Math.floor(lo/step)*step; hi = Math.ceil(hi/step)*step;
+  const X = t => padL + (t - t0)/30*pw, Y = v => padT + (1 - (v - lo)/(hi - lo))*phh;
+  ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 1;
+  for (let v = lo; v <= hi + 1e-9; v += step){
+    const y = Math.round(Y(v)) + 0.5;
+    ctx.strokeStyle = TK.line; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+    ctx.fillStyle = TK.muted; ctx.fillText(fx(v, step < 1 ? 1 : 0), padL - 5, y);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  for (let s = 0; s <= 30; s += 10){ const x = padL + s/30*pw; ctx.fillStyle = TK.muted; ctx.fillText(s === 30 ? 'bây giờ' : '−' + (30 - s) + ' s', clamp(x, padL + 14, w - padR - 18), h - 3); }
+  ctx.save(); ctx.beginPath(); ctx.rect(padL, padT - 2, pw, phh + 4); ctx.clip();
+  def.series.forEach(s => {
+    const arr = H[s.k]; ctx.strokeStyle = TK[s.c]; ctx.lineWidth = s.dash ? 1.3 : 1.8; ctx.setLineDash(s.dash ? [4,3] : []);
+    ctx.beginPath(); let pen = false;
+    for (let i = 0; i < arr.length; i++){
+      const v = arr[i]; if (v == null){ pen = false; continue; }
+      const x = X(H.t[i]), y = Y(v);
+      if (!pen){ ctx.moveTo(x, y); pen = true; } else ctx.lineTo(x, y);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+    if (!s.dash && arr.length && arr[arr.length-1] != null){ ctx.fillStyle = TK[s.c]; ctx.beginPath(); ctx.arc(X(H.t[arr.length-1]), Y(arr[arr.length-1]), 2.6, 0, Math.PI*2); ctx.fill(); }
+  });
+  ctx.restore();
+  ctx.fillStyle = TK.muted; ctx.textAlign = 'left'; ctx.fillText(def.unit, 2, padT + 6);
+}
+
+/* ---------- DOM telemetry (10 Hz) ---------- */
+const E = id => document.getElementById(id);
+const els = {}; ['roAlt','roVs','roGs','roHdg','roHome','roObs','kvRoll','kvRollSp','kvPitch','kvPitchSp','kvMass','kvCargoSub','kvT','kvTW',
+  'batPct','batFill','batBar','batV','batCell','batI','batUsed','batRem','batFt','metaTime','metaBat','smTime',
+  'cSpE','cSpN','cSpU','cPE','cPN','cPU','cVE','cVN','cVU','hudAlt','hudGs','hudObs','hudWp','banner'].forEach(k => els[k] = E(k));
+const motEls = [E('m1'), E('m2'), E('m3'), E('m4')].map(m => ({ bar:m.querySelector('.m-bar'), fill:m.querySelector('.m-bar span'), rpm:m.querySelector('.m-v b'), pct:m.querySelector('.m-v span') }));
+function updateDom(){
+  const S = Sim.S, p = S.pos, v = S.vel, Pp = Sim.P;
+  const gs = Math.hypot(v[0], v[1]);
+  els.roAlt.textContent = fx(p[2], 1);
+  els.roVs.textContent = fx(v[2], 1);
+  els.roGs.textContent = fx(gs, 1);
+  els.roHdg.textContent = pad3(hdgOf(S.att[2]));
+  els.roHome.textContent = fx(Math.hypot(p[0], p[1]), 1);
+  const obsD = Math.max(0, S.minObsDist);
+  els.roObs.textContent = obsD > 40 ? '>40' : fx(obsD, 1);
+  els.roObs.style.color = obsD < 3.5 ? 'var(--bad)' : obsD < 6.5 ? 'var(--warn)' : '';
+
+  els.kvRoll.textContent = fx(S.att[0]*DEG, 1) + '°';
+  els.kvPitch.textContent = fx(-S.att[1]*DEG, 1) + '°';
+  els.kvRollSp.textContent = S.sp ? 'đặt ' + fx(S.tgtAtt[0]*DEG, 1) + '°' : '';
+  els.kvPitchSp.textContent = S.sp ? 'đặt ' + fx(-S.tgtAtt[1]*DEG, 1) + '°' : '';
+  els.kvMass.textContent = Pp.m.toFixed(2) + ' kg';
+  els.kvCargoSub.textContent = Pp.cargoMass > 0 ? ('hàng ' + Pp.cargoMass.toFixed(2) + ' kg') : 'đã giao hàng';
+  els.kvT.textContent = fx(S.T, 1) + ' N';
+  els.kvTW.textContent = 'T/W ' + (S.T/(Pp.m*Pp.g)).toFixed(2);
+  const pct = S.soc*100;
+  els.batPct.textContent = Math.ceil(pct - 0.001) + '%';
+  els.metaBat.textContent = Math.ceil(pct - 0.001) + '%';
+  els.batFill.style.width = pct.toFixed(1) + '%';
+  els.batBar.classList.toggle('low', S.soc < 0.25 && S.soc >= 0.15);
+  els.batBar.classList.toggle('crit', S.soc < 0.15);
+  els.batV.textContent = S.V.toFixed(2) + ' V';
+  els.batCell.textContent = (S.V/Pp.cells).toFixed(2) + ' V';
+  els.batI.textContent = S.I.toFixed(1) + ' A';
+  els.batUsed.textContent = Math.round(S.mAh) + ' mAh';
+  const rate = S.I/3.6*P.drain;
+  els.batRem.textContent = S.state !== 'DISARMED' && rate > 0.1 ? mmss((Pp.capacity - S.mAh)/rate) : '—';
+  els.batFt.textContent = mmss(S.flightT);
+  els.metaTime.textContent = mmss(S.armT);
+  els.smTime.textContent = 'đã ' + S.stateT.toFixed(1) + ' s';
+  for (let i = 0; i < 4; i++){
+    const r = S.f[i]/Pp.fMax; const m = motEls[i];
+    m.fill.style.width = (r*100).toFixed(1) + '%'; m.bar.classList.toggle('hot', r > 0.85);
+    m.rpm.textContent = Math.round(S.rpm[i]/10)*10; m.pct.textContent = Math.round(r*100);
+  }
+  const sp = S.sp;
+  els.cSpE.textContent = sp && sp.xy ? fx(sp.xy[0], 1) : '—';
+  els.cSpN.textContent = sp && sp.xy ? fx(sp.xy[1], 1) : '—';
+  els.cSpU.textContent = sp && sp.z != null ? fx(sp.z, 1) : '—';
+  els.cPE.textContent = fx(p[0], 1); els.cPN.textContent = fx(p[1], 1); els.cPU.textContent = fx(p[2], 1);
+  els.cVE.textContent = sp ? fx(sp.vd[0], 1) : '—'; els.cVN.textContent = sp ? fx(sp.vd[1], 1) : '—'; els.cVU.textContent = sp ? fx(sp.vd[2], 1) : '—';
+  els.hudAlt.textContent = fx(p[2], 1) + ' m';
+  els.hudGs.textContent = fx(gs, 1) + ' m/s';
+  els.hudObs.textContent = obsD > 40 ? 'AN TOÀN' : fx(obsD, 1) + ' m';
+  els.hudWp.textContent = S.state === 'MISSION' ? (S.wpIdx + 1) + '/' + Sim.mission.length : Sim.mission.length ? '—/' + Sim.mission.length : '—';
+
+  // banner
+  let msg = '', cls = 'warn';
+  if (P.linkLost) { msg = 'Mất liên kết: drone tự né cao ốc về Nhà Máy'; cls = 'bad'; }
+  else if (S.state === 'EMERGENCY') { msg = 'Khẩn cấp: Động cơ đã ngắt'; cls = 'bad'; }
+  else if (deliveryBannerText) { msg = deliveryBannerText; cls = 'good'; }
+  else if (S.state === 'FAILSAFE') msg = 'Failsafe: ' + S.fsReason + ', đang về Nhà Máy';
+  else if (!S.grounded && obsD < 4.2) { msg = 'Lidar APF: Đang né ' + S.nearObsName + ' (' + fx(obsD, 1) + ' m)'; cls = 'warn'; }
+  else if (S.soc < 0.25 && S.state !== 'DISARMED') msg = 'Pin yếu ' + Math.ceil(pct) + '%';
+  else if (demo.on) { msg = 'Đang chạy Demo Giao Hàng Đô Thị'; cls = 'warn'; }
+  els.banner.hidden = !msg; if (msg){ els.banner.textContent = msg; els.banner.className = 'ov ov-banner ' + cls; }
+
+  const act = S.state === 'MISSION' ? S.wpIdx : -1;
+  if (act !== lastActiveWp){
+    lastActiveWp = act;
+    $$('#wpBody tr').forEach((tr, i) => { tr.classList.toggle('active', i === act); tr.classList.toggle('done', act >= 0 && i < act); });
+  }
+  if (cargoLocked !== !S.grounded){
+    cargoLocked = !S.grounded;
+    $('#pCargo').disabled = cargoLocked; $('#btnReloadCargo').disabled = cargoLocked;
+    $('#pCargo').title = cargoLocked ? 'Chỉ đổi khối lượng hàng khi drone đang đỗ' : '';
+  }
+  const live = (S.state === 'HOVER' || S.state === 'MANUAL') && !P.linkLost;
+  $('#stickL').classList.toggle('dim', !live); $('#stickR').classList.toggle('dim', !live);
+  updateWindHudUI();
+  refreshValidity(false);
+}
+
+/* ---------- 3D URBAN & MANUFACTURING FACTORY ENVIRONMENT ---------- */
+function init3D(){
+  if (!window.THREE) throw new Error('three.js chưa tải được');
+  const THREE = window.THREE;
+  const canvas = $('#gl'), stage = $('#stage');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 800);
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x556270, 0.88); scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffffff, 0.78); sun.position.set(45, 85, 35); scene.add(sun);
+  scene.fog = new THREE.Fog(0xffffff, 95, 320);
+
+  const groundMat = new THREE.MeshLambertMaterial({ color:0xcccccc });
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), groundMat); ground.rotation.x = -Math.PI/2; scene.add(ground);
+  let grid = null;
+
+  const toV = (e, n, u) => new THREE.Vector3(e, u, -n);
+  function canvasTex(size, draw){ const c = document.createElement('canvas'); c.width = c.height = size; draw(c.getContext('2d'), size); const t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t; }
+
+  function textSprite(txt, fg, bg, scale){
+    const tex = canvasTex(256, (x, s) => {
+      x.fillStyle = bg;
+      x.beginPath();
+      if (x.roundRect) x.roundRect(14, 58, s - 28, 140, 28);
+      else x.rect(14, 58, s - 28, 140);
+      x.fill();
+      x.lineWidth = 6; x.strokeStyle = fg; x.stroke();
+      x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle';
+      let fs = 54;
+      do { x.font = '700 ' + fs + 'px "Barlow Condensed", "Arial Narrow", Arial, sans-serif'; fs -= 2; } while (fs > 24 && x.measureText(txt).width > s - 56);
+      x.fillText(txt, s/2, s/2 + 4);
+    });
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, depthWrite:false, transparent:true, sizeAttenuation:false }));
+    sp.scale.set(scale * 1.65, scale, 1); sp.renderOrder = 12; return sp;
+  }
+
+  // Urban Road Network (Asphalt streets with lane dashes)
+  const roadGroup = new THREE.Group(); scene.add(roadGroup);
+  const roadMat = new THREE.MeshLambertMaterial({ color:0x333b42 });
+  const swMat = new THREE.MeshLambertMaterial({ color:0x9aa4ad });
+  const dashMat = new THREE.MeshBasicMaterial({ color:0xe8edf2 });
+  const ewRoads = [-42, -6, 14, 44];
+  const nsRoads = [-44, -20, 10, 46];
+
+  function addRoadEW(nPos, width, len){
+    const sw = new THREE.Mesh(new THREE.PlaneGeometry(len, width + 2.8), swMat);
+    sw.rotation.x = -Math.PI/2; sw.position.set(0, 0.009, -nPos); roadGroup.add(sw);
+    const r = new THREE.Mesh(new THREE.PlaneGeometry(len, width), roadMat);
+    r.rotation.x = -Math.PI/2; r.position.set(0, 0.014, -nPos); roadGroup.add(r);
+    for (let x = -len/2 + 4; x < len/2 - 4; x += 6){
+      const d = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.22), dashMat);
+      d.rotation.x = -Math.PI/2; d.position.set(x, 0.020, -nPos); roadGroup.add(d);
+    }
+  }
+  function addRoadNS(ePos, width, len){
+    const sw = new THREE.Mesh(new THREE.PlaneGeometry(width + 2.8, len), swMat);
+    sw.rotation.x = -Math.PI/2; sw.position.set(ePos, 0.010, 0); roadGroup.add(sw);
+    const r = new THREE.Mesh(new THREE.PlaneGeometry(width, len), roadMat);
+    r.rotation.x = -Math.PI/2; r.position.set(ePos, 0.016, 0); roadGroup.add(r);
+    for (let z = -len/2 + 4; z < len/2 - 4; z += 6){
+      const d = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 2.6), dashMat);
+      d.rotation.x = -Math.PI/2; d.position.set(ePos, 0.021, z); roadGroup.add(d);
+    }
+  }
+  ewRoads.forEach(n => addRoadEW(n, 7.5, 168));
+  nsRoads.forEach(e => addRoadNS(e, 7.5, 168));
+
+  // Crosswalk stripes at all road intersections
+  ewRoads.forEach(n => {
+    nsRoads.forEach(e => {
+      for (let s = -2.4; s <= 2.4; s += 0.8){
+        const cw1 = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 1.8), dashMat);
+        cw1.rotation.x = -Math.PI/2; cw1.position.set(e + s, 0.023, -(n + 4.8)); roadGroup.add(cw1);
+        const cw2 = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 1.8), dashMat);
+        cw2.rotation.x = -Math.PI/2; cw2.position.set(e + s, 0.023, -(n - 4.8)); roadGroup.add(cw2);
+      }
+    });
+  });
+
+  // Helper to check if a point (e, n) overlaps roads, factory apron, hubs, or high-rise footprints
+  function isZoneFree(e, n, padR){
+    for (let i = 0; i < ewRoads.length; i++) if (Math.abs(n - ewRoads[i]) < 4.8 + padR) return false;
+    for (let i = 0; i < nsRoads.length; i++) if (Math.abs(e - nsRoads[i]) < 4.8 + padR) return false;
+    if (e > -21 - padR && e < 7 + padR && n > -16 - padR && n < 12 + padR) return false; // Factory compound
+    const hubs = Object.values(Sim.HUBS);
+    for (let i = 0; i < hubs.length; i++) if (Math.hypot(e - hubs[i].e, n - hubs[i].n) < 5.5 + padR) return false;
+    for (let i = 0; i < Sim.obstacles.length; i++){
+      const o = Sim.obstacles[i];
+      if (Math.abs(e - o.e) < o.rx + padR + 1.2 && Math.abs(n - o.n) < o.ry + padR + 1.2) return false;
+    }
+    return true;
+  }
+
+  // Green Park Lawns in several urban blocks
+  const parkMat = new THREE.MeshLambertMaterial({ color:0x688f64 });
+  const parkZones = [
+    { e: -32, n: 29, w: 18, d: 22 },
+    { e: 28,  n: -24, w: 26, d: 26 },
+    { e: -4,  n: 56, w: 20, d: 16 },
+    { e: -58, n: 4,  w: 20, d: 14 },
+    { e: 60,  n: -24, w: 22, d: 26 }
+  ];
+  parkZones.forEach(pk => {
+    const pMesh = new THREE.Mesh(new THREE.PlaneGeometry(pk.w, pk.d), parkMat);
+    pMesh.rotation.x = -Math.PI/2; pMesh.position.copy(toV(pk.e, pk.n, 0.008));
+    scene.add(pMesh);
+  });
+
+  // Detailed Residential Neighborhoods & Shophouse Clusters ("Các khu nhà phố / biệt thự thấp tầng")
+  const houseGroup = new THREE.Group(); scene.add(houseGroup);
+  const housePalette = [0xd8cfc4, 0xc7d3dd, 0xe3d5b8, 0xbec9be, 0xd9c2ba, 0xcbd0d6];
+  const roofPalette = [0x9e4736, 0x3f5364, 0x6b4c3b, 0x485c54];
+  const winStripMat = new THREE.MeshBasicMaterial({ color:0x263542 });
+  function addLowRiseHouse(e, n, w, d, h, rotY, palIdx){
+    if (!isZoneFree(e, n, Math.max(w, d)*0.55)) return;
+    const g = new THREE.Group();
+    g.position.copy(toV(e, n, 0));
+    g.rotation.y = rotY;
+    const wallM = new THREE.MeshLambertMaterial({ color: housePalette[palIdx % housePalette.length] });
+    const roofM = new THREE.MeshLambertMaterial({ color: roofPalette[palIdx % roofPalette.length] });
+    const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallM);
+    bodyMesh.position.y = h / 2;
+    g.add(bodyMesh);
+    // Pitched or terraced roof
+    if (palIdx % 2 === 0){
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w, d)*0.68, 1.35, 4), roofM);
+      roof.position.y = h + 0.67;
+      roof.rotation.y = Math.PI / 4;
+      g.add(roof);
+    } else {
+      const parapet = new THREE.Mesh(new THREE.BoxGeometry(w + 0.25, 0.45, d + 0.25), roofM);
+      parapet.position.y = h + 0.22;
+      g.add(parapet);
+    }
+    // Windows band
+    const win1 = new THREE.Mesh(new THREE.BoxGeometry(w + 0.06, 0.65, d * 0.65), winStripMat);
+    win1.position.y = h * 0.65;
+    g.add(win1);
+    houseGroup.add(g);
+  }
+
+  // Place clusters of neighborhood houses across city blocks
+  const neighborhoodRows = [
+    // North-West residential quarter
+    { e0:-36, n0: 26, dx: 4.6, dn: 0, count: 3, w:3.8, d:4.6, h:4.5 },
+    { e0:-36, n0: 34, dx: 4.6, dn: 0, count: 3, w:3.8, d:4.4, h:5.2 },
+    // Mid-North shophouses
+    { e0: -3, n0:  4, dx: 4.2, dn: 0, count: 2, w:3.6, d:4.2, h:4.8 },
+    // Far-North neighborhood near Hub A
+    { e0:-34, n0: 52, dx: 5.0, dn: 0, count: 3, w:4.0, d:4.8, h:5.0 },
+    { e0: 36, n0: 52, dx: 0, dn: 5.0, count: 3, w:4.8, d:4.0, h:5.4 },
+    // East commercial shophouses
+    { e0: 56, n0: -18, dx: 0, dn: -5.2, count: 4, w:5.0, d:4.2, h:5.5 },
+    { e0: 64, n0: -18, dx: 0, dn: -5.2, count: 4, w:4.8, d:4.2, h:4.6 },
+    { e0: 26, n0: -12, dx: 4.8, dn: 0, count: 3, w:4.0, d:4.4, h:4.8 },
+    // South-East residential block
+    { e0:  2, n0: -26, dx: 4.8, dn: 0, count: 3, w:4.0, d:4.6, h:5.0 },
+    { e0:  2, n0: -34, dx: 4.8, dn: 0, count: 3, w:4.0, d:4.6, h:4.4 },
+    { e0: 22, n0: -50, dx: 5.0, dn: 0, count: 4, w:4.2, d:5.0, h:5.2 },
+    // West industrial/residential blocks
+    { e0:-56, n0: 24, dx: 0, dn: 5.2, count: 4, w:5.0, d:4.2, h:5.0 },
+    { e0:-56, n0:-18, dx: 0, dn:-5.2, count: 4, w:5.0, d:4.2, h:4.8 }
+  ];
+  let hSeed = 1;
+  neighborhoodRows.forEach(row => {
+    for (let i = 0; i < row.count; i++){
+      addLowRiseHouse(
+        row.e0 + i * row.dx,
+        row.n0 + i * row.dn,
+        row.w, row.d,
+        row.h + ((hSeed * 7) % 3) * 0.45,
+        row.dx !== 0 ? 0 : Math.PI/2,
+        hSeed++
+      );
+    }
+  });
+
+  // Urban Trees ("Cây cối"): Avenue trees & Park trees (sway gently with wind!)
+  const treeCrowns = [];
+  const trunkMat = new THREE.MeshLambertMaterial({ color:0x634832 });
+  const leafMat1 = new THREE.MeshLambertMaterial({ color:0x3b7a47 });
+  const leafMat2 = new THREE.MeshLambertMaterial({ color:0x4c8c52 });
+  const trunkGeo = new THREE.CylinderGeometry(0.18, 0.26, 1.8, 7);
+  const crownGeoSphere = new THREE.DodecahedronGeometry(1.35, 1);
+  const crownGeoCone = new THREE.ConeGeometry(1.25, 3.2, 8);
+
+  function addTree(e, n, scale, style){
+    if (!isZoneFree(e, n, 0.8)) return;
+    const g = new THREE.Group();
+    g.position.copy(toV(e, n, 0));
+    const tr = new THREE.Mesh(trunkGeo, trunkMat);
+    tr.position.y = 0.9 * scale;
+    tr.scale.setScalar(scale);
+    g.add(tr);
+
+    const crownPivot = new THREE.Group();
+    crownPivot.position.y = 1.6 * scale;
+    if (style % 2 === 0){
+      const c1 = new THREE.Mesh(crownGeoSphere, leafMat1);
+      c1.position.y = 0.8 * scale;
+      c1.scale.set(scale, scale * 1.15, scale);
+      crownPivot.add(c1);
+    } else {
+      const c2 = new THREE.Mesh(crownGeoCone, leafMat2);
+      c2.position.y = 1.2 * scale;
+      c2.scale.setScalar(scale);
+      crownPivot.add(c2);
+    }
+    g.add(crownPivot);
+    scene.add(g);
+    treeCrowns.push({ pivot: crownPivot, phase: (e * 0.17 + n * 0.23) });
+  }
+
+  // Avenue trees along sidewalks
+  let tIdx = 0;
+  ewRoads.forEach(nR => {
+    for (let e = -72; e <= 72; e += 11){
+      addTree(e, nR + 5.6, 0.85 + (tIdx % 3)*0.12, tIdx++);
+      addTree(e + 4, nR - 5.6, 0.85 + (tIdx % 3)*0.12, tIdx++);
+    }
+  });
+  nsRoads.forEach(eR => {
+    for (let n = -72; n <= 72; n += 11){
+      addTree(eR + 5.6, n, 0.85 + (tIdx % 3)*0.12, tIdx++);
+      addTree(eR - 5.6, n + 4, 0.85 + (tIdx % 3)*0.12, tIdx++);
+    }
+  });
+  // Extra park tree clusters
+  parkZones.forEach(pk => {
+    for (let dx = -pk.w*0.35; dx <= pk.w*0.35; dx += 5.2){
+      for (let dn = -pk.d*0.35; dn <= pk.d*0.35; dn += 5.2){
+        addTree(pk.e + dx, pk.n + dn, 0.95 + ((tIdx++) % 3)*0.15, tIdx);
+      }
+    }
+  });
+
+  // Streetlights ("Đèn đường") along avenues with lamp heads & ground light pools
+  const streetLightGroup = new THREE.Group(); scene.add(streetLightGroup);
+  const poleMat = new THREE.MeshLambertMaterial({ color:0x525e68 });
+  const bulbMat = new THREE.MeshBasicMaterial({ color:0xffe29a });
+  const poolTex = canvasTex(64, (x, s) => {
+    const grd = x.createRadialGradient(s/2, s/2, 2, s/2, s/2, s/2);
+    grd.addColorStop(0, 'rgba(255,216,130,0.42)');
+    grd.addColorStop(1, 'rgba(255,216,130,0)');
+    x.fillStyle = grd; x.fillRect(0, 0, s, s);
+  });
+  const poolMat = new THREE.MeshBasicMaterial({ map:poolTex, transparent:true, depthWrite:false });
+  const poleGeo = new THREE.CylinderGeometry(0.07, 0.10, 4.6, 6);
+  const armGeo = new THREE.BoxGeometry(1.25, 0.08, 0.08);
+  const headGeo = new THREE.BoxGeometry(0.38, 0.12, 0.22);
+  const poolGeo = new THREE.PlaneGeometry(4.2, 4.2);
+
+  function addStreetLight(e, n, dirAngle){
+    // Skip if right inside a road intersection
+    for (let i = 0; i < ewRoads.length; i++) if (Math.abs(n - ewRoads[i]) < 3.9) return;
+    for (let i = 0; i < nsRoads.length; i++) if (Math.abs(e - nsRoads[i]) < 3.9) return;
+    const g = new THREE.Group();
+    g.position.copy(toV(e, n, 0));
+    g.rotation.y = dirAngle;
+    const p = new THREE.Mesh(poleGeo, poleMat); p.position.y = 2.3; g.add(p);
+    const arm = new THREE.Mesh(armGeo, poleMat); arm.position.set(0.55, 4.55, 0); g.add(arm);
+    const hd = new THREE.Mesh(headGeo, bulbMat); hd.position.set(1.08, 4.48, 0); g.add(hd);
+    const pl = new THREE.Mesh(poolGeo, poolMat); pl.rotation.x = -Math.PI/2; pl.position.set(1.1, 0.024, 0); g.add(pl);
+    streetLightGroup.add(g);
+  }
+
+  ewRoads.forEach(nR => {
+    for (let e = -68; e <= 68; e += 16){
+      addStreetLight(e, nR + 4.35, -Math.PI/2);
+      addStreetLight(e + 8, nR - 4.35, Math.PI/2);
+    }
+  });
+  nsRoads.forEach(eR => {
+    for (let n = -68; n <= 68; n += 16){
+      addStreetLight(eR + 4.35, n, Math.PI);
+      addStreetLight(eR - 4.35, n + 8, 0);
+    }
+  });
+
+  // Manufacturing Factory Compound Apron & Launch Pad H at (0,0,0)
+  const apron = new THREE.Mesh(new THREE.PlaneGeometry(26, 26), new THREE.MeshLambertMaterial({ color:0x525c66 }));
+  apron.rotation.x = -Math.PI/2; apron.position.set(-7, 0.016, -2); scene.add(apron);
+
+  const padTex = canvasTex(256, (x, s) => {
+    x.fillStyle = 'rgba(26,35,44,0.95)'; x.beginPath(); x.arc(s/2, s/2, s/2 - 4, 0, Math.PI*2); x.fill();
+    x.lineWidth = 12; x.strokeStyle = '#e2891a'; x.beginPath(); x.arc(s/2, s/2, s/2 - 18, 0, Math.PI*2); x.stroke();
+    x.fillStyle = '#e2891a'; x.font = '700 116px "Barlow Condensed", Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('H', s/2, s/2 - 10);
+    x.font = '700 28px "JetBrains Mono", monospace'; x.fillStyle = '#ffffff'; x.fillText('FACTORY', s/2, s/2 + 64);
+  });
+  const pad = new THREE.Mesh(new THREE.CircleGeometry(2.1, 48), new THREE.MeshBasicMaterial({ map:padTex, transparent:true, depthWrite:false }));
+  pad.rotation.x = -Math.PI/2; pad.position.y = 0.025; scene.add(pad);
+  const facLabel = textSprite('NHÀ MÁY SX', '#1d1306', '#f2a33a', 0.052);
+  facLabel.position.copy(toV(-12, 2, 14.5)); scene.add(facLabel);
+
+  // Conveyor loading dock extending from Main Factory Hall toward Launch Pad (0,0)
+  const dock = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.2, 2.8), new THREE.MeshLambertMaterial({ color:0x68737e }));
+  dock.position.copy(toV(-5.2, 0, 0.6)); scene.add(dock);
+  for (let i = 0; i < 3; i++){
+    const pkg = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.55, 0.7), new THREE.MeshLambertMaterial({ color:0xd97b16 }));
+    pkg.position.copy(toV(-6.4 + i*1.1, 0, 1.48)); scene.add(pkg);
+  }
+  // Shipping containers & logistics trucks at the Manufacturing Factory yard
+  const contColors = [0x1f5f8b, 0xb83b2b, 0x2e7d47, 0xd98218];
+  for (let i = 0; i < 4; i++){
+    const cMesh = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.9, 1.8), new THREE.MeshLambertMaterial({ color:contColors[i] }));
+    cMesh.position.copy(toV(-17.5, -9.5 + i*2.2, 0.95));
+    scene.add(cMesh);
+  }
+
+  // Delivery Hubs (Hub A, Hub B, Hub C)
+  const hubColors = { A:'#0b7ba0', B:'#1c8748', C:'#d9483b' };
+  Object.values(Sim.HUBS).forEach(h => {
+    const col = hubColors[h.code];
+    const hTex = canvasTex(256, (x, s) => {
+      x.fillStyle = 'rgba(20,28,35,0.92)'; x.beginPath(); x.arc(s/2, s/2, s/2 - 6, 0, Math.PI*2); x.fill();
+      x.lineWidth = 14; x.strokeStyle = col; x.beginPath(); x.arc(s/2, s/2, s/2 - 20, 0, Math.PI*2); x.stroke();
+      x.fillStyle = '#ffffff'; x.font = '700 84px "Barlow Condensed", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText('HUB ' + h.code, s/2, s/2 + 4);
+    });
+    const hp = new THREE.Mesh(new THREE.CircleGeometry(2.4, 40), new THREE.MeshBasicMaterial({ map:hTex, transparent:true, depthWrite:false }));
+    hp.rotation.x = -Math.PI/2; hp.position.copy(toV(h.e, h.n, 0.025)); scene.add(hp);
+    const sp = textSprite('HUB ' + h.code, '#ffffff', col, 0.048);
+    sp.position.copy(toV(h.e, h.n, 4.2)); scene.add(sp);
+  });
+
+  const north = textSprite('BẮC (N)', '#ffffff', 'rgba(20,32,42,0.82)', 0.045); north.position.copy(toV(0, 74, 2.5)); scene.add(north);
+
+  // Build procedural window facade textures for urban skyscrapers
+  const winTexLight = canvasTex(256, (x, s) => {
+    x.fillStyle = '#7e8c99'; x.fillRect(0, 0, s, s);
+    for (let r = 0; r < 8; r++){
+      for (let c = 0; c < 4; c++){
+        x.fillStyle = ((r + c) % 3 === 0) ? '#b8d0e6' : '#4a5a68';
+        x.fillRect(14 + c*58, 10 + r*30, 38, 18);
+      }
+    }
+  });
+  winTexLight.wrapS = winTexLight.wrapT = THREE.RepeatWrapping;
+
+  const winTexDark = canvasTex(256, (x, s) => {
+    x.fillStyle = '#25313d'; x.fillRect(0, 0, s, s);
+    for (let r = 0; r < 8; r++){
+      for (let c = 0; c < 4; c++){
+        const lit = ((r*3 + c*5) % 4 === 0);
+        x.fillStyle = lit ? '#f2c166' : '#18222c';
+        x.fillRect(14 + c*58, 10 + r*30, 38, 18);
+      }
+    }
+  });
+  winTexDark.wrapS = winTexDark.wrapT = THREE.RepeatWrapping;
+
+  // Construct 3D meshes for all `Sim.obstacles` (Factory halls, Silo, and Urban High-Rises) + safety buffer rings
+  const cityMeshes = [];
+  const bufferGroup = new THREE.Group(); scene.add(bufferGroup);
+
+  Sim.obstacles.forEach((o, idx) => {
+    const w = o.rx * 2, d = o.ry * 2, h = o.h;
+    if (o.kind === 'factory'){
+      const m = new THREE.MeshLambertMaterial({ color:0x607080 });
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+      b.position.copy(toV(o.e, o.n, h/2)); scene.add(b);
+      // Orange industrial stripe + rooftop skylights
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(w + 0.1, 1.1, d + 0.1), new THREE.MeshBasicMaterial({ color:0xe2891a }));
+      stripe.position.copy(toV(o.e, o.n, h - 1.4)); scene.add(stripe);
+      cityMeshes.push({ mesh:b, kind:'factory' });
+    } else if (o.kind === 'silo'){
+      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(o.rx*0.8, o.rx*0.95, h, 18), new THREE.MeshLambertMaterial({ color:0x8a949e }));
+      cyl.position.copy(toV(o.e, o.n, h/2)); scene.add(cyl);
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(o.rx*0.83, o.rx*0.85, 1.8, 18), new THREE.MeshBasicMaterial({ color:0xc4302a }));
+      band.position.copy(toV(o.e, o.n, h - 2.2)); scene.add(band);
+      cityMeshes.push({ mesh:cyl, kind:'silo' });
+    } else {
+      const mat = new THREE.MeshLambertMaterial({ map: winTexLight });
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      b.position.copy(toV(o.e, o.n, h/2)); scene.add(b);
+      // Rooftop cap + HVAC unit
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, 0.6, d + 0.3), new THREE.MeshLambertMaterial({ color:0x434e58 }));
+      cap.position.copy(toV(o.e, o.n, h + 0.3)); scene.add(cap);
+      const hvac = new THREE.Mesh(new THREE.BoxGeometry(w*0.35, 1.4, d*0.35), new THREE.MeshLambertMaterial({ color:0x5b6773 }));
+      hvac.position.copy(toV(o.e + (idx%2?1:-1)*1.2, o.n, h + 1.0)); scene.add(hvac);
+      cityMeshes.push({ mesh:b, kind:'building', mat });
+    }
+  });
+
+  function rebuildSafetyBuffers(){
+    while (bufferGroup.children.length){
+      const c = bufferGroup.children.pop();
+      if (c.geometry) c.geometry.dispose();
+      if (c.material) c.material.dispose();
+    }
+    const sm = Sim.params.safeMargin;
+    const mat = new THREE.LineBasicMaterial({ color:0xe2891a, transparent:true, opacity:0.38 });
+    Sim.obstacles.forEach(o => {
+      const rx = o.rx + sm, ry = o.ry + sm;
+      const pts = [
+        toV(o.e - rx, o.n - ry, 0.12), toV(o.e + rx, o.n - ry, 0.12),
+        toV(o.e + rx, o.n + ry, 0.12), toV(o.e - rx, o.n + ry, 0.12),
+        toV(o.e - rx, o.n - ry, 0.12)
+      ];
+      bufferGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+    });
+  }
+
+  // Windsock at Factory edge
+  const sock = new THREE.Group(); sock.position.copy(toV(4.2, 4.2, 0)); scene.add(sock);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 3.0, 8), new THREE.MeshLambertMaterial({ color:0xb8bec4 })); pole.position.y = 1.5; sock.add(pole);
+  const sockPivot = new THREE.Group(); sockPivot.position.y = 2.95; sock.add(sockPivot);
+  const sockCone = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.2, 14, 1, true), new THREE.MeshLambertMaterial({ color:0xe2891a, side:THREE.DoubleSide }));
+  sockCone.rotation.z = Math.PI/2; sockCone.position.x = 0.6; sockPivot.add(sockCone);
+
+  // Heavy-Lift Cargo Drone 3D Model (with slung parcel box + rotating Lidar turret)
+  const k = 2.2;
+  const drone = new THREE.Group(); scene.add(drone);
+  const darkM = new THREE.MeshStandardMaterial({ color:0x232a31, roughness:0.55, metalness:0.3 });
+  const plateM = new THREE.MeshStandardMaterial({ color:0x424d58, roughness:0.45, metalness:0.38 });
+  const accM = new THREE.MeshStandardMaterial({ color:0xe2891a, roughness:0.45 });
+  const greyM = new THREE.MeshStandardMaterial({ color:0xc9cfd5, roughness:0.6 });
+  const boxM = new THREE.MeshStandardMaterial({ color:0xd4791c, roughness:0.65 });
+  const strapM = new THREE.MeshStandardMaterial({ color:0x1b2228, roughness:0.8 });
+
+  // Main airframe body (elevated on tall landing skids to fit cargo box underneath)
+  const yFrame = 0.135 * k;
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.24*k, 0.065*k, 0.16*k), darkM); body.position.y = yFrame; drone.add(body);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(0.18*k, 0.022*k, 0.12*k), plateM); top.position.y = yFrame + 0.042*k; drone.add(top);
+  const nose = new THREE.Mesh(new THREE.BoxGeometry(0.045*k, 0.036*k, 0.11*k), accM); nose.position.set(0.135*k, yFrame, 0); drone.add(nose);
+
+  // 360° Lidar dome on top of drone
+  const lidarTurret = new THREE.Group(); lidarTurret.position.set(-0.02*k, yFrame + 0.075*k, 0); drone.add(lidarTurret);
+  const lidarCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.036*k, 0.038*k, 0.042*k, 18), darkM); lidarTurret.add(lidarCyl);
+  const lidarLens = new THREE.Mesh(new THREE.CylinderGeometry(0.038*k, 0.038*k, 0.016*k, 18), new THREE.MeshBasicMaterial({ color:0x0b7ba0 }));
+  lidarTurret.add(lidarLens);
+
+  const ledM = new THREE.MeshBasicMaterial({ color:0x7a8590 });
+  const led = new THREE.Mesh(new THREE.SphereGeometry(0.014*k, 10, 8), ledM); led.position.set(0.05*k, yFrame + 0.06*k, 0); drone.add(led);
+
+  // Cargo Parcel Box slung beneath drone frame
+  const cargoGroup = new THREE.Group(); cargoGroup.position.set(0, 0.065*k, 0); drone.add(cargoGroup);
+  const parcel = new THREE.Mesh(new THREE.BoxGeometry(0.165*k, 0.095*k, 0.135*k), boxM); cargoGroup.add(parcel);
+  const strap1 = new THREE.Mesh(new THREE.BoxGeometry(0.17*k, 0.10*k, 0.022*k), strapM); cargoGroup.add(strap1);
+  const strap2 = new THREE.Mesh(new THREE.BoxGeometry(0.022*k, 0.10*k, 0.14*k), strapM); cargoGroup.add(strap2);
+
+  const props = [];
+  Sim.MOT.forEach(M => {
+    const x = M.x*k*0.62, z = -M.y*k*0.62, len = Math.hypot(x, z);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(len, 0.02*k, 0.028*k), darkM);
+    arm.position.set(x/2, yFrame, z/2); arm.rotation.y = Math.atan2(-z, x); drone.add(arm);
+    const mot = new THREE.Mesh(new THREE.CylinderGeometry(0.03*k, 0.034*k, 0.045*k, 16), plateM); mot.position.set(x, yFrame + 0.028*k, z); drone.add(mot);
+    const front = M.x > 0;
+    const prop = new THREE.Group(); prop.position.set(x, yFrame + 0.056*k, z);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.28*k, 0.005*k, 0.026*k), front ? accM : greyM); prop.add(blade);
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(0.14*k, 36), new THREE.MeshBasicMaterial({ color: front ? 0xe2891a : 0xc9cfd5, transparent:true, opacity:0, depthWrite:false, side:THREE.DoubleSide }));
+    disc.rotation.x = -Math.PI/2; prop.add(disc);
+    drone.add(prop); props.push({ prop, disc, dir: -M.s, ang: Math.random()*6 });
+    const nav = new THREE.Mesh(new THREE.SphereGeometry(0.012*k, 8, 6), new THREE.MeshBasicMaterial({ color: M.pos === 'FL' ? 0xff3b30 : M.pos === 'FR' ? 0x34c759 : 0xffffff }));
+    nav.position.set(x, yFrame, z); drone.add(nav);
+    if (M.x < 0) props[props.length-1].strobe = nav;
+  });
+
+  // Tall Cargo Landing Gear Skids
+  [-1, 1].forEach(sd => {
+    const skid = new THREE.Mesh(new THREE.BoxGeometry(0.26*k, 0.012*k, 0.014*k), darkM); skid.position.set(0, 0.006*k, sd*0.095*k); drone.add(skid);
+    [-1, 1].forEach(fb => {
+      const st = new THREE.Mesh(new THREE.BoxGeometry(0.012*k, 0.13*k, 0.012*k), darkM);
+      st.position.set(fb*0.07*k, 0.068*k, sd*0.09*k); drone.add(st);
+    });
+  });
+
+  // 8-ray Lidar laser visualization group attached to drone position (non-tilting horizontal scan)
+  const lidarGroup = new THREE.Group(); scene.add(lidarGroup);
+  const lidarLines = [];
+  for (let i = 0; i < 8; i++){
+    const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(1,0,0)]);
+    const m = new THREE.LineBasicMaterial({ color:0x52c2e4, transparent:true, opacity:0.65 });
+    const ln = new THREE.Line(g, m);
+    lidarGroup.add(ln); lidarLines.push(ln);
+  }
+  const lidarRing = new THREE.Mesh(
+    new THREE.RingGeometry(Sim.params.safeMargin - 0.15, Sim.params.safeMargin, 48),
+    new THREE.MeshBasicMaterial({ color:0x52c2e4, transparent:true, opacity:0.35, side:THREE.DoubleSide, depthWrite:false })
+  );
+  lidarRing.rotation.x = -Math.PI/2; lidarGroup.add(lidarRing);
+  const ringBase = Sim.params.safeMargin;
+
+  // Blob shadow
+  const shTex = canvasTex(128, (x, s) => { const g = x.createRadialGradient(s/2, s/2, 2, s/2, s/2, s/2); g.addColorStop(0, 'rgba(0,0,0,0.58)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, s, s); });
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), new THREE.MeshBasicMaterial({ map:shTex, transparent:true, depthWrite:false }));
+  shadow.rotation.x = -Math.PI/2; scene.add(shadow);
+
+  // 3D Wind Streamlines & On-Drone Wind Vector Indicator (visible when wind is enabled)
+  const windStreamGroup = new THREE.Group(); scene.add(windStreamGroup);
+  const WIND_STREAKS = 65;
+  const windParticles = [];
+  const streakMat = new THREE.LineBasicMaterial({ color:0x52c2e4, transparent:true, opacity:0.55 });
+  for (let i = 0; i < WIND_STREAKS; i++){
+    const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(3.5, 0, 0)]);
+    const ln = new THREE.Line(g, streakMat);
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.6, 6), new THREE.MeshBasicMaterial({ color:0x52c2e4, transparent:true, opacity:0.7 }));
+    head.rotation.z = -Math.PI / 2;
+    head.position.x = 3.5;
+    const item = new THREE.Group();
+    item.add(ln, head);
+    const e0 = (Math.random() - 0.5) * 140;
+    const n0 = (Math.random() - 0.5) * 140;
+    const u0 = 4 + Math.random() * 28;
+    item.position.copy(toV(e0, n0, u0));
+    windStreamGroup.add(item);
+    windParticles.push({ grp: item, e: e0, n: n0, u: u0, spdMul: 0.8 + Math.random() * 0.5 });
+  }
+
+  // Flight Trail
+  const TMAX = 2000; const trailPos = new Float32Array(TMAX*3); let tCount = 0, lastTrailT = -1;
+  const trailGeo = new THREE.BufferGeometry(); trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3)); trailGeo.setDrawRange(0, 0);
+  const trailMat = new THREE.LineBasicMaterial({ color:0x0b7ba0, transparent:true, opacity:0.9 });
+  const trail = new THREE.Line(trailGeo, trailMat); trail.frustumCulled = false; scene.add(trail);
+  function pushTrail(p){
+    if (tCount >= TMAX){ trailPos.copyWithin(0, 3); tCount = TMAX - 1; }
+    trailPos[tCount*3] = p[0]; trailPos[tCount*3+1] = p[2]; trailPos[tCount*3+2] = -p[1]; tCount++;
+    trailGeo.setDrawRange(0, tCount); trailGeo.attributes.position.needsUpdate = true;
+  }
+  function clearTrail(){ tCount = 0; trailGeo.setDrawRange(0, 0); }
+
+  // Setpoint marker
+  const spMat = new THREE.MeshBasicMaterial({ color:0xe2891a, transparent:true, opacity:0.9, depthTest:false });
+  const spMark = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.04, 8, 32), spMat); spMark.rotation.x = Math.PI/2; spMark.renderOrder = 5; scene.add(spMark);
+
+  // Mission & Obstacle-Avoidance Trajectory visualization
+  const wpGroup = new THREE.Group(); scene.add(wpGroup); let wpBalls = [];
+  function disposeObj(o){ if (o.geometry) o.geometry.dispose(); if (o.material){ if (o.material.map) o.material.map.dispose(); o.material.dispose(); } }
+  function rebuildMission(){
+    while (wpGroup.children.length){ const o = wpGroup.children.pop(); disposeObj(o); }
+    wpBalls = [];
+    rebuildSafetyBuffers();
+
+    const M = Sim.mission;
+    const acc = new THREE.Color(TK.accent), tele = new THREE.Color(TK.tele), bad = new THREE.Color(TK.bad), lineC = new THREE.Color(TK['line-2']);
+
+    // Draw blocked direct lines in dashed red so user clearly sees obstacles blocking the straight path
+    Sim.blockedSegments.forEach(b => {
+      const p1 = toV(b.from[0], b.from[1], b.from[2]);
+      const p2 = toV(b.to[0], b.to[1], b.to[2]);
+      const g = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+      const ln = new THREE.Line(g, new THREE.LineDashedMaterial({ color:bad, dashSize:1.2, gapSize:0.8, transparent:true, opacity:0.75 }));
+      ln.computeLineDistances();
+      wpGroup.add(ln);
+    });
+
+    // Draw waypoints (Destination vs Avoidance Node)
+    M.forEach((w, i) => {
+      const isAvoid = w.kind === 'avoid';
+      const top = toV(w.e, w.n, w.u);
+      const col = isAvoid ? tele : acc;
+      const pl = new THREE.Line(new THREE.BufferGeometry().setFromPoints([toV(w.e, w.n, 0.02), top]), new THREE.LineBasicMaterial({ color:lineC, transparent:true, opacity:isAvoid ? 0.45 : 0.85 }));
+      const ball = new THREE.Mesh(
+        isAvoid ? new THREE.OctahedronGeometry(0.32, 0) : new THREE.SphereGeometry(0.42, 16, 12),
+        new THREE.MeshBasicMaterial({ color:col })
+      );
+      ball.position.copy(top);
+      const labTxt = isAvoid ? ('NÉ ' + (i+1)) : ('#' + (i+1));
+      const lab = textSprite(labTxt, '#1d1306', isAvoid ? '#52c2e4' : TK.accent, isAvoid ? 0.032 : 0.042);
+      lab.position.copy(toV(w.e, w.n, w.u + 1.1));
+      wpGroup.add(pl, ball, lab);
+      wpBalls.push({ ball, isAvoid });
+    });
+
+    // Draw full trajectory path starting from Factory launch altitude through all mission points
+    if (M.length >= 1){
+      const ms = Sim.missionStart || { e:0, n:0, u:Math.max(Sim.params.takeoffAlt, M[0].u) };
+      const startPt = toV(ms.e, ms.n, ms.u);
+      const pts = [startPt].concat(M.map(w => toV(w.e, w.n, w.u)));
+      const path = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color:acc, linewidth:2 }));
+      wpGroup.add(path);
+    }
+  }
+
+  // RTL / Failsafe route home (dashed green), rebuilt whenever the sim plans a new one
+  const rtlGroup = new THREE.Group(); scene.add(rtlGroup);
+  let rtlVerDrawn = -1;
+  function drawRtl(){
+    while (rtlGroup.children.length) disposeObj(rtlGroup.children.pop());
+    const S = Sim.S, path = Sim.rtlPath;
+    if (!path.length) return;
+    const pts = [toV(S.hold[0], S.hold[1], S.rtlAlt)].concat(path.map(w => toV(w.e, w.n, w.u)));
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineDashedMaterial({ color:new THREE.Color(TK.good), dashSize:1.0, gapSize:0.6 }));
+    ln.computeLineDistances(); rtlGroup.add(ln);
+    path.forEach(w => {
+      const b = new THREE.Mesh(new THREE.OctahedronGeometry(0.3, 0), new THREE.MeshBasicMaterial({ color:new THREE.Color(TK.good) }));
+      b.position.copy(toV(w.e, w.n, w.u)); rtlGroup.add(b);
+    });
+  }
+
+  function applyTheme(){
+    readTokens();
+    rtlVerDrawn = -1;
+    const sky = new THREE.Color(TK['scene-sky']);
+    renderer.setClearColor(sky); scene.fog.color.copy(sky);
+    groundMat.color.set(TK['scene-ground']);
+    if (grid){ scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); }
+    grid = new THREE.GridHelper(240, 120, new THREE.Color(TK['scene-grid']), new THREE.Color(TK['scene-grid2'])); grid.position.y = 0.006; scene.add(grid);
+    hemi.intensity = TK.dark ? 0.65 : 0.9; sun.intensity = TK.dark ? 0.58 : 0.78;
+    cityMeshes.forEach(c => { if (c.kind === 'building'){ c.mat.map = TK.dark ? winTexDark : winTexLight; c.mat.needsUpdate = true; } });
+    trailMat.color.set(TK.tele); spMat.color.set(TK.accent);
+    rebuildMission();
+  }
+
+  // Camera modes: Orbit, Follow, Top-down Urban Planning View
+  const cam = { mode:'orbit', az:0.85, el:0.44, dist:22.0, tgt:new THREE.Vector3(0, 2.5, 0), pos:new THREE.Vector3() };
+  function setCam(mode){
+    cam.mode = mode; camera.up.set(0, 1, 0);
+    $$('#camSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cam === mode)));
+    if (mode === 'top' && cam.dist < 42) cam.dist = 48;
+  }
+  $$('#camSeg button').forEach(b => b.addEventListener('click', () => setCam(b.dataset.cam)));
+  // Distance along `dir` from `from` before the view ray enters a building (stops 1 m short)
+  function clearCamDist(from, dir, maxD){
+    for (let s = 1.0; s <= maxD; s += 0.5){
+      const e = from.x + dir.x*s, u = from.y + dir.y*s, n = -(from.z + dir.z*s);
+      for (let i = 0; i < Sim.obstacles.length; i++){
+        const o = Sim.obstacles[i];
+        if (u < o.h + 0.8 && Math.abs(e - o.e) < o.rx + 0.4 && Math.abs(n - o.n) < o.ry + 0.4) return Math.max(2.5, s - 1.0);
+      }
+    }
+    return maxD;
+  }
+  let camDistNow = null;
+  function smoothCamDist(want, dt){
+    if (camDistNow == null) camDistNow = want;
+    camDistNow += (want - camDistNow) * (want < camDistNow ? 0.45 : 1 - Math.exp(-dt*2.5));
+    return camDistNow;
+  }
+  function updateCamera(dt){
+    const S = Sim.S, dp = toV(S.pos[0], S.pos[1], S.pos[2]);
+    const a = 1 - Math.exp(-dt*5);
+    if (cam.mode === 'orbit'){
+      cam.tgt.lerp(dp.clone().add(new THREE.Vector3(0, 0.5, 0)), a);
+      const dir = new THREE.Vector3(Math.cos(cam.el)*Math.cos(cam.az), Math.sin(cam.el), Math.cos(cam.el)*Math.sin(cam.az));
+      const d = smoothCamDist(clearCamDist(cam.tgt, dir, cam.dist), dt);
+      camera.position.copy(cam.tgt).addScaledVector(dir, d); camera.up.set(0, 1, 0); camera.lookAt(cam.tgt);
+    } else if (cam.mode === 'follow'){
+      const ps = S.att[2], fwd = new THREE.Vector3(Math.cos(ps), 0, -Math.sin(ps));
+      const want = dp.clone().addScaledVector(fwd, -cam.dist*0.65).add(new THREE.Vector3(0, cam.dist*0.28 + 1.2, 0));
+      if (want.y < 0.8) want.y = 0.8;
+      cam.pos.lerp(want, 1 - Math.exp(-dt*3.5)); cam.tgt.lerp(dp.clone().add(new THREE.Vector3(0, 0.5, 0)), a);
+      const fdir = cam.pos.clone().sub(cam.tgt), flen = fdir.length() || 1; fdir.multiplyScalar(1 / flen);
+      const fd = smoothCamDist(clearCamDist(cam.tgt, fdir, flen), dt);
+      camera.position.copy(cam.tgt).addScaledVector(fdir, fd); camera.up.set(0, 1, 0); camera.lookAt(cam.tgt);
+    } else {
+      cam.tgt.lerp(dp, a);
+      camera.position.set(cam.tgt.x, cam.tgt.y + cam.dist*1.5 + 8, cam.tgt.z + 0.001);
+      camera.up.set(0, 0, -1); camera.lookAt(cam.tgt);
+    }
+    if (cam.mode !== 'follow') cam.pos.copy(camera.position);
+  }
+
+  // Pointer: orbit drag, pinch, click-to-add destination
+  const pts = new Map(); let downAt = null, moved = 0, pinch0 = 0, dist0 = 0;
+  canvas.addEventListener('pointerdown', e => {
+    if (e.button !== undefined && e.button !== 0) return;
+    canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if (pts.size === 1){ downAt = { x:e.clientX, y:e.clientY }; moved = 0; }
+    if (pts.size === 2){ const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a.x-b.x, a.y-b.y); dist0 = cam.dist; }
+    canvas.classList.add('drag');
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return;
+    const pr = pts.get(e.pointerId), dx = e.clientX - pr.x, dy = e.clientY - pr.y;
+    pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if (pts.size === 1){
+      moved += Math.abs(dx) + Math.abs(dy);
+      if (moved > 6){
+        if (cam.mode === 'follow'){ setCam('orbit'); const off = camera.position.clone().sub(cam.tgt); cam.az = Math.atan2(off.z, off.x); cam.el = Math.asin(clamp(off.y/off.length(), -1, 1)); }
+        if (cam.mode === 'orbit'){ cam.az += dx*0.008; cam.el = clamp(cam.el + dy*0.006, 0.05, 1.5); }
+      }
+    } else if (pts.size === 2){
+      const [a, b] = [...pts.values()]; const pd = Math.hypot(a.x-b.x, a.y-b.y);
+      if (pinch0 > 0) cam.dist = clamp(dist0*pinch0/pd, 3.0, 200); moved = 99;
+    }
+  });
+  const endPtr = e => {
+    if (!pts.has(e.pointerId)) return;
+    const single = pts.size === 1; pts.delete(e.pointerId);
+    if (single && moved < 6 && downAt && e.type === 'pointerup' && $('#wpMode').checked){
+      const g = groundAt(e.clientX, e.clientY); if (g) addWaypointAt(g.e, g.n);
+    }
+    if (!pts.size){ canvas.classList.remove('drag'); downAt = null; }
+  };
+  canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
+  canvas.addEventListener('wheel', e => { e.preventDefault(); cam.dist = clamp(cam.dist*Math.exp(e.deltaY*0.0012), 3.0, 200); }, { passive:false });
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3();
+  function groundAt(cx, cy){
+    const r = canvas.getBoundingClientRect();
+    ndc.set(((cx - r.left)/r.width)*2 - 1, -((cy - r.top)/r.height)*2 + 1);
+    ray.setFromCamera(ndc, camera);
+    return ray.ray.intersectPlane(plane, hit) ? { e:hit.x, n:-hit.z } : null;
+  }
+
+  function resize(){ const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w/h; camera.updateProjectionMatrix(); }
+  new ResizeObserver(resize).observe(stage); resize();
+
+  const ledColors = { idle:0x7a8590, armed:0xf2a33a, air:0x34c759, land:0x34c759, fs:0xf2a33a, emg:0xff3b30 };
+  function render(dt, dtSim){
+    const S = Sim.S, p = S.pos;
+    drone.position.copy(toV(p[0], p[1], p[2]));
+    drone.rotation.set(S.att[0], S.att[2], -S.att[1], 'YZX');
+
+    // Show/scale cargo box according to cargoMass
+    const cm = Sim.P.cargoMass;
+    cargoGroup.visible = cm > 0.02;
+    if (cargoGroup.visible){
+      const sc = 0.72 + 0.18 * cm;
+      cargoGroup.scale.set(sc, sc, sc);
+    }
+
+    const t = performance.now()/1000;
+    lidarTurret.rotation.y = S.t * 8.0;
+    props.forEach((pr, i) => {
+      const r = S.rpm[i]/Sim.P.rpmMax;
+      pr.ang += pr.dir*r*34*dtSim; pr.prop.rotation.y = pr.ang;
+      pr.disc.material.opacity = r*0.32; pr.prop.children[0].visible = r < 0.55;
+      if (pr.strobe) pr.strobe.visible = S.state === 'DISARMED' ? true : (t % 1) < 0.12;
+    });
+    const cls = META[S.state].cls;
+    ledM.color.setHex(ledColors[cls]);
+    led.visible = (cls === 'armed' || cls === 'fs') ? (t % 0.6) < 0.35 : true;
+
+    // Lidar rays & safety buffer visibility
+    const showLidar = $('#optLidar').checked;
+    bufferGroup.visible = showLidar;
+    lidarGroup.visible = showLidar && !S.grounded;
+    if (lidarGroup.visible){
+      lidarGroup.position.copy(toV(p[0], p[1], p[2] + 0.25));
+      lidarRing.scale.setScalar(Sim.params.safeMargin / ringBase);
+      S.lidarRays.forEach((r, idx) => {
+        const ln = lidarLines[idx];
+        const posArr = ln.geometry.attributes.position.array;
+        posArr[0] = 0; posArr[1] = 0; posArr[2] = 0;
+        posArr[3] = Math.cos(r.ang) * r.dist;
+        posArr[4] = 0;
+        posArr[5] = -Math.sin(r.ang) * r.dist;
+        ln.geometry.attributes.position.needsUpdate = true;
+        ln.material.color.setHex(r.hit ? (r.dist < 5.5 ? 0xf0605a : 0xf2a33a) : 0x52c2e4);
+        ln.material.opacity = r.hit ? 0.9 : 0.35;
+      });
+    }
+
+    shadow.position.set(p[0], 0.02, -p[1]);
+    const sc = 1.0 + p[2]*0.06; shadow.scale.set(sc, sc, 1);
+    shadow.material.opacity = Math.max(0.12, 1 - p[2]/40);
+    if ($('#optTrail').checked && !S.grounded && S.t - lastTrailT > 0.08){ pushTrail(p); lastTrailT = S.t; }
+    trail.visible = $('#optTrail').checked;
+    const sp = S.sp;
+    if (sp && sp.xy && $('#optSp').checked){ spMark.visible = true; spMark.position.copy(toV(sp.xy[0], sp.xy[1], sp.z != null ? sp.z : p[2])); }
+    else spMark.visible = false;
+
+    const inRtl = S.state === 'RTL' || S.state === 'FAILSAFE';
+    rtlGroup.visible = inRtl;
+    if (inRtl && S.rtlVer !== rtlVerDrawn){ rtlVerDrawn = S.rtlVer; drawRtl(); }
+
+    const act = S.state === 'MISSION' ? S.wpIdx : -1;
+    const ca = new THREE.Color(TK.accent), ct = new THREE.Color(TK.tele), cf = new THREE.Color(TK.faint);
+    wpBalls.forEach((item, i) => {
+      const b = item.ball;
+      b.material.color.copy(i === act ? ct : (act >= 0 && i < act) ? cf : (item.isAvoid ? ct : ca));
+      b.scale.setScalar(i === act ? 1.35 + 0.15*Math.sin(t*6) : 1);
+    });
+
+    const w = S.windNow, ws = Math.hypot(w[0], w[1]);
+    sockPivot.rotation.set(0, ws > 0.05 ? Math.atan2(w[1], w[0]) : sockPivot.rotation.y, -(1 - Math.min(1, ws/9))*1.25);
+
+    // Animate 3D wind streamlines and tree crowns swaying in the wind
+    const windVisible = Sim.params.windOn && ws > 0.05;
+    windStreamGroup.visible = windVisible;
+    if (windVisible){
+      const wAng = Math.atan2(w[1], w[0]); // angle in ENU (0 = East, pi/2 = North)
+      const streakScale = clamp(0.6 + ws * 0.14, 0.6, 2.2);
+      windParticles.forEach(wp => {
+        wp.e += w[0] * dtSim * wp.spdMul * 1.4;
+        wp.n += w[1] * dtSim * wp.spdMul * 1.4;
+        if (wp.e > 72) wp.e -= 144; else if (wp.e < -72) wp.e += 144;
+        if (wp.n > 72) wp.n -= 144; else if (wp.n < -72) wp.n += 144;
+        wp.grp.position.copy(toV(wp.e, wp.n, wp.u));
+        wp.grp.rotation.y = wAng;
+        wp.grp.scale.set(streakScale, 1, 1);
+      });
+      const swayAmp = Math.min(0.14, ws * 0.012);
+      treeCrowns.forEach(tc => {
+        const s = swayAmp * (0.7 + 0.3 * Math.sin(t * 2.6 + tc.phase));
+        tc.pivot.rotation.z = -Math.cos(wAng) * s;
+        tc.pivot.rotation.x = -Math.sin(wAng) * s;
+      });
+    } else {
+      treeCrowns.forEach(tc => { tc.pivot.rotation.set(0, 0, 0); });
+    }
+
+    updateCamera(dt);
+    renderer.render(scene, camera);
+  }
+
+  applyTheme();
+  return { render, rebuildMission, clearTrail, applyTheme };
+}
+try { R3 = init3D(); }
+catch (err){ R3 = null; $('#glErr').hidden = false; $('#gl').style.display = 'none'; console.warn(err); }
+
+$('#clearTrail').addEventListener('click', () => { if (R3) R3.clearTrail(); });
+
+/* theme changes */
+function onTheme(){ readTokens(); if (R3) R3.applyTheme(); }
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', onTheme); } catch (e) {}
+new MutationObserver(onTheme).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme','class'] });
+
+/* ---------- main loop ---------- */
+updateCargoSpecUI();
+updateWindHudUI();
+renderMission();
+onStateChanged();
+addLog('info', 'Sẵn sàng tại Nhà Máy Sản Xuất (0,0). Kiện hàng 1.50 kg đã khóa.', 'Tuyến mặc định tới Hub A (Bắc) đã tự động sinh điểm né cao ốc. Bấm "Chạy Demo Giao Hàng" để xem!', 0);
+const DT = 1/250;
+let last = performance.now(), accT = 0, lastDom = 0;
+function frame(now){
+  const fdt = Math.min(0.1, (now - last)/1000); last = now;
+  updateSticks(fdt);
+  demoTick();
+  accT += fdt*simSpeed; let n = 0;
+  while (accT >= DT && n < 240){ Sim.step(DT); accT -= DT; n++; }
+  if (n >= 240) accT = 0;
+  sample();
+  if (R3) R3.render(fdt, fdt*simSpeed);
+  drawADI(); drawTape(); drawChart();
+  if (now - lastDom > 100){ lastDom = now; updateDom(); }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
