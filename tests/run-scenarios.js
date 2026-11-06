@@ -196,5 +196,45 @@ function hoverSteps(adaptive){
   const drops = A.resp.filter(r => r.kind === 'drop').sort((a, b) => a.from.cargo - b.from.cargo);
   check('Bay thử: thả hàng nặng hơn → vọt lên cao hơn', drops.length === 2 && drops[1].peakV > drops[0].peakV, drops.map(r => r.from.cargo + ' kg: ' + r.peakV.toFixed(2) + ' m').join(' · '));
 }
+
+// 10. Surveillance missions (the drone's main job); cargo stays on board unless the route has drop points
+{
+  const sc = html.match(/<script id="surv-core">([\s\S]*?)<\/script>/)[1];
+  const SURV = new Function(sc + ';return SURV;')();
+  const radius = { min: 1e9, max: 0 };
+  const watchOrbit = Sim => { const S = Sim.S, o = Sim.params.orbit; if (o && S.orbPhase === 'circle' && S.orbTrav > 0.5){ const d = Math.hypot(S.pos[0] - o.e, S.pos[1] - o.n); radius.min = Math.min(radius.min, d); radius.max = Math.max(radius.max, d); } };
+
+  for (const key of Object.keys(SURV.PATROLS)){
+    const r = flyRoute(Sim => { Sim.params.task = 'patrol'; Sim.params.loops = 2; Sim.setDestinations(SURV.patrolPts(key), true); }, { maxT: 900 });
+    const pts = SURV.PATROLS[key].pts.length, laps = r.events.filter(e => e.type === 'lap').length, passes = r.events.filter(e => e.type === 'pass').length;
+    check(`Tuần tra "${SURV.PATROLS[key].name}" 2 vòng: qua đủ điểm, về Nhà máy, không thả hàng, không va chạm`,
+      !r.crashed && r.home && laps === 1 && passes === 2 * pts && r.delivered === 0 && r.S.cargoDelivered === false,
+      `${passes}/${2 * pts} điểm · cách tường gần nhất ${r.minClear.toFixed(2)} m`);
+  }
+
+  const B6 = makeSim().obstacles.find(o => o.id === 'B6');
+  radius.min = 1e9; radius.max = 0;
+  let r = flyRoute(Sim => Sim.setOrbit(Object.assign(SURV.orbitFor(B6), { u: 20, laps: 2, v: 4 }), true), { maxT: 900, during: watchOrbit });
+  const R6 = SURV.orbitFor(B6).r;
+  check(`Bay vòng ${B6.name} R ${R6} m, 2 vòng: bám bán kính, tự nâng độ cao qua nhà khác, về Nhà máy`,
+    !r.crashed && r.home && r.events.some(e => /Đã bay xong 2 vòng/.test(e.msg || '')) && radius.max - R6 < 1.5 && R6 - radius.min < 1.5 && r.Sim.params.orbit.u > 20,
+    `bán kính ${radius.min.toFixed(1)}–${radius.max.toFixed(1)} m · cao ${r.Sim.params.orbit.u} m · cách tường gần nhất ${r.minClear.toFixed(2)} m`);
+
+  // nose stays on the target while circling
+  let worst = 0;
+  r = flyRoute(Sim => Sim.setOrbit({ e: -4, n: -12, r: 14, u: 24, laps: 1, v: 4, name: 'Silo', lookU: 12 }, true), { maxT: 600,
+    during: Sim => { const S = Sim.S; if (S.orbPhase === 'circle' && S.orbTrav > 2){ const want = Math.atan2(-12 - S.pos[1], -4 - S.pos[0]); let d = Math.abs(want - S.att[2]); d = Math.min(d, 2 * Math.PI - d); worst = Math.max(worst, d * 180 / Math.PI); } } });
+  check('Bay vòng: sau khi vào vòng, mũi drone luôn hướng vào mục tiêu', !r.crashed && r.home && worst < 10, `lệch hướng lớn nhất ${worst.toFixed(1)}°`);
+
+  for (const key of Object.keys(SURV.AREAS)){
+    const A = SURV.AREAS[key], L = SURV.scanLanes(A, 30, 0.3);
+    const covered = L.lanes * L.width * (1 - 0.3) + 0.3 * L.width >= Math.min(A.e1 - A.e0, A.n1 - A.n0);
+    r = flyRoute(Sim => { Sim.params.task = 'scan'; Sim.setDestinations(L.pts, true); }, { maxT: 900 });
+    const passes = r.events.filter(e => e.type === 'pass').length;
+    check(`Quét "${A.name}" ở 30 m: ${L.lanes} làn phủ kín bề ngang, bay hết làn, về Nhà máy`,
+      covered && !r.crashed && r.home && passes === L.pts.length,
+      `${passes}/${L.pts.length} đầu làn · vệt ${L.width.toFixed(0)} m · cách tường gần nhất ${r.minClear.toFixed(2)} m`);
+  }
+}
 console.log(failures ? `\n${failures} kiểm tra thất bại` : '\nTất cả kiểm tra đều đạt');
 process.exit(failures ? 1 : 0);

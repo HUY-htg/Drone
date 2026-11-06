@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Urban Cargo Drone Sim</title>
-<meta name="description" content="Mô phỏng drone chở hàng trong đô thị chạy trên trình duyệt: động lực học quadcopter, PID xếp tầng, lập quỹ đạo né cao ốc A* + APF, máy trạng thái 10 trạng thái, dashboard telemetry và cảnh 3D.">
+<title>Urban Surveillance Drone Sim</title>
+<meta name="description" content="Mô phỏng drone giám sát đô thị (có chức năng chở hàng) chạy trên trình duyệt: tuần tra, bay vòng quanh mục tiêu, quét khu vực, camera gimbal nhận diện người và xe, động lực học quadcopter, PID xếp tầng, né cao ốc A* + APF, máy trạng thái và cảnh 3D.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%2314202a' stroke-width='2.6'%3E%3Cpath d='M10 10L30 30M30 10L10 30'/%3E%3Ccircle cx='9' cy='9' r='6'/%3E%3Ccircle cx='31' cy='9' r='6'/%3E%3Ccircle cx='9' cy='31' r='6'/%3E%3Ccircle cx='31' cy='31' r='6'/%3E%3C/g%3E%3Crect x='14' y='14' width='12' height='12' rx='2' fill='%23e2891a'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -494,6 +494,70 @@ td.an-bad{color:var(--bad);font-weight:600}
   .osd-sub{top:36px}
   .cam-foot .sub{display:none}
 }
+
+:root{--det-p:#c8357f;--det-v:#6250d6}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--det-p:#e05a98;--det-v:#8c7bf5} }
+:root[data-theme="dark"]{--det-p:#e05a98;--det-v:#8c7bf5}
+.sv{grid-area:sv}
+/* mission form */
+.sv-tasks{display:flex;width:100%;margin-bottom:10px}
+.sv-tasks button{flex:1;padding-inline:4px}
+.sv-opt .row{margin-bottom:8px}
+.sv-opt .row > label{font-size:13px}
+.sv-opt select{max-width:100%;min-width:0;flex:1}
+.sv-seg{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px}
+.sv-seg .seg{margin-left:auto}
+.sv-info{font-size:12px;color:var(--muted);margin:2px 0 10px;line-height:1.45}
+.sv-go{display:flex;gap:6px;margin-top:4px}
+.sv-go .btn.primary{flex:1}
+.sv-pick{display:flex;align-items:center;gap:8px;margin:10px 0 0;padding:7px 9px;border:1px dashed var(--accent);border-radius:4px;font-size:12.5px;background:var(--accent-soft)}
+.sv-pick span{flex:1}
+/* Giám sát panel */
+.sv-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.sv-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.sv-k{border:1px solid var(--line);border-radius:4px;padding:7px 10px;min-width:0;display:flex;flex-direction:column;gap:1px}
+.sv-k > span{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.sv-k b{font-family:var(--f-mono);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sv-k b small{font-size:12px;color:var(--muted);font-weight:500;margin-left:3px}
+.sv-k em{font-style:normal;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sv-k .sw{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:0}
+.sw-p{border-radius:50%;background:var(--det-p)}
+.sw-v{background:var(--det-v)}
+.sv-main{display:grid;grid-template-columns:minmax(240px,360px) minmax(0,1fr);gap:14px;align-items:start}
+.sv-map{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.sv-map canvas{width:100%;aspect-ratio:1;display:block;border:1px solid var(--line);border-radius:4px}
+.sv-map figcaption{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--muted)}
+.sv-map figcaption i{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px}
+.lg-cov{background:var(--accent);opacity:.45}
+.lg-foot{background:var(--tele);opacity:.4}
+.lg-rt{height:2px!important;vertical-align:3px!important;background:var(--accent)}
+.sv-log{min-width:0;display:flex;flex-direction:column;gap:8px}
+.sv-log-h{display:flex;align-items:center;gap:8px}
+.sv-log-h h3{margin:0;margin-right:auto}
+.sv-log .an-tw{max-height:330px}
+table.an-t tr.on td{background:var(--accent-soft)}
+.dk{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px}
+.dk::before{content:"";width:8px;height:8px;display:inline-block}
+.dk-p::before{border-radius:50%;background:var(--det-p)}
+.dk-v::before{background:var(--det-v)}
+.sv-empty{margin:0;font-size:12.5px;color:var(--muted)}
+table.sv-t th,table.sv-t td{text-align:left}
+table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6),table.sv-t td:nth-child(6){text-align:right}
+/* detection boxes drawn over the camera picture */
+.det-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.det-svg .db{fill:none;stroke-width:1.6}
+.det-svg .db-p{stroke:#ff5fa8}
+.det-svg .db-v{stroke:#a596ff}
+.det-svg .db-tr{stroke:#ffffff;stroke-width:2.4}
+.det-svg .dl{font-family:var(--f-mono);font-size:10.5px;font-weight:600;paint-order:stroke;stroke:rgba(8,14,20,.85);stroke-width:3px}
+.det-svg .dl-p{fill:#ff8cc0}
+.det-svg .dl-v{fill:#c2b8ff}
+@media (max-width:1240px){ .sv-stats{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (max-width:760px){
+  .sv-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sv-main{grid-template-columns:minmax(0,1fr)}
+  .sv-map canvas{max-width:420px}
+}
 @media (prefers-reduced-motion: reduce){
   *{transition:none!important}
 }
@@ -511,8 +575,8 @@ td.an-bad{color:var(--bad);font-weight:600}
         <path d="M17 17h6v6h-6z" fill="var(--panel)"/>
       </svg>
       <div class="brand-t">
-        <h1>Urban Cargo Drone Sim</h1>
-        <p id="brandSpec">X4 Heavy-Lift · khung 800 mm · tự trọng 2,4 kg + hàng 1,5 kg · pin 6S 12000 mAh · Lidar 360°</p>
+        <h1>Urban Surveillance Drone Sim</h1>
+        <p id="brandSpec">X4 giám sát · camera gimbal 3 trục · khung 800 mm · tự trọng 2,4 kg · chở hàng tới 3 kg · pin 6S 12000 mAh · Lidar 360°</p>
       </div>
     </div>
     <div class="top-state">
@@ -522,7 +586,7 @@ td.an-bad{color:var(--bad);font-weight:600}
     <div class="top-meta">
       <a class="src-link" href="https://github.com/HUY-htg/Drone" target="_blank" rel="noopener">Mã nguồn ↗</a>
       <div class="lay">
-        <button class="btn lay-btn" id="layBtn" aria-expanded="false" aria-controls="layMenu" title="Ẩn hoặc hiện các bảng dashboard (phím H)"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M5.5 2.5v11M10.5 2.5v11"/></svg>Bảng <b id="layCount">5/5</b></button>
+        <button class="btn lay-btn" id="layBtn" aria-expanded="false" aria-controls="layMenu" title="Ẩn hoặc hiện các bảng dashboard (phím H)"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M5.5 2.5v11M10.5 2.5v11"/></svg>Bảng <b id="layCount">6/6</b></button>
         <div class="lay-menu" id="layMenu" role="dialog" aria-label="Chọn bảng hiển thị" hidden>
           <p class="lay-h">Hiện các bảng</p>
           <div class="lay-list" id="layList"></div>
@@ -543,26 +607,58 @@ td.an-bad{color:var(--bad);font-weight:600}
   <main class="grid">
     <!-- FUNCTION -->
     <section class="panel fn" aria-labelledby="hFn">
-      <div class="ph"><span class="code">FN</span><h2 id="hFn">Điều hành giao hàng</h2><span class="ph-note">lệnh · quỹ đạo né · tải hàng</span></div>
+      <div class="ph"><span class="code">FN</span><h2 id="hFn">Điều hành nhiệm vụ</h2><span class="ph-note">lệnh · giám sát · chở hàng</span></div>
       <div class="scroll">
         <div class="sec">
           <h3>Lệnh bay</h3>
           <div class="cmds">
             <button class="cmd" data-cmd="ARM"><span class="cn">ARM</span><small>Khởi động tại Nhà máy</small></button>
             <button class="cmd" data-cmd="DISARM"><span class="cn">DISARM</span><small>Tắt động cơ</small></button>
-            <button class="cmd" data-cmd="TAKEOFF"><span class="cn">TAKEOFF</span><small>Cất cánh tải hàng</small></button>
-            <button class="cmd" data-cmd="LAND"><span class="cn">LAND</span><small>Hạ cánh / Giao hàng</small></button>
+            <button class="cmd" data-cmd="TAKEOFF"><span class="cn">TAKEOFF</span><small>Cất cánh tại Nhà máy</small></button>
+            <button class="cmd" data-cmd="LAND"><span class="cn">LAND</span><small>Hạ cánh tại chỗ</small></button>
             <button class="cmd" data-cmd="HOLD"><span class="cn">HOLD</span><small>Treo giữ vị trí</small></button>
             <button class="cmd" data-cmd="MANUAL"><span class="cn">MANUAL</span><small>Lái tay (có APF bảo vệ)</small></button>
-            <button class="cmd" data-cmd="MISSION"><span class="cn">MISSION</span><small>Bay giao hàng tự động</small></button>
+            <button class="cmd" data-cmd="MISSION"><span class="cn">MISSION</span><small>Bay nhiệm vụ tự động</small></button>
             <button class="cmd" data-cmd="RTL"><span class="cn">RTL</span><small>Về Nhà Máy (né tòa nhà)</small></button>
             <button class="cmd kill" data-cmd="KILL" id="killBtn"><span class="cn">KILL</span><small id="killTxt">Ngắt động cơ khẩn cấp</small></button>
           </div>
           <div class="valid"><span>Hợp lệ lúc này:</span><span id="validFn" class="row"></span></div>
         </div>
 
+        <div class="sec" id="svSec">
+          <div class="sec-h"><h3>Nhiệm vụ giám sát</h3><span class="chip chip-avoid">CAMERA</span></div>
+          <div class="seg sv-tasks" role="group" aria-label="Loại nhiệm vụ" id="svTaskSeg"><button data-task="patrol" aria-pressed="true">Tuần tra</button><button data-task="orbit">Bay vòng</button><button data-task="scan">Quét vùng</button><button data-task="delivery">Giao hàng</button></div>
+          <div class="sv-opt" data-for="patrol">
+            <div class="row"><label for="svPatrol">Tuyến</label><select id="svPatrol"><option value="fence">Hàng rào Nhà máy</option><option value="center">Trục phố trung tâm</option><option value="city">Vòng ngoài khu đô thị</option><option value="custom">Tự vẽ: click mặt đất 3D</option></select></div>
+            <div class="field"><label for="svPu">Độ cao tuần tra</label><output id="oSvPu"></output><input type="range" id="svPu" min="10" max="40" step="1" value="16"></div>
+            <div class="sv-seg">Số vòng<div class="seg" role="group" aria-label="Số vòng tuần tra" id="svLoops"><button data-l="1" aria-pressed="true">1</button><button data-l="2">2</button><button data-l="3">3</button><button data-l="0">Liên tục</button></div></div>
+            <p class="sv-info">Bay theo các trục phố, hết tuyến thì sang vòng sau. Camera tự quét hai bên ±55°.</p>
+          </div>
+          <div class="sv-opt" data-for="orbit" hidden>
+            <div class="row"><label for="svTarget">Mục tiêu</label><select id="svTarget"></select><button class="btn" id="svPickOrbit" title="Click mặt đất 3D để chọn tâm vòng bay">Chọn trên bản đồ</button></div>
+            <div class="field"><label for="svR">Bán kính vòng</label><output id="oSvR"></output><input type="range" id="svR" min="8" max="40" step="1" value="14"></div>
+            <div class="field"><label for="svOu">Độ cao vòng</label><output id="oSvOu"></output><input type="range" id="svOu" min="8" max="50" step="1" value="22"></div>
+            <div class="field"><label for="svOv">Tốc độ trên vòng</label><output id="oSvOv"></output><input type="range" id="svOv" min="2" max="7" step="0.5" value="4"></div>
+            <div class="sv-seg">Số vòng<div class="seg" role="group" aria-label="Số vòng bay" id="svLapsO"><button data-l="1" aria-pressed="true">1</button><button data-l="2">2</button><button data-l="3">3</button><button data-l="0">Liên tục</button></div></div>
+            <div class="sv-seg">Chiều bay<div class="seg" role="group" aria-label="Chiều bay vòng" id="svDir"><button data-d="1" aria-pressed="true">Ngược kim đồng hồ</button><button data-d="-1">Thuận</button></div></div>
+            <p class="sv-info" id="svOrbitInfo"></p>
+            <p class="sv-info">Mũi drone và camera luôn hướng vào mục tiêu.</p>
+          </div>
+          <div class="sv-opt" data-for="scan" hidden>
+            <div class="row"><label for="svArea">Vùng</label><select id="svArea"><option value="factory">Khu Nhà máy</option><option value="north">Khu phố Bắc</option><option value="east">Khu phố Đông</option><option value="pick">Vùng tự khoanh</option></select><button class="btn" id="svPickArea" title="Click 2 góc đối diện trên mặt đất 3D">Khoanh trên bản đồ</button></div>
+            <div class="field"><label for="svSu">Độ cao quét</label><output id="oSvSu"></output><input type="range" id="svSu" min="12" max="45" step="1" value="31"></div>
+            <p class="sv-info" id="svScanInfo"></p>
+            <p class="sv-info">Bay zig-zag, các vệt camera chồng nhau 30%. Camera chúc thẳng xuống; phần đất camera thấy rõ (cách ống kính dưới 45 m) được tô màu và tính vào độ phủ.</p>
+          </div>
+          <div class="sv-opt" data-for="delivery" hidden>
+            <p class="sv-info">Chở hàng là chức năng phụ: chọn Trạm Hub và khối lượng ở phần <b>Chở hàng</b> và <b>Tuyến bay · Giao hàng</b> bên dưới. Camera chúc xuống khi tới gần bãi thả.</p>
+          </div>
+          <div class="sv-go"><button class="btn primary" id="svStart">Bắt đầu tuần tra</button><button class="btn" id="svStop" title="Dừng nhiệm vụ, bay về Nhà máy">Gọi về (RTL)</button></div>
+          <div class="sv-pick" id="svPickMsg" hidden><span id="svPickTxt"></span><button class="btn mini" id="svPickCancel">Huỷ</button></div>
+        </div>
+
         <div class="sec">
-          <div class="sec-h"><h3>Kiện hàng &amp; Né vật cản (A* + APF)</h3><span class="chip chip-avoid" id="avoidBadge">A* ON</span></div>
+          <div class="sec-h"><h3>Chở hàng &amp; né vật cản (A* + APF)</h3><span class="chip chip-avoid" id="avoidBadge">A* ON</span></div>
           <div class="field">
             <label for="pCargo">Khối lượng kiện hàng</label><output id="oCargo"></output>
             <input type="range" id="pCargo" min="0" max="3" step="0.25" value="1.5">
@@ -589,8 +685,8 @@ td.an-bad{color:var(--bad);font-weight:600}
         </div>
 
         <div class="sec">
-          <div class="sec-h"><h3>Tuyến giao hàng đô thị</h3><span class="sub" id="wpCount"></span></div>
-          <label class="chk"><input type="checkbox" id="wpMode" checked> Click mặt đất 3D để thêm điểm giao hàng</label>
+          <div class="sec-h"><h3>Tuyến bay · Giao hàng (phụ)</h3><span class="sub" id="wpCount"></span></div>
+          <label class="chk"><input type="checkbox" id="wpMode" checked> Click mặt đất 3D để thêm điểm (tuần tra tự vẽ hoặc giao hàng)</label>
           <div class="field" style="margin-top:9px"><label for="pWpAlt">Độ cao hành trình đô thị</label><output id="oWpAlt"></output><input type="range" id="pWpAlt" min="8" max="36" step="1" value="12"></div>
           <div class="row" style="margin-bottom:6px"><label for="pEnd" style="font-size:13px">Khi giao xong</label>
             <select id="pEnd">
@@ -609,7 +705,7 @@ td.an-bad{color:var(--bad);font-weight:600}
           </div>
           <div class="wp-wrap">
             <table class="wp"><thead><tr><th>#</th><th>Loại</th><th>E (m)</th><th>N (m)</th><th>Cao</th><th><span style="position:absolute;left:-9999px">Xoá</span></th></tr></thead><tbody id="wpBody"></tbody></table>
-            <div class="wp-empty" id="wpEmpty" hidden>Chưa có điểm giao. Click mặt đất đô thị hoặc chọn một Trạm Giao Hàng (Hub A/B/C).</div>
+            <div class="wp-empty" id="wpEmpty" hidden>Chưa có điểm. Chọn một nhiệm vụ giám sát ở trên, click mặt đất đô thị, hoặc chọn một Trạm Giao Hàng (Hub A/B/C).</div>
           </div>
           <p class="note">Đường nét đứt đỏ là đường thẳng xuyên qua cao ốc bị cấm; đường xanh/cam là quỹ đạo tự động vòng qua hành lang đô thị an toàn.</p>
         </div>
@@ -667,7 +763,7 @@ td.an-bad{color:var(--bad);font-weight:600}
       </div>
       <div class="stage" id="stage">
         <canvas id="gl" aria-label="Cảnh 3D đô thị và nhà máy của drone chở hàng"></canvas>
-        <div class="ov ov-hint" id="hint">Kéo: xoay · cuộn chuột, chụm 2 ngón hoặc +/−: thu phóng · click mặt đất: đặt điểm giao hàng</div>
+        <div class="ov ov-hint" id="hint">Kéo: xoay · cuộn chuột, chụm 2 ngón hoặc +/−: thu phóng · click mặt đất: thêm điểm tuần tra / giao hàng</div>
         <div class="ov ov-hud" id="hud">
           <span>ALT</span><b id="hudAlt">0.0 m</b>
           <span>GS</span><b id="hudGs">0.0 m/s</b>
@@ -697,6 +793,7 @@ td.an-bad{color:var(--bad);font-weight:600}
         </div>
         <div class="ov ov-banner" id="banner" hidden></div>
         <div class="ov ov-err" id="glErr" hidden>Trình duyệt không khởi tạo được WebGL nên cảnh 3D không hiển thị. Mô phỏng, dashboard và máy trạng thái vẫn chạy bình thường.</div>
+        <svg class="det-svg" id="detSvg" aria-hidden="true"></svg>
         <button class="pip" id="pip" type="button" aria-label="Camera drone thu nhỏ: bấm để xem toàn khung"><span class="pip-lab" id="pipLab">CAMERA DRONE</span><span class="pip-sw" id="pipSw" aria-hidden="true">⤢ phóng to</span></button>
         <div class="osd" id="osd" hidden aria-hidden="true">
           <svg class="osd-svg" id="osdSvg">
@@ -704,7 +801,7 @@ td.an-bad{color:var(--bad);font-weight:600}
             <g id="osdX"><circle class="sh" r="13"/><path class="sh" d="M-24 0h-10M24 0h10M0 -24v-10M0 24v10"/><circle r="13" stroke-width="1.5"/><path d="M-24 0h-10M24 0h10M0 -24v-10M0 24v10" stroke-width="1.5"/><circle r="1.6" fill="currentColor" stroke-width="1"/></g>
           </svg>
           <div class="osd-top"><span class="osd-c" id="osdRec"></span><span class="osd-c" id="osdState"></span><span class="osd-c" id="osdBat"></span></div>
-          <div class="osd-sub"><span class="osd-c" id="osdHdg"></span><span class="osd-c" id="osdGim"></span></div>
+          <div class="osd-sub"><span class="osd-c" id="osdHdg"></span><span class="osd-c" id="osdGim"></span><span class="osd-c" id="osdDet"></span></div>
           <div class="osd-l"><div class="osd-c osd-v"><span>ĐỘ CAO</span><b id="osdAlt"></b></div><div class="osd-c osd-v nar-hide"><span>LÊN/XUỐNG</span><b id="osdVs"></b></div></div>
           <div class="osd-r"><div class="osd-c osd-v"><span>TỐC ĐỘ</span><b id="osdGs"></b></div><div class="osd-c osd-v"><span>CÁCH NHÀ MÁY</span><b id="osdHome"></b></div><div class="osd-c osd-v nar-hide"><span>GIÓ</span><b id="osdWind"></b></div></div>
         </div>
@@ -727,6 +824,7 @@ td.an-bad{color:var(--bad);font-weight:600}
           <button class="btn mini" data-tilt="reset" title="Gimbal −15°, hướng theo mũi, zoom 1×">Mặc định</button>
         </span>
         <div class="seg" role="group" aria-label="Zoom camera" id="czSeg"><button data-cz="1" aria-pressed="true">1×</button><button data-cz="2">2×</button><button data-cz="4">4×</button></div>
+        <label class="chk" title="Camera tự hướng theo nhiệm vụ: quét hai bên khi tuần tra, nhìn vào mục tiêu khi bay vòng, chúc thẳng xuống khi quét vùng, bám người/xe được chọn"><input type="checkbox" id="optAuto" checked> Tự động theo nhiệm vụ</label>
         <label class="chk"><input type="checkbox" id="optStab" checked> Ổn định gimbal</label>
         <label class="chk" title="Vẽ tuyến bay và điểm giao hàng chồng lên hình camera"><input type="checkbox" id="optAR" checked> AR tuyến bay</label>
         <span class="sub" id="camHelp">Toàn khung: kéo = xoay gimbal · cuộn = zoom · nhấp đúp = mặc định</span>
@@ -735,7 +833,7 @@ td.an-bad{color:var(--bad);font-weight:600}
 
     <!-- DASHBOARD -->
     <section class="panel dash" aria-labelledby="hDash">
-      <div class="ph"><span class="code">TLM</span><h2 id="hDash">Telemetry Giao Hàng</h2><span class="ph-note">ENU · Nhà Máy = (0,0,0)</span></div>
+      <div class="ph"><span class="code">TLM</span><h2 id="hDash">Telemetry</h2><span class="ph-note">ENU · Nhà Máy = (0,0,0)</span></div>
       <div class="scroll">
         <div class="sec">
           <div class="ro-grid">
@@ -835,11 +933,37 @@ td.an-bad{color:var(--bad);font-weight:600}
     </section>
 
     <!-- STATE -->
+    <section class="panel sv" id="surv" aria-labelledby="hSv">
+      <div class="ph"><span class="code">SV</span><h2 id="hSv">Giám sát</h2><span class="ph-note">camera · nhận diện người và xe · độ phủ</span></div>
+      <div class="sv-body">
+        <div class="sv-stats">
+          <div class="sv-k"><span>Nhiệm vụ</span><b id="svTask">—</b><em id="svProg"></em></div>
+          <div class="sv-k"><span><i class="sw sw-p" aria-hidden="true"></i>Người</span><b id="svPeople">0</b><em>khác nhau đã nhận diện</em></div>
+          <div class="sv-k"><span><i class="sw sw-v" aria-hidden="true"></i>Xe</span><b id="svCars">0</b><em>khác nhau đã nhận diện</em></div>
+          <div class="sv-k"><span>Đang thấy</span><b id="svNow">0</b><em id="svNowSub"></em></div>
+          <div class="sv-k"><span>Độ phủ</span><b><span id="svCov">0</span><small id="svCovU">m²</small></b><em id="svCovSub"></em></div>
+        </div>
+        <div class="sv-main">
+          <figure class="sv-map">
+            <canvas id="svMap" role="img" aria-label="Bản đồ giám sát: tòa nhà, tuyến bay, vùng camera đã quét, người và xe"></canvas>
+            <figcaption><span><i class="lg-cov"></i>Đã quét</span><span><i class="lg-foot"></i>Camera đang nhìn</span><span><i class="lg-rt"></i>Tuyến / vòng / vùng</span><span><i class="sw sw-p"></i>Người</span><span><i class="sw sw-v"></i>Xe</span></figcaption>
+          </figure>
+          <div class="sv-log">
+            <div class="sv-log-h"><h3>Nhật ký nhận diện</h3><button class="btn mini" id="svUntrack" hidden>Bỏ bám</button><button class="btn mini" id="svClear" title="Xoá nhật ký và vùng đã quét">Xoá</button></div>
+            <div class="an-tw"><table class="an-t sv-t">
+              <thead><tr><th>T+</th><th>Loại</th><th>Mã</th><th>Vị trí E, N</th><th>Cách drone</th><th>Tin cậy</th><th>Nhiệm vụ</th></tr></thead>
+              <tbody id="svTbody"></tbody></table></div>
+            <p class="sv-empty" id="svEmpty">Chưa nhận diện được ai. Camera nhận diện người và xe trong khung hình khi drone đã ARM, nếu đủ gần và không bị tòa nhà che. Bấm một dòng để camera bám theo đối tượng đó.</p>
+            <label class="chk"><input type="checkbox" id="svCovShow" checked> Tô vùng camera đã quét trên cảnh 3D</label>
+          </div>
+        </div>
+      </div>
+    </section>
     <section class="panel sm" aria-labelledby="hSm">
       <div class="ph"><span class="code">SM</span><h2 id="hSm">Máy trạng thái</h2><span class="ph-note">10 trạng thái · tự động né cao ốc khi MISSION, RTL và FAILSAFE</span></div>
       <div class="sm-body">
         <div class="sm-dia">
-          <div class="sm-scroll"><svg id="smSvg" viewBox="0 0 1020 340" role="img" aria-label="Sơ đồ máy trạng thái của drone giao hàng"></svg></div>
+          <div class="sm-scroll"><svg id="smSvg" viewBox="0 0 1020 340" role="img" aria-label="Sơ đồ máy trạng thái của drone giám sát"></svg></div>
           <p class="note">Ô cam là trạng thái hiện tại, viền đứt là trạng thái ngay trước, mũi tên sáng là lần chuyển gần nhất. Khi vào RTL hoặc FAILSAFE trong đô thị, drone tự động sinh quỹ đạo né các tòa nhà cao tầng để quay về Nhà Máy Sản Xuất.</p>
         </div>
         <div class="sm-side">
@@ -915,7 +1039,7 @@ td.an-bad{color:var(--bad);font-weight:600}
         </div>
       </div>
       <div class="rp-empty" id="rpEmpty">
-        <p><b>Chưa có chuyến bay nào được ghi.</b> Bấm <b>Chạy Demo Giao Hàng</b>, hoặc ARM rồi TAKEOFF. Báo cáo cập nhật ngay trong lúc bay và chốt lại khi drone hạ cánh: quỹ đạo thực tế so với tuyến dự kiến, trạng thái theo thời gian, độ cao, tốc độ, pin và khoảng cách tới tòa nhà.</p>
+        <p><b>Chưa có chuyến bay nào được ghi.</b> Bấm <b>Bắt đầu tuần tra</b> (hoặc một nhiệm vụ khác), hoặc ARM rồi TAKEOFF. Báo cáo cập nhật ngay trong lúc bay và chốt lại khi drone hạ cánh: quỹ đạo thực tế so với tuyến dự kiến, trạng thái theo thời gian, độ cao, tốc độ, pin và khoảng cách tới tòa nhà.</p>
       </div>
       <div class="rp-body" id="rpBody" hidden>
         <div class="rp-tiles" id="rpTiles"></div>
@@ -1079,6 +1203,50 @@ function aggregatePoints(points){
 }
 </script>
 
+<script id="surv-core">
+/* ===== Surveillance planning helpers (no DOM): patrol routes, scan areas, lawn-mower lanes, camera footprint ===== */
+const SURV = (() => {
+  const CAM_VFOV = 56, CAM_HFOV = 2 * Math.atan(Math.tan(CAM_VFOV / 2 * Math.PI / 180) * 16 / 9) * 180 / Math.PI;   // ≈ 87°
+  // Patrol routes follow the street grid (streets run E–W at n = −42, −6, 14, 44 and N–S at e = −44, −20, 10, 46)
+  const PATROLS = {
+    fence:  { name:'Hàng rào Nhà máy',     u:16, pts:[[-20,-6],[10,-6],[10,14],[-20,14]] },
+    center: { name:'Trục phố trung tâm',   u:18, pts:[[-44,14],[46,14],[46,-6],[-44,-6]] },
+    city:   { name:'Vòng ngoài khu đô thị', u:18, pts:[[-44,-42],[46,-42],[46,44],[-44,44]] }
+  };
+  // Scan areas: e0..e1 × n0..n1 (m, ENU)
+  const AREAS = {
+    factory: { name:'Khu Nhà máy',     e0:-30, e1:14, n0:-26, n1:24 },
+    north:   { name:'Khu phố Bắc',     e0:-30, e1:30, n0:24,  n1:60 },
+    east:    { name:'Khu phố Đông',    e0:20,  e1:62, n0:-36, n1:32 }
+  };
+  // Width of ground the nadir camera sees across track at height h
+  const footprint = h => 2 * h * Math.tan(CAM_HFOV / 2 * Math.PI / 180);
+  const footLen = h => 2 * h * Math.tan(CAM_VFOV / 2 * Math.PI / 180);
+  // Lawn-mower lanes along the longer side, spaced so neighbouring camera strips overlap by `overlap`
+  function scanLanes(a, u, overlap){
+    const ov = overlap == null ? 0.3 : overlap;
+    const W = a.e1 - a.e0, Hh = a.n1 - a.n0, alongN = Hh >= W;
+    const across = alongN ? W : Hh, spacing = footprint(u) * (1 - ov);
+    const nL = Math.max(1, Math.ceil(across / spacing));
+    const pts = [];
+    for (let i = 0; i < nL; i++){
+      const c = (alongN ? a.e0 : a.n0) + (i + 0.5) * across / nL;
+      const ends = alongN ? [[c, a.n0], [c, a.n1]] : [[a.e0, c], [a.e1, c]];
+      if (i % 2) ends.reverse();
+      ends.forEach((p, k) => pts.push({ e: Math.round(p[0] * 2) / 2, n: Math.round(p[1] * 2) / 2, u, label: 'Làn ' + (i + 1) + (k ? ' · cuối' : ' · đầu'), role: 'pass' }));
+    }
+    const len = pts.reduce((s, p, i) => i ? s + Math.hypot(p.e - pts[i - 1].e, p.n - pts[i - 1].n) : 0, 0);
+    return { pts, lanes: nL, spacing, width: footprint(u), len };
+  }
+  function patrolPts(key, u){
+    const r = PATROLS[key];
+    return r.pts.map((p, i) => ({ e: p[0], n: p[1], u: u || r.u, label: 'Điểm tuần tra ' + (i + 1), role: 'pass' }));
+  }
+  // Suggested orbit around a building: clear of its walls by a comfortable margin
+  function orbitFor(o){ return { e: o.e, n: o.n, r: Math.round(Math.max(o.rx, o.ry) * 1.4 + 9), lookU: Math.round(o.h * 0.6), name: o.name }; }
+  return { CAM_VFOV, CAM_HFOV, PATROLS, AREAS, footprint, footLen, scanLanes, patrolPts, orbitFor };
+})();
+</script>
 <script id="sim-core">
 /* ===== Urban Cargo Drone Simulation Core:
    Heavy-lift 6S dynamics, cascaded PID, 2.5D A* obstacle-avoidance trajectory planner,
@@ -1113,7 +1281,9 @@ var Sim = (function(){
   const params = {
     takeoffAlt: 10, rtlAlt: 14, vMax: 8, missionAlt: 12, missionEnd: 'RTL',
     cargoMass: 1.5, autoAvoid: true, autoDrop: true, safeMargin: 4.5,
-    windOn: true, windSpeed: 5, windDir: 270, gust: 0.3, drain: 5, linkLost: false, adaptive: true
+    windOn: true, windSpeed: 5, windDir: 270, gust: 0.3, drain: 5, linkLost: false, adaptive: true,
+    // task: 'delivery' | 'patrol' | 'orbit' | 'scan'; loops: patrol laps (0 = until recalled); orbit: { e, n, r, u, dir, v, laps, lookU, name }
+    task: 'delivery', loops: 1, orbit: null
   };
 
   // Delivery Hubs in the urban environment
@@ -1154,7 +1324,7 @@ var Sim = (function(){
   ];
 
   // Primary destinations requested by user/presets vs full expanded mission (with A* avoidance waypoints)
-  let destinations = [ { e: HUBS.A.e, n: HUBS.A.n, u: 12, label: 'Hub A' } ];
+  let destinations = [ { e: HUBS.A.e, n: HUBS.A.n, u: 12, label: 'Hub A', role: 'drop' } ];
   const mission = [];
   const blockedSegments = []; // [{ from:[e,n,u], to:[e,n,u], hitName }]
   let rtlPath = [];
@@ -1192,7 +1362,8 @@ var Sim = (function(){
       est:{ mHat: P.mBase + clamp(params.cargoMass, 0, 3.5), dHat:[0,0], wHat:[0,0], IHat: P.I0x + clamp(params.cargoMass, 0, 3.5) * P.rCargo * P.rCargo, valid:false },
       ctl:{ aH:[0,0], tiltCmd:0, T:0 },
       minObsDist: 12.0, nearObsName: '', hitObs: null, lidarRays: [], lidarT: -1, apfVec: [0,0], cargoDelivered: false,
-      destDone: 0, legFrom: null, dwell: 0, rtlVer: 0, windWarnT: -99
+      destDone: 0, legFrom: null, dwell: 0, rtlVer: 0, windWarnT: -99,
+      lap: 1, orbPhase: 'approach', orbTrav: 0, orbPrev: 0
     };
   }
   S = fresh();
@@ -1401,13 +1572,17 @@ var Sim = (function(){
     const airborne = !S.grounded && S.pos[2] > 1.5;
     const startPt = {
       e: S.pos[0], n: S.pos[1],
-      u: airborne ? Math.max(S.pos[2], params.takeoffAlt) : Math.max(params.takeoffAlt, destinations[from0].u)
+      u: airborne ? Math.max(S.pos[2], params.takeoffAlt, destinations[from0].u) : Math.max(params.takeoffAlt, destinations[from0].u)
     };
     missionStart = startPt;
     S.legFrom = airborne ? { e: S.pos[0], n: S.pos[1], u: S.pos[2] } : { e: startPt.e, n: startPt.n, u: startPt.u };
 
     let prev = startPt;
     let avoidCount = 0;
+    if (airborne && startPt.u > S.pos[2] + 1){
+      mission.push({ e: Math.round(S.pos[0] * 2) / 2, n: Math.round(S.pos[1] * 2) / 2, u: startPt.u, kind: 'avoid', label: 'Leo độ cao' });
+      avoidCount++;
+    }
     for (let i = from0; i < destinations.length; i++){
       const rawDest = destinations[i];
       const clean = sanitizePoint(rawDest.e, rawDest.n, rawDest.u, params.safeMargin * 0.7);
@@ -1415,7 +1590,7 @@ var Sim = (function(){
         rawDest.e = clean.e; rawDest.n = clean.n;
         if (!silent) emit({ type:'info', msg:'Điểm giao trùng vào ' + clean.hitName + ', đã dịch ra rìa an toàn (' + clean.e + ', ' + clean.n + ')' });
       }
-      const target = { e: rawDest.e, n: rawDest.n, u: rawDest.u, kind: 'dest', destIdx: i, label: rawDest.label || ('Đích ' + (i + 1)) };
+      const target = { e: rawDest.e, n: rawDest.n, u: rawDest.u, kind: 'dest', destIdx: i, label: rawDest.label || ('Đích ' + (i + 1)), role: rawDest.role || 'drop' };
 
       if (params.autoAvoid){
         const res = planSegmentAStar(prev, target, params.safeMargin);
@@ -1548,7 +1723,7 @@ var Sim = (function(){
     HOLD:    { from:['TAKEOFF','MANUAL','MISSION','RTL','LANDING','FAILSAFE'], to:'HOVER',
                guard(){ if (S.state==='FAILSAFE' && S.soc < 0.15) return 'pin dưới 15%, failsafe không thể huỷ'; } },
     MANUAL:  { from:['HOVER','MISSION','RTL'], to:'MANUAL' },
-    MISSION: { from:['HOVER','MANUAL'], to:'MISSION', guard(){ if (!mission.length) return 'chưa có điểm giao hàng'; } },
+    MISSION: { from:['HOVER','MANUAL'], to:'MISSION', guard(){ if (!mission.length && !(params.task === 'orbit' && params.orbit)) return 'chưa có nhiệm vụ (tuyến tuần tra, vòng bay, vùng quét hoặc điểm giao)'; } },
     RTL:     { from:['TAKEOFF','HOVER','MANUAL','MISSION','LANDING'], to:'RTL' },
     LAND:    { from:['TAKEOFF','HOVER','MANUAL','MISSION','RTL','FAILSAFE'], to:'LANDING' },
     KILL:    { from:['ARMED'].concat(AIR), to:'EMERGENCY' },
@@ -1590,6 +1765,7 @@ var Sim = (function(){
       case 'MISSION':
         // Resume from where the drone is, skipping hubs already served on this run
         S.dwell = 0;
+        if (params.task === 'orbit' && params.orbit){ S.orbPhase = 'approach'; destinations = [orbitEntry()]; S.destDone = 0; }
         rebuildTrajectory(true);
         break;
       case 'RTL': case 'FAILSAFE':
@@ -1661,18 +1837,85 @@ var Sim = (function(){
     E.IHat = P.I0x + Math.max(0, E.mHat - P.mBase) * P.rCargo * P.rCargo;
   }
 
+  const TASK_NAME = { delivery:'chuyến giao hàng', patrol:'tuần tra', orbit:'bay vòng', scan:'quét khu vực' };
+  function finishTask(why){
+    S.wpIdx = 0; S.destDone = 0;
+    const end = params.missionEnd;
+    setState(end === 'RTL' ? 'RTL' : end === 'LAND' ? 'LANDING' : 'HOVER', why || ('hoàn thành ' + (TASK_NAME[params.task] || 'nhiệm vụ')), 'auto');
+  }
   function advanceWaypoint(){
     const w = mission[S.wpIdx];
     S.legFrom = { e:w.e, n:w.n, u:w.u };
     S.dwell = 0;
     S.wpIdx++;
     if (S.wpIdx >= mission.length){
-      S.wpIdx = 0; S.destDone = 0;
-      const end = params.missionEnd;
-      setState(end === 'RTL' ? 'RTL' : end === 'LAND' ? 'LANDING' : 'HOVER', 'hoàn thành chuyến giao hàng', 'auto');
+      if (params.task === 'orbit' && params.orbit && S.orbPhase === 'approach'){ startCircle(); return false; }
+      if (params.task === 'patrol' && (params.loops === 0 || S.lap < params.loops)){
+        S.lap++; S.destDone = 0;
+        rebuildTrajectory(true);
+        emit({ type:'lap', msg:'Bắt đầu vòng tuần tra ' + S.lap + (params.loops ? '/' + params.loops : '') });
+        return false;
+      }
+      finishTask();
       return true;
     }
     return false;
+  }
+
+  /* ===== Orbit: circle a point of interest with the nose (and camera) turned to it ===== */
+  function orbitEntry(){
+    const o = params.orbit, p = S.pos;
+    let dx = p[0] - o.e, dy = p[1] - o.n, d = Math.hypot(dx, dy);
+    if (d < 0.5){ dx = 1; dy = 0; d = 1; }
+    const c = sanitizePoint(o.e + dx / d * o.r, o.n + dy / d * o.r, o.u, params.safeMargin * 0.7);
+    return { e: c.e, n: c.n, u: o.u, label: 'Vào vòng bay', role: 'stop' };
+  }
+  function setOrbit(o, silent){
+    const oo = Object.assign({ dir: 1, v: 4, laps: 1, lookU: 1, name: 'mục tiêu' }, o);
+    oo.r = clamp(oo.r, 6, 60); oo.u = clamp(oo.u, 6, P.fenceAlt - 2);
+    // every building the circle passes over must stay below the orbit altitude
+    let top = 0; const hit = [], m = params.safeMargin * 0.8;
+    for (let k = 0; k < 120; k++){
+      const a = k / 120 * 2 * Math.PI, e = oo.e + oo.r * Math.cos(a), n = oo.n + oo.r * Math.sin(a);
+      for (const ob of obstacles){
+        if (relevant(ob, oo.u) && Math.abs(e - ob.e) < ob.rx + m && Math.abs(n - ob.n) < ob.ry + m){
+          top = Math.max(top, ob.h); if (hit.indexOf(ob.name) < 0) hit.push(ob.name);
+        }
+      }
+    }
+    oo.raised = 0;
+    if (top > 0){
+      const u2 = Math.min(P.fenceAlt - 2, Math.ceil(top + 3));
+      if (!silent) emit({ type:'info', msg:'Vòng bay R ' + oo.r + ' m cắt qua ' + hit.join(', ') + ': nâng độ cao vòng từ ' + oo.u + ' lên ' + u2 + ' m' });
+      oo.raised = u2 - oo.u; oo.u = u2;
+    }
+    params.task = 'orbit'; params.orbit = oo;
+    S.orbPhase = 'approach'; S.lap = 1; S.orbTrav = 0;
+    destinations = [orbitEntry()]; S.destDone = 0;
+    return rebuildTrajectory(silent);
+  }
+  function startCircle(){
+    const o = params.orbit, p = S.pos;
+    S.orbPhase = 'circle'; S.orbPrev = Math.atan2(p[1] - o.n, p[0] - o.e); S.orbTrav = 0; S.lap = 1; S.wpIdx = 0;
+    emit({ type:'info', msg:'Bắt đầu bay vòng quanh ' + o.name + ' · R ' + o.r + ' m · cao ' + o.u + ' m' + (o.laps ? ' · ' + o.laps + ' vòng' : ' · lặp đến khi gọi về') });
+  }
+  function orbitGuidance(){
+    const o = params.orbit, p = S.pos;
+    const dx = p[0] - o.e, dy = p[1] - o.n, d = Math.max(0.1, Math.hypot(dx, dy)), th = Math.atan2(dy, dx);
+    const vt = Math.min(o.v, Math.sqrt(2.2 * o.r), params.vMax);
+    const rr = clamp(0.9 * (o.r - d), -3, 3);
+    const vxy = [-Math.sin(th) * o.dir * vt + Math.cos(th) * rr + S.apfVec[0], Math.cos(th) * o.dir * vt + Math.sin(th) * rr + S.apfVec[1]];
+    S.orbTrav += Math.abs(wrap(th - S.orbPrev)); S.orbPrev = th;
+    S.lap = Math.floor(S.orbTrav / (2 * Math.PI)) + 1;
+    // the yaw loop lags a turning target by ≈ (K.yawD / K.yaw)·ω, so lead the set-point by that much
+    S.yawSp = wrap(Math.atan2(-dy, -dx) + o.dir * (vt / d) * 0.75);
+    if (o.laps > 0 && S.orbTrav >= o.laps * 2 * Math.PI){
+      S.orbPhase = 'done'; S.lap = o.laps;
+      emit({ type:'info', msg:'Đã bay xong ' + o.laps + ' vòng quanh ' + o.name });
+      finishTask('hoàn thành ' + o.laps + ' vòng quanh ' + o.name);
+      return guidance(0);
+    }
+    return { vxy, z:o.u, yaw:S.yawSp, vUp:3.0, vDown:2.2 };
   }
 
   function guidance(dt){
@@ -1708,11 +1951,13 @@ var Sim = (function(){
         return g;
       }
       case 'MISSION': {
+        if (params.task === 'orbit' && params.orbit && S.orbPhase === 'circle') return orbitGuidance();
         if (!mission.length){ setState('HOVER', 'nhiệm vụ trống', 'auto'); return guidance(dt); }
         if (S.wpIdx >= mission.length) S.wpIdx = 0;
         if (!S.legFrom) S.legFrom = { e:p[0], n:p[1], u:p[2] };
         const w = mission[S.wpIdx];
         const isDest = w.kind !== 'avoid';
+        const isStop = isDest && w.role !== 'pass';
         if (S.dwell > 0){
           // Hovering over the hub while the parcel is released
           S.dwell -= dt;
@@ -1720,15 +1965,15 @@ var Sim = (function(){
           advanceWaypoint();
           return guidance(dt);
         }
-        const tr = trackLeg(S.legFrom, w, mission[S.wpIdx + 1] || null, params.vMax, isDest);
+        const tr = trackLeg(S.legFrom, w, mission[S.wpIdx + 1] || null, params.vMax, isStop);
         if (tr.toB > 1.5) S.yawSp = tr.heading;
         const dz = Math.abs(w.u - p[2]);
-        if (isDest){
+        if (isStop){
           if (tr.toB < 1.0 && dz < 0.8 && gs < 1.2){
             emit({ type:'info', msg:'Đã tới ' + (w.label || ('Đích ' + (w.destIdx + 1))) });
             S.destDone = w.destIdx + 1;
-            S.dwell = 0.6;
-            if (params.autoDrop && params.cargoMass > 0.001){
+            S.dwell = w.role === 'stop' ? 0.3 : 0.6;
+            if (w.role === 'drop' && params.autoDrop && params.cargoMass > 0.001){
               // Split the load evenly over the hubs still to be served on this route
               const share = params.cargoMass / Math.max(1, destinations.length - w.destIdx);
               params.cargoMass = Math.max(0, params.cargoMass - share);
@@ -1740,7 +1985,8 @@ var Sim = (function(){
             return { xy:[w.e, w.n], z:w.u, yaw:S.yawSp };
           }
         } else if ((tr.toB < 1.6 || legPassed(tr)) && dz < 1.2){
-          emit({ type:'info', msg:'Đã qua điểm né cao ốc (' + w.e + ', ' + w.n + ')' });
+          if (isDest){ S.destDone = w.destIdx + 1; emit({ type:'pass', msg:'Đã qua ' + (w.label || ('điểm ' + (w.destIdx + 1))) }); }
+          else emit({ type:'info', msg:'Đã qua điểm né cao ốc (' + w.e + ', ' + w.n + ')' });
           advanceWaypoint();
           return guidance(dt);
         }
@@ -1938,12 +2184,12 @@ var Sim = (function(){
   }
 
   function setDestinations(list, silent){
-    destinations = list.map(d => ({ e: d.e, n: d.n, u: d.u, label: d.label || '' }));
-    S.destDone = 0;
+    destinations = list.map(d => ({ e: d.e, n: d.n, u: d.u, label: d.label || '', role: d.role || 'drop' }));
+    S.destDone = 0; S.lap = 1;
     return rebuildTrajectory(silent);
   }
   function addDestination(d, silent){
-    destinations.push({ e: d.e, n: d.n, u: d.u, label: d.label || '' });
+    destinations.push({ e: d.e, n: d.n, u: d.u, label: d.label || '', role: d.role || 'drop' });
     return rebuildTrajectory(silent);
   }
   function removeDestination(i, silent){
@@ -1968,7 +2214,7 @@ var Sim = (function(){
   return {
     P, K, MOT, AIR, CMDS, HUBS, obstacles, params, mission, blockedSegments, sticks,
     on, step, command, check, setLink, reset, syncMass,
-    rebuildTrajectory, setDestinations, addDestination, removeDestination, sanitizePoint,
+    rebuildTrajectory, setDestinations, addDestination, removeDestination, sanitizePoint, setOrbit, pointInObs,
     planSegmentAStar, clearanceAt, windLimit, EST,
     get destinations(){ return destinations; },
     get missionStart(){ return missionStart; },
@@ -1992,12 +2238,12 @@ const tstamp = t => { const m = Math.floor(t/60), s = t - m*60; return String(m)
 const hdgOf = psi => ((90 - psi*DEG) % 360 + 360) % 360;
 
 const META = {
-  DISARMED: { cls:'idle',  sub:'tắt động cơ',    top:'Tại Nhà Máy Sản Xuất — Động cơ tắt', desc:'Drone chở hàng đang đỗ trên bãi phóng H của Nhà Máy Sản Xuất (0,0). Bấm ARM hoặc "Chạy Demo Giao Hàng" để khởi hành.' },
+  DISARMED: { cls:'idle',  sub:'tắt động cơ',    top:'Tại Nhà Máy Sản Xuất — Động cơ tắt', desc:'Drone giám sát đang đỗ trên bãi phóng H của Nhà Máy Sản Xuất (0,0). Bấm ARM hoặc "Chạy Demo Giao Hàng" để khởi hành.' },
   ARMED:    { cls:'armed', sub:'chờ tại xưởng',  top:'Động cơ quay không tải — Sẵn sàng cất cánh', desc:'4 động cơ heavy-lift quay không tải, kiện hàng đã khóa dưới bụng. Sẵn sàng TAKEOFF. Tự DISARM sau 12 giây nếu không cất cánh.' },
   TAKEOFF:  { cls:'air',   sub:'cất cánh tải',   top:'Đang cất cánh khỏi Nhà Máy Sản Xuất', desc:'Leo thẳng đứng lên độ cao hành trình an toàn trước khi rời khuôn viên Nhà Máy. Tới độ cao đặt sẽ tự chuyển sang HOVER.' },
   HOVER:    { cls:'air',   sub:'treo giữ vị trí', top:'Treo giữ vị trí ổn định', desc:'Giữ cố định toạ độ E/N/U và hướng mũi, tự động bù tải trọng kiện hàng và gió đô thị. Bấm MISSION để bay giao hàng.' },
   MANUAL:   { cls:'air',   sub:'lái tay + APF',  top:'Lái bằng tay (có trường lực APF bảo vệ)', desc:'Lái tự do bằng bàn phím hoặc cần ảo. Khi bật né vật cản, cảm biến Lidar 360° tạo lực đẩy APF giúp hạn chế va vào cao ốc.' },
-  MISSION:  { cls:'air',   sub:'giao hàng A*',   top:'Đang bay theo quỹ đạo giao hàng tự động', desc:'Bay qua chuỗi điểm dẫn đường đã được thuật toán A* tối ưu hóa để vòng tránh các tòa nhà cao tầng và giao kiện hàng tới Hub.' },
+  MISSION:  { cls:'air',   sub:'bay nhiệm vụ',   top:'Đang bay nhiệm vụ tự động', desc:'Bay qua chuỗi điểm dẫn đường đã được thuật toán A* tối ưu hóa để vòng tránh các tòa nhà cao tầng và giao kiện hàng tới Hub.' },
   RTL:      { cls:'air',   sub:'về Nhà Máy',     top:'Quay về Nhà Máy Sản Xuất (có né cao ốc)', desc:'Tự động tính toán hành lang né các tòa nhà cao tầng từ vị trí hiện tại về lại bãi đáp Nhà Máy Sản Xuất (0,0) rồi hạ cánh.' },
   LANDING:  { cls:'land',  sub:'hạ cánh',        top:'Đang hạ cánh chính xác', desc:'Hạ cánh tốc độ giảm dần để bảo vệ kiện hàng. Chạm đất ổn định 0,4 giây thì chuyển về ARMED.' },
   FAILSAFE: { cls:'fs',    sub:'tự bảo vệ',      top:'Failsafe — Tự động né vật cản về Nhà Máy', desc:'Kích hoạt khi pin dưới 15% hoặc mất sóng. Drone tự lập đường né cao ốc về Nhà Máy; nếu pin dưới 6% sẽ đáp khẩn cấp tại chỗ.' },
@@ -2013,7 +2259,7 @@ function readTokens(){
   const cs = getComputedStyle(document.documentElement);
   ['bg','panel','panel-2','line','line-2','fg','muted','faint','accent','accent-ink','tele','good','warn','bad','scene-sky','scene-ground','scene-grid','scene-grid2',
     'st-takeoff','st-hover','st-mission','st-rtl','st-landing','st-manual','st-ground','st-armed',
-    'pl-0','pl-1','pl-2','pl-3','pl-4','wd-0','wd-1','wd-2']
+    'pl-0','pl-1','pl-2','pl-3','pl-4','wd-0','wd-1','wd-2','det-p','det-v']
     .forEach(k => { TK[k] = cs.getPropertyValue('--' + k).trim() || '#888888'; });
   const hex = TK.bg.replace('#',''); const n = parseInt(hex.length === 3 ? hex.split('').map(c => c+c).join('') : hex, 16);
   TK.dark = (((n >> 16) & 255)*0.299 + ((n >> 8) & 255)*0.587 + (n & 255)*0.114) < 110;
@@ -2145,6 +2391,7 @@ Sim.on(ev => {
   if (ev.type === 'transition'){
     addLog(ev.kind === 'fail' ? 'fail' : 'tr', ev.from + ' → ' + ev.to, ev.reason, ev.t);
     onStateChanged();
+    if (ev.to === 'MISSION'){ renderMission(); svDraw3D(); }
   } else if (ev.type === 'delivery'){
     const left = Sim.params.cargoMass;
     addLog('info', ev.msg, left > 0 ? 'Tải trọng giảm, bay tiếp tới trạm sau' : 'Đã giao hết hàng', ev.t);
@@ -2154,7 +2401,9 @@ Sim.on(ev => {
     deliveryBannerText = ev.msg;
     clearTimeout(deliveryBannerTimer);
     deliveryBannerTimer = setTimeout(() => { deliveryBannerText = ''; }, 5000);
-  } else if (ev.type === 'info') addLog('info', ev.msg, '', ev.t);
+  } else if (ev.type === 'lap'){ addLog('info', ev.msg, '', ev.t); renderMission(); }
+  else if (ev.type === 'pass'){ /* patrol and scan points: shown in the route table, not the log */ }
+  else if (ev.type === 'info') addLog('info', ev.msg, '', ev.t);
   else if (ev.type === 'warn') addLog('warn', ev.msg, '', ev.t);
   else if (ev.type === 'reject') addLog('rej', ev.msg, '', ev.t);
   else if (ev.type === 'reset'){ addLog('info', ev.msg, '', ev.t); }
@@ -2228,7 +2477,7 @@ function updateWindHudUI(){
 function updateCargoSpecUI(){
   const cm = Sim.params.cargoMass;
   $('#metaCargo').textContent = cm.toFixed(2) + ' kg';
-  $('#brandSpec').textContent = 'X4 Heavy-Lift · khung 800 mm · tự trọng 2,4 kg + hàng ' + cm.toFixed(2) + ' kg · pin 6S 12000 mAh · Lidar 360°';
+  $('#brandSpec').textContent = 'X4 giám sát · camera gimbal 3 trục · khung 800 mm · tự trọng 2,4 kg' + (cm > 0 ? ' + hàng ' + cm.toFixed(2) + ' kg' : ', không chở hàng') + ' · pin 6S 12000 mAh · Lidar 360°';
 }
 function bindRange(id, outId, fmt, apply){
   const i = $('#' + id), o = $('#' + outId);
@@ -2393,13 +2642,19 @@ $('#btnClear').addEventListener('click', () => { Sim.setDestinations([], true); 
 $('#btnDemo').addEventListener('click', startDemo);
 $('#wpMode').addEventListener('change', e => {
   $('#hint').textContent = e.target.checked
-    ? 'Kéo: xoay · cuộn chuột, chụm 2 ngón hoặc +/−: thu phóng · click mặt đất: đặt điểm giao hàng'
+    ? 'Kéo: xoay · cuộn chuột, chụm 2 ngón hoặc +/−: thu phóng · click mặt đất: thêm điểm tuần tra / giao hàng'
     : 'Kéo: xoay · cuộn chuột, chụm 2 ngón hoặc +/−: thu phóng';
 });
 function addWaypointAt(e, n){
-  if (Sim.destinations.length >= 10){ addLog('rej', 'Tối đa 10 điểm giao hàng chính', '', Sim.S.t); return; }
+  if (SV.task === 'orbit' || SV.task === 'scan'){ addLog('rej', 'Đang ở nhiệm vụ ' + TASK_LABEL[SV.task], 'chuyển sang Tuần tra (tự vẽ) hoặc Giao hàng để thêm điểm bằng click', Sim.S.t); return; }
+  if (Sim.destinations.length >= 10){ addLog('rej', 'Tối đa 10 điểm trên tuyến', '', Sim.S.t); return; }
   e = clamp(Math.round(e*2)/2, -80, 80);
   n = clamp(Math.round(n*2)/2, -80, 80);
+  if (SV.task === 'patrol'){
+    if (SV.patrol !== 'custom'){ SV.patrol = 'custom'; $('#svPatrol').value = 'custom'; Sim.setDestinations([], true); }
+    Sim.addDestination({ e, n, u: SV.pu, label: 'Điểm tuần tra ' + (Sim.destinations.length + 1), role: 'pass' });
+    renderMission(); return;
+  }
   Sim.addDestination({ e, n, u: P.missionAlt, label: 'Điểm giao ' + (Sim.destinations.length + 1) });
   renderMission();
 }
@@ -2801,6 +3056,7 @@ function updateDom(){
   else if (S.soc < 0.25 && S.state !== 'DISARMED') msg = 'Pin yếu ' + Math.ceil(pct) + '%';
   else if (atest.on) { msg = 'Bay thử ' + (atest.pi + 1) + '/' + TESTPLAN.payloads.length + ': ' + atest.label; cls = 'warn'; }
   else if (demo.on) { msg = 'Đang chạy Demo Giao Hàng Đô Thị'; cls = 'warn'; }
+  else if (SV.track && Sim.S.state !== 'DISARMED') { msg = 'Camera đang bám ' + (SV.track[0] === 'P' ? 'người ' : 'xe ') + SV.track; cls = 'good'; }
   els.banner.hidden = !msg; if (msg){ els.banner.textContent = msg; els.banner.className = 'ov ov-banner ' + cls; }
 
   const act = S.state === 'MISSION' ? S.wpIdx : -1;
@@ -3537,8 +3793,9 @@ function init3D(){
   const endPtr = e => {
     if (!pts.has(e.pointerId)) return;
     const single = pts.size === 1; pts.delete(e.pointerId);
-    if (single && moved < 6 && downAt && e.type === 'pointerup' && $('#wpMode').checked){
-      const g = groundAt(e.clientX, e.clientY); if (g) addWaypointAt(g.e, g.n);
+    if (single && moved < 6 && downAt && e.type === 'pointerup'){
+      const g = groundAt(e.clientX, e.clientY);
+      if (g && !svGroundClick(g.e, g.n) && $('#wpMode').checked) addWaypointAt(g.e, g.n);
     }
     if (!pts.size){ canvas.classList.remove('drag'); downAt = null; }
   };
@@ -3657,7 +3914,8 @@ function init3D(){
 
   /* ---------- gimbal camera: pose, full view, picture-in-picture, OSD ---------- */
   const D2R = Math.PI / 180;
-  const GB = { tilt:-15, pan:0, tiltT:-15, panT:0, zoom:1, zoom0:1, stab:true, ar:true, pip:true, ext:'orbit' };
+  const GB = { tilt:-15, pan:0, tiltT:-15, panT:0, zoom:1, zoom0:1, stab:true, ar:true, pip:true, ext:'orbit', auto:true, aimFn:null, viewFn:null };
+  const camHide = [];   // AR objects never drawn in the camera picture (coverage tint, map-only marks)
   const CAM_V = 56 * D2R, CAM_H = 2 * Math.atan(Math.tan(CAM_V / 2) * 16 / 9);
   const droneCam = new THREE.PerspectiveCamera(56, 16/9, 0.05, 800);
   const mapCam = new THREE.PerspectiveCamera(50, 16/9, 1, 900);
@@ -3671,6 +3929,7 @@ function init3D(){
   const qLensFwd = new THREE.Quaternion().setFromAxisAngle(Y, -Math.PI / 2);   // camera −Z → airframe +X
   function gimbalPose(dt){
     const S = Sim.S, sl = 120 * dt;   // gimbal motors slew at 120°/s
+    if (GB.auto && GB.aimFn){ const a = GB.aimFn(); if (a){ GB.tiltT = clamp(a.tilt, -90, 20); GB.panT = clamp(a.pan, -120, 120); } }
     GB.tilt += clamp(GB.tiltT - GB.tilt, -sl, sl); GB.pan += clamp(GB.panT - GB.pan, -sl, sl);
     if (GB.stab) qA.setFromAxisAngle(Y, S.att[2] + GB.pan * D2R);   // stabilised: only follows the heading
     else qA.copy(drone.quaternion).multiply(qB.setFromAxisAngle(Y, GB.pan * D2R));   // hard-mounted: rolls and pitches with the airframe
@@ -3689,7 +3948,7 @@ function init3D(){
     lensAt.copy(at);
     const off = [], hide = o => { if (o.visible){ o.visible = false; off.push(o); } };
     drone.children.forEach(c => { if (c !== cargoGroup) hide(c); });
-    hide(lidarGroup); hide(bufferGroup); hide(spMark);
+    hide(lidarGroup); hide(bufferGroup); hide(spMark); camHide.forEach(hide);
     if (!GB.ar){ hide(wpGroup); hide(rtlGroup); hide(trail); }
     else wpGroup.children.forEach(o => { if (o.isMesh && o.position.distanceTo(lensAt) < 4) hide(o); });
     const solid = [];
@@ -3716,15 +3975,18 @@ function init3D(){
     GB.zoom = clamp(z, 1, 6);
     $$('#czSeg button').forEach(b => b.setAttribute('aria-pressed', String(Math.abs(+b.dataset.cz - GB.zoom) < 0.05)));
   }
+  function manualGimbal(){ if (GB.auto){ GB.auto = false; $('#optAuto').checked = false; } }
   function gimbalDrag(dx, dy){
+    manualGimbal();
     GB.tiltT = GB.tilt = clamp(GB.tilt + dy * 0.22 / GB.zoom, -90, 20);
     GB.panT = GB.pan = clamp(GB.pan - dx * 0.22 / GB.zoom, -120, 120);
   }
   function gimbalReset(){ GB.tiltT = -15; GB.panT = 0; setZoom(1); }
   pipEl.addEventListener('click', () => setCam(cam.mode === 'fpv' ? GB.ext : 'fpv'));
-  canvas.addEventListener('dblclick', e => { if (cam.mode === 'fpv'){ e.preventDefault(); gimbalReset(); } });
+  canvas.addEventListener('dblclick', e => { if (cam.mode === 'fpv'){ e.preventDefault(); manualGimbal(); gimbalReset(); } });
+  $('#optAuto').addEventListener('change', e => { GB.auto = e.target.checked; });
   $$('[data-tilt]').forEach(b => b.addEventListener('click', () => {
-    const k = b.dataset.tilt;
+    const k = b.dataset.tilt; manualGimbal();
     if (k === 'up') GB.tiltT = Math.min(20, Math.round(GB.tiltT / 5) * 5 + 10);
     else if (k === 'down') GB.tiltT = Math.max(-90, Math.round(GB.tiltT / 5) * 5 - 10);
     else if (k === 'nadir'){ GB.tiltT = -90; GB.panT = 0; }
@@ -3789,12 +4051,13 @@ function init3D(){
     const W = sizeV.x, H = sizeV.y, fpv = cam.mode === 'fpv';
     if (fpv) asCamera(() => renderer.render(scene, camera), camera.position); else renderer.render(scene, camera);
     if (fpv) osdUpdate(W, H);
+    const views = fpv ? [{ cam: camera, x: 0, y: 0, w: W, h: H, full: true }] : [];
     const g = (GB.tiltT > 0 ? '+' : GB.tiltT < 0 ? '−' : '') + Math.abs(Math.round(GB.tiltT)) + '° · ' + (Math.round(GB.panT) > 0 ? '+' : Math.round(GB.panT) < 0 ? '−' : '') + Math.abs(Math.round(GB.panT)) + '°';
     if (g !== gimShown){ gimShown = g; $('#oGim').textContent = g; }
-    if (!GB.pip || pipEl.hidden) return;
+    if (!GB.pip || pipEl.hidden){ if (GB.viewFn) GB.viewFn(views, W, H); return; }
     const pr = pipEl.getBoundingClientRect(), sr = canvas.getBoundingClientRect();
     const x = pr.left - sr.left + 2, y = sr.bottom - pr.bottom + 2, w = pr.width - 4, h = pr.height - 4;
-    if (w < 20 || h < 12) return;
+    if (w < 20 || h < 12){ if (GB.viewFn) GB.viewFn(views, W, H); return; }
     renderer.setScissorTest(true); renderer.setScissor(x, y, w, h); renderer.setViewport(x, y, w, h);
     if (fpv){
       const d = drone.position;
@@ -3806,13 +4069,16 @@ function init3D(){
     } else {
       droneCam.aspect = w / h; droneCam.fov = camFov(droneCam.aspect, GB.zoom); droneCam.updateProjectionMatrix();
       asCamera(() => renderer.render(scene, droneCam), droneCam.position);
+      views.push({ cam: droneCam, x: pr.left - sr.left + 2, y: pr.top - sr.top + 2, w, h, full: false });
     }
     renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H);
+    if (GB.viewFn) GB.viewFn(views, W, H);
   }
   camModeChanged();
 
   applyTheme();
-  return { render, rebuildMission, clearTrail, applyTheme };
+  return { render, rebuildMission, clearTrail, applyTheme,
+    cam: { scene, toV, droneCam, GB, camFov, camHide, camera, mode: () => cam.mode, setCam } };
 }
 try { R3 = init3D(); }
 catch (err){ R3 = null; $('#glErr').hidden = false; $('#gl').style.display = 'none'; console.warn(err); }
@@ -3820,7 +4086,7 @@ catch (err){ R3 = null; $('#glErr').hidden = false; $('#gl').style.display = 'no
 $('#clearTrail').addEventListener('click', () => { if (R3) R3.clearTrail(); });
 
 /* theme changes */
-function onTheme(){ readTokens(); if (R3) R3.applyTheme(); if (REC.sel) rpRender(); anRender(); }
+function onTheme(){ readTokens(); if (R3) R3.applyTheme(); if (REC.sel) rpRender(); anRender(); svCovColor(); svDraw3D(); }
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', onTheme); } catch (e) {}
 new MutationObserver(onTheme).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme','class'] });
 
@@ -4703,8 +4969,577 @@ new ResizeObserver(() => { if (AN.data) anRender(true); }).observe($('#anBody'))
 anRender();
 
 
+/* ---------- surveillance: tasks, people & vehicles in the streets, camera detection, ground coverage ---------- */
+const TASK_LABEL = { patrol:'Tuần tra', orbit:'Bay vòng', scan:'Quét vùng', delivery:'Giao hàng' };
+const SV = {
+  task:'patrol', patrol:'fence', pu:16, loops:1,
+  orbit:{ target:'F3', r:14, u:22, laps:1, dir:1, v:4 }, orbitPick:null,
+  area:'factory', su:31, areaPick:null, pick:null, pickA:null,
+  agents:[], dets:[], seen:{}, uniq:{ p:new Set(), v:new Set() }, track:null, now:0,
+  cov:null, launch:{ on:false, step:0 }, ready:false, tDet:0, tMap:0, foot:null, g3:null
+};
+const ROAD_EW = [-42, -6, 14, 44], ROAD_NS = [-44, -20, 10, 46];
+const D2R_ = Math.PI / 180;
+
+/* --- people and vehicles (deterministic, so every run looks the same) --- */
+function svRand(seed){ let x = seed >>> 0; return () => { x = (x * 1664525 + 1013904223) >>> 0; return x / 4294967296; }; }
+function svMakeAgents(){
+  const r = svRand(20261106), A = [];
+  for (let i = 0; i < 10; i++){
+    const ew = i % 2 === 0, road = (ew ? ROAD_EW : ROAD_NS)[Math.floor(r() * 4)], dir = r() < 0.5 ? -1 : 1;
+    A.push({ id:'X' + String(i + 1).padStart(2, '0'), type:'v', ew, road, dir, s: -76 + r() * 152, v: 5 + r() * 4, lane: 1.9, h: 1.5, size: 4.3, e:0, n:0, yaw:0, col: ['#d8dde3','#2f3a44','#b23a32','#2a5ea8','#e0b43a','#5b6b3a'][i % 6] });
+  }
+  for (let i = 0; i < 16; i++){
+    const ew = r() < 0.5, road = (ew ? ROAD_EW : ROAD_NS)[Math.floor(r() * 4)], side = r() < 0.5 ? -1 : 1;
+    const a = -70 + r() * 110, len = 14 + r() * 30;
+    A.push({ id:'P' + String(i + 1).padStart(2, '0'), type:'p', ew, road, side, a, b: Math.min(76, a + len), s: a + r() * len, dir: r() < 0.5 ? -1 : 1, v: 1.0 + r() * 0.6, h: 1.75, size: 1.75, e:0, n:0, yaw:0,
+      col: ['#3b6fb6','#c0503a','#3f8f5a','#d1a23a','#7a4fb0','#2b2b2b','#e07a2f','#4aa3a8'][i % 8] });
+  }
+  return A;
+}
+function svMoveAgents(dt){
+  SV.agents.forEach(a => {
+    if (a.type === 'v'){
+      a.s += a.dir * a.v * dt;
+      if (a.s > 80) a.s = -80; else if (a.s < -80) a.s = 80;
+      if (a.ew){ a.e = a.s; a.n = a.road - a.dir * a.lane; a.yaw = a.dir > 0 ? 0 : Math.PI; }
+      else { a.n = a.s; a.e = a.road + a.dir * a.lane; a.yaw = a.dir > 0 ? Math.PI / 2 : -Math.PI / 2; }
+    } else {
+      a.s += a.dir * a.v * dt;
+      if (a.s > a.b){ a.s = a.b; a.dir = -1; } else if (a.s < a.a){ a.s = a.a; a.dir = 1; }
+      const off = a.side * 4.6;
+      if (a.ew){ a.e = a.s; a.n = a.road + off; a.yaw = a.dir > 0 ? 0 : Math.PI; }
+      else { a.n = a.s; a.e = a.road + off; a.yaw = a.dir > 0 ? Math.PI / 2 : -Math.PI / 2; }
+    }
+  });
+}
+function svBuildMeshes(C){
+  const T = THREE;
+  SV.agents.forEach(a => {
+    const g = new T.Group();
+    if (a.type === 'v'){
+      const body = new T.Mesh(new T.BoxGeometry(4.2, 0.85, 1.8), new T.MeshLambertMaterial({ color:a.col })); body.position.y = 0.62;
+      const cab = new T.Mesh(new T.BoxGeometry(2.1, 0.6, 1.62), new T.MeshLambertMaterial({ color:0x1d2731 })); cab.position.set(-0.25, 1.3, 0);
+      g.add(body, cab);
+      [[1.3, 0.85], [1.3, -0.85], [-1.3, 0.85], [-1.3, -0.85]].forEach(([x, z]) => { const w = new T.Mesh(new T.CylinderGeometry(0.34, 0.34, 0.24, 10), new T.MeshLambertMaterial({ color:0x15191d })); w.rotation.x = Math.PI / 2; w.position.set(x, 0.34, z); g.add(w); });
+    } else {
+      const legs = new T.Mesh(new T.CylinderGeometry(0.15, 0.13, 0.82, 8), new T.MeshLambertMaterial({ color:0x2a3138 })); legs.position.y = 0.41;
+      const torso = new T.Mesh(new T.CylinderGeometry(0.22, 0.19, 0.62, 10), new T.MeshLambertMaterial({ color:a.col })); torso.position.y = 1.13;
+      const head = new T.Mesh(new T.SphereGeometry(0.13, 10, 8), new T.MeshLambertMaterial({ color:0xd9a77e })); head.position.y = 1.6;
+      g.add(legs, torso, head);
+    }
+    a.mesh = g; C.scene.add(g);
+  });
+}
+
+/* --- ground coverage: 2 m cells over the city, marked where the camera footprint falls --- */
+const COV = { x0:-100, y0:-100, cell:2, N:100 };
+function svInitCoverage(C){
+  const N = COV.N, data = new Uint8Array(N * N * 4);
+  const tex = new THREE.DataTexture(data, N, N, THREE.RGBAFormat);
+  tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.needsUpdate = true;
+  const mat = new THREE.MeshBasicMaterial({ map:tex, transparent:true, depthWrite:false });
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(N * COV.cell, N * COV.cell), mat);
+  plane.rotation.x = -Math.PI / 2; plane.position.set(COV.x0 + N * COV.cell / 2, 0.06, -(COV.y0 + N * COV.cell / 2)); plane.renderOrder = 2;
+  C.scene.add(plane); C.camHide.push(plane);
+  SV.cov = { grid:new Uint8Array(N * N), scan:new Uint8Array(N * N), data, tex, plane, total:0, col:[0, 0, 0] };
+  svCovColor();
+}
+function svCovColor(){
+  if (!SV.cov) return;
+  const c = new THREE.Color(TK.accent); SV.cov.col = [Math.round(c.r * 255), Math.round(c.g * 255), Math.round(c.b * 255)];
+  const { grid, data, col } = SV.cov;
+  for (let i = 0; i < grid.length; i++) if (grid[i]){ data[i * 4] = col[0]; data[i * 4 + 1] = col[1]; data[i * 4 + 2] = col[2]; data[i * 4 + 3] = 70; }
+  SV.cov.tex.needsUpdate = true;
+}
+function svCovReset(){
+  if (!SV.cov) return;
+  SV.cov.grid.fill(0); SV.cov.scan.fill(0); SV.cov.data.fill(0); SV.cov.total = 0; SV.cov.tex.needsUpdate = true;
+}
+// Row 0 of the texture is the south edge (n = y0)
+function svMarkFootprint(poly, cx, cy, ch, rmax){
+  const { grid, scan, data, col } = SV.cov, N = COV.N;
+  const scanning = Sim.params.task === 'scan' && Sim.S.state === 'MISSION';
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  poly.forEach(p => { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); });
+  const i0 = clamp(Math.floor((x0 - COV.x0) / COV.cell), 0, N - 1), i1 = clamp(Math.floor((x1 - COV.x0) / COV.cell), 0, N - 1);
+  const j0 = clamp(Math.floor((y0 - COV.y0) / COV.cell), 0, N - 1), j1 = clamp(Math.floor((y1 - COV.y0) / COV.cell), 0, N - 1);
+  let added = 0;
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++){
+    const k = j * N + i; if (grid[k] && (scan[k] || !scanning)) continue;
+    const x = COV.x0 + (i + 0.5) * COV.cell, y = COV.y0 + (j + 0.5) * COV.cell;
+    if (Math.hypot(x - cx, y - cy, ch) > rmax || !svInPoly(poly, x, y)) continue;
+    if (scanning) scan[k] = 1;
+    if (grid[k]) continue;
+    grid[k] = 1; added++;
+    data[k * 4] = col[0]; data[k * 4 + 1] = col[1]; data[k * 4 + 2] = col[2]; data[k * 4 + 3] = 70;
+  }
+  if (added){ SV.cov.total += added; SV.cov.tex.needsUpdate = true; }
+}
+function svInPoly(P, x, y){
+  let inside = false;
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++){
+    const a = P[i], b = P[j];
+    if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
+  }
+  return inside;
+}
+function svAreaCoverage(A){
+  if (!SV.cov || !A) return null;
+  const N = COV.N; let tot = 0, got = 0;
+  for (let j = 0; j < N; j++){ const y = COV.y0 + (j + 0.5) * COV.cell; if (y < A.n0 || y > A.n1) continue;
+    for (let i = 0; i < N; i++){ const x = COV.x0 + (i + 0.5) * COV.cell; if (x < A.e0 || x > A.e1) continue; tot++; if (SV.cov.scan[j * N + i]) got++; } }
+  return tot ? got / tot : null;
+}
+
+/* --- line of sight: does the segment camera → target pass through a building? --- */
+function svBlocked(a, b){
+  for (const o of Sim.obstacles){
+    let t0 = 0, t1 = 1;
+    const lo = [o.e - o.rx, o.n - o.ry, 0], hi = [o.e + o.rx, o.n + o.ry, o.h];
+    let ok = true;
+    for (let k = 0; k < 3 && ok; k++){
+      const d = b[k] - a[k];
+      if (Math.abs(d) < 1e-9){ if (a[k] < lo[k] || a[k] > hi[k]) ok = false; continue; }
+      let u0 = (lo[k] - a[k]) / d, u1 = (hi[k] - a[k]) / d; if (u0 > u1){ const t = u0; u0 = u1; u1 = t; }
+      t0 = Math.max(t0, u0); t1 = Math.min(t1, u1); if (t0 > t1) ok = false;
+    }
+    if (ok) return o;
+  }
+  return null;
+}
+
+/* --- camera detection at 5 Hz on the 16:9 sensor (1920 × 1080) --- */
+let svDetCam = null, svFrustum = null;
+const svM4 = () => new THREE.Matrix4();
+function svDetect(C){
+  const S = Sim.S, GBx = C.GB;
+  if (!svDetCam){ svDetCam = new THREE.PerspectiveCamera(56, 16 / 9, 0.05, 800); svFrustum = new THREE.Frustum(); }
+  const on = S.state !== 'DISARMED' && S.state !== 'EMERGENCY';
+  SV.agents.forEach(a => { a.vis = false; });
+  SV.foot = null;
+  if (!on) return;
+  svDetCam.position.copy(C.droneCam.position); svDetCam.quaternion.copy(C.droneCam.quaternion);
+  svDetCam.fov = C.camFov(16 / 9, GBx.zoom); svDetCam.aspect = 16 / 9; svDetCam.updateProjectionMatrix(); svDetCam.updateMatrixWorld();
+  svFrustum.setFromProjectionMatrix(svM4().multiplyMatrices(svDetCam.projectionMatrix, svDetCam.matrixWorldInverse));
+  const cp = svDetCam.position, cam = [cp.x, -cp.z, cp.y], fovR = svDetCam.fov * D2R_, v = new THREE.Vector3();
+  let nowP = 0, nowV = 0;
+  SV.agents.forEach(a => {
+    v.copy(C.toV(a.e, a.n, a.h * 0.55));
+    if (!svFrustum.containsPoint(v)) return;
+    const d = v.distanceTo(cp), px = 1080 * 2 * Math.atan(a.size / 2 / d) / fovR;
+    if (px < (a.type === 'p' ? 11 : 9)) return;
+    if (svBlocked(cam, [a.e, a.n, a.h * 0.6])) return;
+    a.vis = true; a.dist = d; a.px = px;
+    a.conf = clamp(0.42 + (px - 10) / 55 + 0.04 * Math.sin(S.t * 3.1 + a.e), 0.42, 0.97);
+    a.type === 'p' ? nowP++ : nowV++;
+    const seen = SV.seen[a.id];
+    if (!seen || S.t - seen.last > 15){
+      SV.dets.unshift({ id:a.id, type:a.type, t:S.t, e:a.e, n:a.n, conf:a.conf, dist:d, task:Sim.params.task, flight: (typeof REC !== 'undefined' && REC.cur) ? REC.cur.id : null });
+      if (SV.dets.length > 200) SV.dets.length = 200;
+      SV.uniq[a.type].add(a.id);
+      SV.logDirty = true;
+    }
+    SV.seen[a.id] = { last:S.t };
+  });
+  SV.now = nowP + nowV; SV.nowP = nowP; SV.nowV = nowV;
+  // ground footprint of the picture; only ground within 45 m of the lens counts as observed in detail (≈ 3 cm per pixel at 1×)
+  const RMAX = 45 * Math.sqrt(GBx.zoom), poly = [];
+  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([x, y]) => {
+    const dir = new THREE.Vector3(x, y, 0.5).unproject(svDetCam).sub(cp).normalize();
+    let t = dir.y < -0.02 ? -cp.y / dir.y : Infinity;
+    const hz = Math.hypot(dir.x, dir.z) || 1e-6;
+    if (t * hz > RMAX) t = RMAX / hz;
+    poly.push([cp.x + dir.x * t, -(cp.z + dir.z * t)]);
+  });
+  if (cp.y > 2){ svMarkFootprint(poly, cam[0], cam[1], cp.y, RMAX); SV.foot = poly; }
+}
+
+/* --- detection boxes over the camera picture (full view and/or picture-in-picture) --- */
+function svDrawBoxes(views){
+  const svg = $('#detSvg'); if (!svg) return;
+  let html = '';
+  const v = new THREE.Vector3();
+  views.forEach(view => {
+    view.cam.updateMatrixWorld();
+    SV.agents.forEach(a => {
+      if (!a.vis) return;
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, behind = false;
+      const hw = a.type === 'v' ? 2.2 : 0.3;
+      for (const dx of [-hw, hw]) for (const dy of [-hw, hw]) for (const z of [0, a.h]){
+        v.copy(SV.ctx.toV(a.e + dx, a.n + dy, z)).project(view.cam);
+        if (v.z > 1) behind = true;
+        const X = view.x + (v.x + 1) / 2 * view.w, Y = view.y + (1 - v.y) / 2 * view.h;
+        x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y);
+      }
+      if (behind) return;
+      x0 = Math.max(view.x, x0); x1 = Math.min(view.x + view.w, x1); y0 = Math.max(view.y, y0); y1 = Math.min(view.y + view.h, y1);
+      if (x1 - x0 < 2 || y1 - y0 < 2) return;
+      const pad = view.full ? 3 : 1.5, tr = SV.track === a.id;
+      const cls = 'db ' + (a.type === 'p' ? 'db-p' : 'db-v') + (tr ? ' db-tr' : '');
+      html += '<rect class="' + cls + '" x="' + (x0 - pad).toFixed(1) + '" y="' + (y0 - pad).toFixed(1) + '" width="' + (x1 - x0 + 2 * pad).toFixed(1) + '" height="' + (y1 - y0 + 2 * pad).toFixed(1) + '"/>';
+      if (view.full || view.w > 220){
+        const lab = (a.type === 'p' ? 'NGƯỜI ' : 'XE ') + a.id + ' ' + Math.round(a.conf * 100) + '%' + (tr ? ' · BÁM' : '');
+        html += '<text class="dl ' + (a.type === 'p' ? 'dl-p' : 'dl-v') + '" x="' + (x0 - pad).toFixed(1) + '" y="' + (y0 - pad - 3).toFixed(1) + '">' + lab + '</text>';
+      }
+    });
+  });
+  if (html !== SV.lastSvg){ svg.innerHTML = html; SV.lastSvg = html; }
+}
+
+/* --- gimbal pointing for each task --- */
+function svAimAt(tgt){
+  const S = Sim.S, de = tgt[0] - S.pos[0], dn = tgt[1] - S.pos[1], du = tgt[2] - (S.pos[2] - 0.1);
+  const yawW = Math.atan2(dn, de);
+  let pan = (yawW - S.att[2]) / D2R_; pan = ((pan + 540) % 360) - 180;
+  return { tilt: Math.atan2(du, Math.hypot(de, dn)) / D2R_, pan };
+}
+function svAim(){
+  const S = Sim.S, P_ = Sim.params;
+  if (S.state === 'DISARMED' || S.state === 'ARMED' || S.state === 'EMERGENCY') return { tilt:-15, pan:0 };
+  if (SV.track){ const a = SV.agents.find(x => x.id === SV.track); if (a) return svAimAt([a.e, a.n, a.h * 0.55]); }
+  if (S.state === 'MISSION'){
+    if (P_.task === 'orbit' && P_.orbit) return svAimAt([P_.orbit.e, P_.orbit.n, P_.orbit.lookU]);
+    if (P_.task === 'scan') return { tilt:-90, pan:0 };
+    if (P_.task === 'patrol') return { tilt:-32, pan: 55 * Math.sin(S.t * 2 * Math.PI / 16) };
+    if (P_.task === 'delivery'){
+      const w = Sim.mission[S.wpIdx];
+      if (w && w.kind === 'dest' && w.role === 'drop' && Math.hypot(w.e - S.pos[0], w.n - S.pos[1]) < 14) return { tilt:-90, pan:0 };
+    }
+  }
+  return { tilt:-15, pan:0 };
+}
+
+/* --- task set-up --- */
+function svOrbitTarget(){
+  const k = SV.orbit.target;
+  if (k === 'pick' && SV.orbitPick) return { e:SV.orbitPick.e, n:SV.orbitPick.n, lookU:1, name:'điểm chọn (' + SV.orbitPick.e + ', ' + SV.orbitPick.n + ')', r:SV.orbit.r };
+  if (k.startsWith('hub')){ const h = Sim.HUBS[k.slice(3)]; return { e:h.e, n:h.n, lookU:1, name:h.name }; }
+  const o = Sim.obstacles.find(x => x.id === k) || Sim.obstacles[0];
+  return SURV.orbitFor(o);
+}
+function svArea(){ return SV.area === 'pick' ? SV.areaPick : SURV.AREAS[SV.area]; }
+function svAreaAlt(A){
+  let top = 0;
+  Sim.obstacles.forEach(o => { if (o.e + o.rx > A.e0 - 4 && o.e - o.rx < A.e1 + 4 && o.n + o.ry > A.n0 - 4 && o.n - o.ry < A.n1 + 4) top = Math.max(top, o.h); });
+  return clamp(Math.ceil(top + 3), 15, 45);
+}
+function svAreaChanged(){ const A = svArea(); if (A){ SV.su = svAreaAlt(A); $('#svSu').value = SV.su; } }
+function svApply(silent){
+  const P_ = Sim.params;
+  P_.task = SV.task;
+  if (SV.task === 'patrol'){
+    P_.loops = SV.loops;
+    if (SV.patrol !== 'custom') Sim.setDestinations(SURV.patrolPts(SV.patrol, SV.pu), true);
+    else Sim.setDestinations(Sim.destinations.map(d => Object.assign({}, d, { role:'pass', u:SV.pu })), true);
+    if (!silent) addLog('info', 'Đã nạp tuyến tuần tra: ' + (SV.patrol === 'custom' ? 'tự vẽ' : SURV.PATROLS[SV.patrol].name), Sim.destinations.length + ' điểm · cao ' + SV.pu + ' m · ' + (SV.loops ? SV.loops + ' vòng' : 'lặp đến khi gọi về'), Sim.S.t);
+  } else if (SV.task === 'orbit'){
+    const t = svOrbitTarget();
+    Sim.setOrbit({ e:t.e, n:t.n, r:SV.orbit.r, u:SV.orbit.u, laps:SV.orbit.laps, dir:SV.orbit.dir, v:SV.orbit.v, lookU:t.lookU, name:t.name }, silent);
+    if (!silent) addLog('info', 'Đã nạp vòng bay quanh ' + t.name, 'R ' + SV.orbit.r + ' m · cao ' + P_.orbit.u + ' m · ' + (SV.orbit.laps ? SV.orbit.laps + ' vòng' : 'lặp đến khi gọi về'), Sim.S.t);
+  } else if (SV.task === 'scan'){
+    const A = svArea();
+    if (!A){ if (!silent) addLog('rej', 'Chưa khoanh vùng quét', 'chọn một khu có sẵn hoặc click 2 góc trên bản đồ', Sim.S.t); return false; }
+    const L = SURV.scanLanes(A, SV.su, 0.3);
+    Sim.setDestinations(L.pts, true);
+    if (!silent) addLog('info', 'Đã nạp vùng quét: ' + A.name, L.lanes + ' làn · cách ' + L.spacing.toFixed(0) + ' m · ~' + Math.round(L.len) + ' m đường bay', Sim.S.t);
+  } else if (SV.task === 'delivery'){
+    if (!Sim.destinations.length || Sim.destinations.some(d => d.role !== 'drop')) loadHubPreset('A');
+  }
+  renderMission(); svDraw3D(); svRenderForm();
+  return true;
+}
+function svSetTask(task, opts){
+  opts = opts || {};
+  SV.task = task; Sim.params.task = task;
+  $$('#svTaskSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.task === task)));
+  $$('.sv-opt').forEach(el => { el.hidden = el.dataset.for !== task; });
+  $('#svStart').textContent = { patrol:'Bắt đầu tuần tra', orbit:'Bắt đầu bay vòng', scan:'Bắt đầu quét vùng', delivery:'Bắt đầu giao hàng' }[task];
+  svPick(null);
+  if (!opts.noApply) svApply(opts.silent);
+  else { svDraw3D(); svRenderForm(); }
+}
+
+/* --- launching: from the pad all the way into the mission --- */
+function svStart(){
+  if (!svApply(false)) return;
+  if (SV.task === 'scan' && SV.cov) SV.cov.scan.fill(0);
+  demo.on = false; if (atest.on) stopAdaptTest('bắt đầu nhiệm vụ ' + TASK_LABEL[SV.task]);
+  const st = Sim.S.state;
+  SV.launch = { on:true, step: st === 'DISARMED' ? 0 : st === 'ARMED' ? 1 : (st === 'HOVER' || st === 'MANUAL') ? 2 : st === 'MISSION' || st === 'RTL' || st === 'TAKEOFF' ? 9 : -1 };
+  if (SV.launch.step < 0){ SV.launch.on = false; addLog('rej', 'Không bắt đầu được nhiệm vụ ở ' + st, '', Sim.S.t); return; }
+  addLog('info', 'Bắt đầu nhiệm vụ: ' + TASK_LABEL[SV.task], '', Sim.S.t);
+}
+function svLaunchTick(){
+  const L = SV.launch; if (!L.on) return;
+  const S = Sim.S, st = S.state;
+  if (st === 'EMERGENCY' || st === 'FAILSAFE'){ L.on = false; return; }
+  if (L.step === 9){ if (st === 'TAKEOFF') L.step = 2; else { Sim.command('HOLD', 'sv'); L.step = 2; } }
+  else if (L.step === 0){ if (Sim.command('ARM', 'sv')) L.step = 1; else L.on = false; }
+  else if (L.step === 1 && st === 'ARMED' && S.stateT > 0.8){ Sim.command('TAKEOFF', 'sv'); L.step = 2; }
+  else if (L.step === 2 && (st === 'HOVER' || st === 'MANUAL') && S.stateT > 0.6){ Sim.command('MISSION', 'sv'); L.on = false; }
+}
+
+/* --- picking targets and areas on the 3D ground --- */
+function svPick(kind){
+  SV.pick = kind; SV.pickA = null;
+  const m = $('#svPickMsg');
+  m.hidden = !kind;
+  $('#svPickTxt').textContent = kind === 'orbit' ? 'Click mặt đất 3D để chọn tâm vòng bay.' : kind === 'area' ? 'Click góc thứ nhất của vùng quét trên mặt đất 3D.' : '';
+  svDraw3D();
+}
+function svGroundClick(e, n){
+  if (!SV.pick) return false;
+  e = clamp(Math.round(e), -90, 90); n = clamp(Math.round(n), -90, 90);
+  if (SV.pick === 'orbit'){
+    SV.orbitPick = { e, n }; SV.orbit.target = 'pick'; $('#svTarget').value = 'pick';
+    svPick(null); svApply(false);
+  } else if (SV.pick === 'area'){
+    if (!SV.pickA){ SV.pickA = { e, n }; $('#svPickTxt').textContent = 'Góc thứ nhất (' + e + ', ' + n + '). Click góc đối diện.'; svDraw3D(); }
+    else {
+      const a = SV.pickA, A = { name:'Vùng tự khoanh', e0:Math.min(a.e, e), e1:Math.max(a.e, e), n0:Math.min(a.n, n), n1:Math.max(a.n, n) };
+      if (A.e1 - A.e0 < 8 || A.n1 - A.n0 < 8){ $('#svPickTxt').textContent = 'Vùng quá nhỏ (cần ít nhất 8 × 8 m). Click lại góc đối diện.'; return true; }
+      SV.areaPick = A; SV.area = 'pick'; $('#svArea').value = 'pick';
+      svPick(null); svAreaChanged(); svApply(false);
+    }
+  }
+  return true;
+}
+
+/* --- 3D overlays: orbit circle, scan rectangle, pick marker --- */
+function svDraw3D(){
+  const C = SV.ctx; if (!C) return;
+  if (!SV.g3){ SV.g3 = new THREE.Group(); C.scene.add(SV.g3); }
+  const g = SV.g3;
+  while (g.children.length){ const o = g.children.pop(); if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }
+  const acc = new THREE.Color(TK.accent);
+  const P_ = Sim.params;
+  if (SV.task === 'orbit' && P_.orbit){
+    const o = P_.orbit, pts = [];
+    for (let k = 0; k <= 96; k++){ const a = k / 96 * 2 * Math.PI; pts.push(C.toV(o.e + o.r * Math.cos(a), o.n + o.r * Math.sin(a), o.u)); }
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color:acc, dashSize:1.4, gapSize:0.8 }));
+    ln.computeLineDistances(); g.add(ln);
+    const stem = new THREE.Line(new THREE.BufferGeometry().setFromPoints([C.toV(o.e, o.n, 0.1), C.toV(o.e, o.n, Math.max(o.lookU, 1) + 0.5)]), new THREE.LineBasicMaterial({ color:acc }));
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.2, 1.6, 28), new THREE.MeshBasicMaterial({ color:acc, side:THREE.DoubleSide, transparent:true, opacity:0.85, depthWrite:false }));
+    ring.rotation.x = -Math.PI / 2; ring.position.copy(C.toV(o.e, o.n, 0.12));
+    g.add(stem, ring);
+  }
+  const A = SV.task === 'scan' ? svArea() : null;
+  if (A){
+    const pts = [[A.e0, A.n0], [A.e1, A.n0], [A.e1, A.n1], [A.e0, A.n1], [A.e0, A.n0]].map(p => C.toV(p[0], p[1], 0.15));
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color:acc, dashSize:1.6, gapSize:1.0 }));
+    ln.computeLineDistances(); g.add(ln);
+  }
+  if (SV.pickA){
+    const m = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.2, 20), new THREE.MeshBasicMaterial({ color:acc, side:THREE.DoubleSide }));
+    m.rotation.x = -Math.PI / 2; m.position.copy(C.toV(SV.pickA.e, SV.pickA.n, 0.15)); g.add(m);
+  }
+}
+
+/* --- form (FN panel) --- */
+function svRenderForm(){
+  const P_ = Sim.params;
+  $('#oSvPu').textContent = SV.pu + ' m';
+  $('#oSvR').textContent = SV.orbit.r + ' m';
+  $('#oSvOu').textContent = SV.orbit.u + ' m';
+  $('#oSvOv').textContent = SV.orbit.v.toFixed(1) + ' m/s';
+  $('#oSvSu').textContent = SV.su + ' m';
+  const A = svArea();
+  if (A){
+    const L = SURV.scanLanes(A, SV.su, 0.3);
+    $('#svScanInfo').textContent = (SV.su > svAreaAlt(A) - 1 ? 'Cao hơn nóc nhà cao nhất trong vùng. ' : 'Thấp hơn vài tòa nhà: drone sẽ bay vòng tránh. ') + A.name + ': ' + Math.round(A.e1 - A.e0) + ' × ' + Math.round(A.n1 - A.n0) + ' m · ' + L.lanes + ' làn cách ' + L.spacing.toFixed(0) + ' m · vệt camera rộng ' + L.width.toFixed(0) + ' m · ~' + Math.round(L.len) + ' m đường bay';
+  } else $('#svScanInfo').textContent = 'Chưa có vùng: chọn khu có sẵn hoặc khoanh trên bản đồ.';
+  if (SV.task === 'orbit' && P_.orbit) $('#svOrbitInfo').textContent = P_.orbit.raised ? 'Vòng bay cắt qua tòa nhà khác: độ cao vòng tự nâng lên ' + P_.orbit.u + ' m.' : 'Vòng bay thông thoáng ở ' + P_.orbit.u + ' m.';
+  $$('#svLoops button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.l === SV.loops)));
+  $$('#svLapsO button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.l === SV.orbit.laps)));
+  $$('#svDir button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.d === SV.orbit.dir)));
+}
+function svBindForm(){
+  $$('#svTaskSeg button').forEach(b => b.addEventListener('click', () => svSetTask(b.dataset.task)));
+  // building list for orbit targets
+  const opts = Sim.obstacles.map(o => '<option value="' + o.id + '">' + o.name + ' (' + o.h + ' m)</option>').join('')
+    + '<option value="hubA">' + Sim.HUBS.A.name + '</option><option value="hubB">' + Sim.HUBS.B.name + '</option><option value="hubC">' + Sim.HUBS.C.name + '</option>'
+    + '<option value="pick">Điểm chọn trên bản đồ</option>';
+  $('#svTarget').innerHTML = opts; $('#svTarget').value = SV.orbit.target;
+  svAreaChanged();
+  const re = () => { if (SV.task !== 'delivery') svApply(true); svRenderForm(); };
+  $('#svPatrol').addEventListener('change', e => { SV.patrol = e.target.value; if (SV.patrol === 'custom'){ Sim.setDestinations([], true); addLog('info', 'Tuần tra tự vẽ: click mặt đất 3D để thêm điểm', 'tối đa 10 điểm', Sim.S.t); renderMission(); } else svApply(false); });
+  $('#svPu').addEventListener('input', e => { SV.pu = +e.target.value; svRenderForm(); });
+  $('#svPu').addEventListener('change', re);
+  $$('#svLoops button').forEach(b => b.addEventListener('click', () => { SV.loops = +b.dataset.l; Sim.params.loops = SV.loops; svRenderForm(); }));
+  $('#svTarget').addEventListener('change', e => {
+    SV.orbit.target = e.target.value;
+    if (SV.orbit.target === 'pick' && !SV.orbitPick){ svPick('orbit'); return; }
+    const t = svOrbitTarget(); if (t.r){ SV.orbit.r = clamp(t.r, 8, 40); $('#svR').value = SV.orbit.r; }
+    svApply(false);
+  });
+  $('#svPickOrbit').addEventListener('click', () => svPick('orbit'));
+  $('#svR').addEventListener('input', e => { SV.orbit.r = +e.target.value; svRenderForm(); });
+  $('#svOu').addEventListener('input', e => { SV.orbit.u = +e.target.value; svRenderForm(); });
+  $('#svOv').addEventListener('input', e => { SV.orbit.v = +e.target.value; svRenderForm(); });
+  ['svR', 'svOu', 'svOv'].forEach(id => $('#' + id).addEventListener('change', re));
+  $$('#svLapsO button').forEach(b => b.addEventListener('click', () => { SV.orbit.laps = +b.dataset.l; re(); }));
+  $$('#svDir button').forEach(b => b.addEventListener('click', () => { SV.orbit.dir = +b.dataset.d; re(); }));
+  $('#svArea').addEventListener('change', e => { SV.area = e.target.value; if (SV.area === 'pick' && !SV.areaPick){ svPick('area'); return; } svAreaChanged(); svApply(false); });
+  $('#svPickArea').addEventListener('click', () => svPick('area'));
+  $('#svSu').addEventListener('input', e => { SV.su = +e.target.value; svRenderForm(); });
+  $('#svSu').addEventListener('change', re);
+  $('#svPickCancel').addEventListener('click', () => svPick(null));
+  $('#svStart').addEventListener('click', svStart);
+  $('#svStop').addEventListener('click', () => { SV.launch.on = false; Sim.command('RTL', 'sv'); });
+  // delivery buttons further down switch the task to delivery first
+  document.addEventListener('click', e => {
+    const b = e.target.closest('#btnHubA,#btnHubB,#btnHubC,#btnMultiHub,#btnDemo');
+    if (b && SV.task !== 'delivery') svSetTask('delivery', { noApply: b.id !== 'btnDemo', silent:true });
+  }, true);
+  // surveillance panel
+  const pickRow = e => {
+    const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.type === 'keydown') e.preventDefault();
+    SV.track = SV.track === tr.dataset.id ? null : tr.dataset.id;
+    if (SV.track && SV.ctx){ SV.ctx.GB.auto = true; $('#optAuto').checked = true; }
+    addLog('info', SV.track ? 'Camera bám ' + (tr.dataset.id[0] === 'P' ? 'người ' : 'xe ') + tr.dataset.id : 'Bỏ bám mục tiêu', '', Sim.S.t);
+    SV.logDirty = true;
+  };
+  $('#svTbody').addEventListener('click', pickRow); $('#svTbody').addEventListener('keydown', pickRow);
+  $('#svUntrack').addEventListener('click', () => { SV.track = null; SV.logDirty = true; });
+  $('#svClear').addEventListener('click', () => { SV.dets = []; SV.seen = {}; SV.uniq = { p:new Set(), v:new Set() }; SV.track = null; svCovReset(); SV.logDirty = true; });
+  $('#svCovShow').addEventListener('change', e => { if (SV.cov) SV.cov.plane.visible = e.target.checked; });
+}
+
+/* --- surveillance panel: stats, map, detection log --- */
+function svProgress(){
+  const S = Sim.S, P_ = Sim.params, st = S.state;
+  const flying = st === 'MISSION';
+  if (P_.task === 'patrol'){
+    const n = Sim.destinations.length;
+    return flying ? 'vòng ' + S.lap + (P_.loops ? '/' + P_.loops : '') + ' · đã qua ' + S.destDone + '/' + n + ' điểm' : n + ' điểm · ' + (P_.loops ? P_.loops + ' vòng' : 'lặp liên tục');
+  }
+  if (P_.task === 'orbit' && P_.orbit){
+    if (flying && S.orbPhase === 'circle') return 'vòng ' + S.lap + (P_.orbit.laps ? '/' + P_.orbit.laps : '') + ' · ' + Math.round((S.orbTrav / (2 * Math.PI) % 1) * 100) + '%';
+    return flying ? 'đang bay tới vòng' : 'R ' + P_.orbit.r + ' m · cao ' + P_.orbit.u + ' m';
+  }
+  if (P_.task === 'scan'){
+    const n = Sim.destinations.length;
+    return flying ? 'làn ' + Math.min(n / 2, Math.floor(S.destDone / 2) + 1) + '/' + n / 2 : (n / 2) + ' làn';
+  }
+  return Sim.destinations.length + ' trạm · ' + P_.cargoMass.toFixed(2) + ' kg hàng';
+}
+function svRenderPanel(){
+  const panel = $('#surv'); if (!panel || panel.hidden) return;
+  const P_ = Sim.params;
+  $('#svTask').textContent = TASK_LABEL[P_.task] || '—';
+  $('#svProg').textContent = svProgress();
+  $('#svPeople').textContent = SV.uniq.p.size;
+  $('#svCars').textContent = SV.uniq.v.size;
+  $('#svNow').textContent = SV.now || 0;
+  $('#svNowSub').textContent = (SV.nowP || 0) + ' người · ' + (SV.nowV || 0) + ' xe';
+  const A = P_.task === 'scan' ? svArea() : null, cov = svAreaCoverage(A);
+  $('#svCov').textContent = cov == null ? (SV.cov ? Math.round(SV.cov.total * 4).toLocaleString('vi-VN') : '0') : Math.round(cov * 100);
+  $('#svCovU').textContent = cov == null ? 'm²' : '%';
+  $('#svCovSub').textContent = cov == null ? 'mặt đất camera đã thấy' : 'của ' + A.name;
+  $('#svUntrack').hidden = !SV.track;
+  if (SV.logDirty){
+    SV.logDirty = false;
+    const rows = SV.dets.slice(0, 80).map(d => '<tr data-id="' + d.id + '"' + (SV.track === d.id ? ' class="on"' : '') + ' tabindex="0" title="Bấm để camera bám ' + d.id + '">'
+      + '<td>' + mmss(d.t) + '</td><td><span class="dk dk-' + d.type + '">' + (d.type === 'p' ? 'Người' : 'Xe') + '</span></td><td class="mono">' + d.id + '</td>'
+      + '<td class="mono">' + fx(d.e, 0) + ', ' + fx(d.n, 0) + '</td><td class="mono">' + d.dist.toFixed(0) + ' m</td><td class="mono">' + Math.round(d.conf * 100) + '%</td>'
+      + '<td>' + TASK_LABEL[d.task] + '</td></tr>').join('');
+    $('#svTbody').innerHTML = rows;
+    $('#svEmpty').hidden = SV.dets.length > 0;
+  }
+  svDrawMap();
+}
+function svDrawMap(){
+  const c = $('#svMap'); if (!c || !c.clientWidth || !c.clientHeight) return;
+  const [ctx, w, h] = fitCanvas(c), S = Sim.S, P_ = Sim.params;
+  const R = 82, sc = Math.min(w, h) / (2 * R), cx = w / 2, cy = h / 2;
+  const X = e => cx + e * sc, Y = n => cy - n * sc;
+  ctx.fillStyle = TK['panel-2']; ctx.fillRect(0, 0, w, h);
+  // streets
+  ctx.strokeStyle = TK.line; ctx.lineWidth = 7.5 * sc;
+  ROAD_EW.forEach(n => { ctx.beginPath(); ctx.moveTo(X(-R), Y(n)); ctx.lineTo(X(R), Y(n)); ctx.stroke(); });
+  ROAD_NS.forEach(e => { ctx.beginPath(); ctx.moveTo(X(e), Y(-R)); ctx.lineTo(X(e), Y(R)); ctx.stroke(); });
+  // coverage
+  if (SV.cov){
+    ctx.fillStyle = TK.accent; ctx.globalAlpha = 0.2;
+    const N = COV.N, g = SV.cov.grid, s2 = COV.cell * sc + 0.5;
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (g[j * N + i]){
+      const e = COV.x0 + i * COV.cell, n = COV.y0 + (j + 1) * COV.cell;
+      if (Math.abs(e) < R + 2 && Math.abs(n) < R + 2) ctx.fillRect(X(e), Y(n), s2, s2);
+    }
+    ctx.globalAlpha = 1;
+  }
+  // buildings
+  Sim.obstacles.forEach(o => { ctx.fillStyle = TK['line-2']; ctx.fillRect(X(o.e - o.rx), Y(o.n + o.ry), 2 * o.rx * sc, 2 * o.ry * sc); });
+  // task geometry
+  ctx.strokeStyle = TK.accent; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+  if (P_.task === 'orbit' && P_.orbit){ ctx.beginPath(); ctx.arc(X(P_.orbit.e), Y(P_.orbit.n), P_.orbit.r * sc, 0, 2 * Math.PI); ctx.stroke(); }
+  const A = P_.task === 'scan' ? svArea() : null;
+  if (A) ctx.strokeRect(X(A.e0), Y(A.n1), (A.e1 - A.e0) * sc, (A.n1 - A.n0) * sc);
+  ctx.setLineDash([]);
+  if (Sim.mission.length && P_.task !== 'orbit'){
+    const ms = Sim.missionStart || { e:0, n:0 };
+    ctx.strokeStyle = TK.accent; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(X(ms.e), Y(ms.n));
+    Sim.mission.forEach(m => ctx.lineTo(X(m.e), Y(m.n))); ctx.stroke();
+  }
+  // camera footprint
+  if (SV.foot){
+    ctx.fillStyle = TK.tele; ctx.globalAlpha = 0.18; ctx.beginPath();
+    SV.foot.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 0.7; ctx.strokeStyle = TK.tele; ctx.lineWidth = 1; ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  // people (circles) and vehicles (squares); ringed when the camera sees them
+  SV.agents.forEach(a => {
+    const x = X(a.e), y = Y(a.n), col = a.type === 'p' ? TK['det-p'] : TK['det-v'];
+    ctx.fillStyle = col; ctx.globalAlpha = a.vis ? 1 : 0.45;
+    if (a.type === 'p'){ ctx.beginPath(); ctx.arc(x, y, 2.6, 0, 2 * Math.PI); ctx.fill(); }
+    else ctx.fillRect(x - 3, y - 3, 6, 6);
+    ctx.globalAlpha = 1;
+    if (a.vis){ ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 6, 0, 2 * Math.PI); ctx.stroke(); }
+    if (SV.track === a.id){ ctx.strokeStyle = TK.fg; ctx.lineWidth = 1.5; ctx.strokeRect(x - 8, y - 8, 16, 16); }
+  });
+  // home pad and drone
+  ctx.strokeStyle = TK.fg; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(X(0), Y(0), 3, 0, 2 * Math.PI); ctx.stroke();
+  const px = X(S.pos[0]), py = Y(S.pos[1]), yaw = S.att[2];
+  ctx.save(); ctx.translate(px, py); ctx.rotate(-yaw);
+  ctx.fillStyle = TK.fg; ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-6, 5.5); ctx.lineTo(-3, 0); ctx.lineTo(-6, -5.5); ctx.closePath(); ctx.fill();
+  ctx.restore();
+  // scale bar + north
+  ctx.fillStyle = TK.muted; ctx.font = '600 10px ' + getComputedStyle(document.body).getPropertyValue('--f-mono');
+  ctx.fillRect(10, h - 12, 20 * sc, 2); ctx.fillText('20 m', 10, h - 16); ctx.fillText('B ↑', w - 24, 14);
+}
+
+/* --- frame hook --- */
+function svFrame(){
+  if (!R3 || !R3.cam) return;
+  const tNow = Sim.S.t, dtSim = SV.lastT == null ? 0 : clamp(tNow - SV.lastT, 0, 0.5); SV.lastT = tNow;
+  if (!SV.ready){
+    SV.ctx = R3.cam; SV.ready = true;
+    SV.agents = svMakeAgents(); svBuildMeshes(SV.ctx); svInitCoverage(SV.ctx);
+    SV.ctx.GB.aimFn = svAim; SV.ctx.GB.viewFn = svDrawBoxes;
+    svDraw3D();
+  }
+  svMoveAgents(dtSim);
+  SV.agents.forEach(a => { a.mesh.position.copy(SV.ctx.toV(a.e, a.n, 0)); a.mesh.rotation.y = a.yaw; });
+  svLaunchTick();
+  const now = performance.now();
+  if (now - SV.tDet > 200){
+    SV.tDet = now; svDetect(SV.ctx);
+    if (SV.ctx.mode() === 'fpv'){
+      const t = 'NHẬN DIỆN ' + (SV.now || 0) + (SV.track ? ' · BÁM ' + SV.track : '');
+      const el = $('#osdDet'); if (el.textContent !== t) el.textContent = t;
+    }
+  }
+  if (now - SV.tMap > 250){ SV.tMap = now; svRenderPanel(); }
+}
+
+svBindForm();
+svSetTask('patrol', { silent:true });
+
 /* ---------- panel visibility: every dashboard can be hidden, the 3D view always stays ---------- */
-const LAY_KEYS = ['fn', 'dash', 'sm', 'an', 'rp'];
+const LAY_KEYS = ['fn', 'dash', 'sv', 'sm', 'an', 'rp'];
 const LAY = { hidden:new Set(), before:null };
 try { (JSON.parse(localStorage.getItem('ucds-hidden') || '[]') || []).forEach(k => { if (LAY_KEYS.includes(k)) LAY.hidden.add(k); }); } catch (e){}
 const layEl = k => $('.grid > .panel.' + k);
@@ -4716,11 +5551,11 @@ function layApply(){
   if (!mqMid.matches){
     const top = [vis('fn') && 'fn', 'view', vis('dash') && 'dash'].filter(Boolean);
     cols = top.map(a => a === 'fn' ? '320px' : a === 'dash' ? '340px' : 'minmax(0,1fr)');
-    rows = [top].concat(['sm', 'an', 'rp'].filter(vis).map(a => top.map(() => a)));
+    rows = [top].concat(['sv', 'sm', 'an', 'rp'].filter(vis).map(a => top.map(() => a)));
   } else if (!mqNarrow.matches){
     cols = ['minmax(0,1fr)', 'minmax(0,1fr)'];
     const pair = ['fn', 'dash'].filter(vis);
-    rows = [['view', 'view']].concat(pair.length === 2 ? [pair] : pair.map(a => [a, a]), ['sm', 'an', 'rp'].filter(vis).map(a => [a, a]));
+    rows = [['view', 'view']].concat(pair.length === 2 ? [pair] : pair.map(a => [a, a]), ['sv', 'sm', 'an', 'rp'].filter(vis).map(a => [a, a]));
   } else {
     cols = ['minmax(0,1fr)'];
     rows = [['view']].concat(LAY_KEYS.filter(vis).map(a => [a]));
@@ -4788,7 +5623,7 @@ updateCargoSpecUI();
 updateWindHudUI();
 renderMission();
 onStateChanged();
-addLog('info', 'Sẵn sàng tại Nhà Máy Sản Xuất (0,0). Kiện hàng 1.50 kg đã khóa.', 'Tuyến mặc định tới Hub A (Bắc) đã tự động sinh điểm né cao ốc. Bấm "Chạy Demo Giao Hàng" để xem!', 0);
+addLog('info', 'Sẵn sàng tại Nhà Máy Sản Xuất (0,0). Camera gimbal sẵn sàng, đang chở 1.50 kg hàng.', 'Nhiệm vụ mặc định: tuần tra Hàng rào Nhà máy. Bấm "Bắt đầu tuần tra" để xem!', 0);
 const DT = 1/250;
 let last = performance.now(), accT = 0, lastDom = 0;
 function frame(now){
@@ -4804,6 +5639,7 @@ function frameBody(now){
   while (accT >= DT && n < 240){ Sim.step(DT); accT -= DT; n++; }
   if (n >= 240) accT = 0;
   sample();
+  svFrame();
   if (R3) R3.render(fdt, fdt*simSpeed);
   drawADI(); drawTape(); drawChart();
   recEnv(); recSample(false);

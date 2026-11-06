@@ -1,16 +1,17 @@
-# Urban Cargo Drone Sim
+# Urban Surveillance Drone Sim
 
-Mô phỏng drone chở hàng trong đô thị, chạy hoàn toàn trên trình duyệt. Drone cất cánh từ bãi đáp của Nhà Máy Sản Xuất, tự lập quỹ đạo vòng qua các cao ốc để giao hàng tới các trạm Hub A, B, C, rồi quay về. Bạn điều khiển drone bằng lệnh, bàn phím hoặc cần ảo, và theo dõi mọi thứ qua dashboard và cảnh 3D.
+Mô phỏng drone giám sát đô thị, chạy hoàn toàn trên trình duyệt. Drone cất cánh từ bãi đáp của Nhà Máy Sản Xuất, mang camera gimbal để tuần tra theo tuyến, bay vòng quanh một mục tiêu hoặc quét một khu vực. Camera nhận diện người và xe trong thành phố. Drone vẫn giữ chức năng chở hàng: mang kiện hàng tới các trạm Hub A, B, C và tự thả. Bạn điều khiển drone bằng lệnh, bàn phím hoặc cần ảo, và theo dõi mọi thứ qua dashboard và cảnh 3D.
 
 **Chạy thử:** https://huy-htg.github.io/Drone/
 
 ![Giao diện mô phỏng](docs/screenshot.png)
 
-## Bốn phần của giao diện
+## Các phần của giao diện
 
 | Phần | Nội dung |
 |---|---|
-| **Chức năng** (Điều hành giao hàng) | Lệnh ARM, DISARM, TAKEOFF, LAND, HOLD, MANUAL, MISSION, RTL, KILL. Chỉnh khối lượng hàng, khoảng cách an toàn, tuyến giao hàng (Hub A/B/C, liên trạm, hoặc click mặt đất), tham số bay, gió và các tình huống lỗi. |
+| **Chức năng** (Điều hành nhiệm vụ) | Lệnh ARM, DISARM, TAKEOFF, LAND, HOLD, MANUAL, MISSION, RTL, KILL. Chọn nhiệm vụ giám sát (tuần tra, bay vòng, quét vùng) hoặc giao hàng. Chỉnh khối lượng hàng, khoảng cách an toàn, tuyến bay (preset hoặc click mặt đất), tham số bay, gió và các tình huống lỗi. |
+| **Giám sát** | Số người và xe đã nhận diện, số đang thấy, độ phủ mặt đất; bản đồ giám sát (tòa nhà, tuyến, vùng camera đã quét, người, xe); nhật ký nhận diện. |
 | **Máy trạng thái** | 10 trạng thái, sơ đồ tô sáng trạng thái hiện tại và lần chuyển gần nhất, danh sách lệnh hợp lệ, nhật ký sự kiện. |
 | **Dashboard** | ALT, V/S, GS, HDG, khoảng cách về nhà máy, khoảng cách vật cản; chân trời nhân tạo, băng hướng mũi; pin 6S (điện áp, dòng, mAh, thời gian còn lại); RPM 4 động cơ; biểu đồ 30 giây; setpoint của bộ điều khiển. |
 | **3D** (Three.js) | Khu đô thị có cao ốc, nhà máy, đường phố, cây và đèn đường; quỹ đạo giao hàng, điểm né, đường thẳng bị chắn (nét đứt đỏ), tuyến RTL (nét đứt xanh), tia Lidar, vùng đệm an toàn, vệt bay và luồng gió. Có 3 góc nhìn ngoài và góc nhìn **camera trên drone**; thu phóng bằng cuộn chuột, chụm 2 ngón, nút + / − hoặc phím + / −. Tòa nhà nằm giữa camera và drone tự làm mờ để không che drone. |
@@ -19,7 +20,7 @@ Mô phỏng drone chở hàng trong đô thị, chạy hoàn toàn trên trình 
 
 Mở `index.html` bằng trình duyệt (cần mạng để tải Three.js và font từ CDN). Không cần cài đặt hay build gì.
 
-Cách nhanh nhất để xem toàn bộ chu trình là bấm **Chạy Demo Giao Hàng**: ARM → TAKEOFF → MISSION → thả hàng → RTL → hạ cánh.
+Cách nhanh nhất là bấm **Bắt đầu tuần tra** trong phần Nhiệm vụ giám sát: drone tự ARM → TAKEOFF → MISSION, bay hết tuyến tuần tra rồi RTL và hạ cánh. Để xem chức năng chở hàng, bấm **Chạy Demo Giao Hàng** ở phần Tuyến bay · Giao hàng.
 
 | Phím | Tác dụng (khi ở HOVER hoặc MANUAL) |
 |---|---|
@@ -39,7 +40,7 @@ Hai phím sau dùng được ở mọi trạng thái:
 
 ### Ẩn và hiện các bảng
 
-Nút **Bảng** trên đầu trang mở danh sách các bảng: Điều hành giao hàng, Telemetry, Máy trạng thái, Kết quả bay thử, Báo cáo hành trình. Bỏ chọn để ẩn, chọn để hiện lại. **Chỉ xem 3D** ẩn tất cả, khung 3D giãn ra toàn bộ chiều rộng. Mỗi bảng cũng có nút × ở góc tiêu đề. Trình duyệt nhớ lựa chọn cho lần mở sau.
+Nút **Bảng** trên đầu trang mở danh sách các bảng: Điều hành nhiệm vụ, Telemetry, Giám sát, Máy trạng thái, Kết quả bay thử, Báo cáo hành trình. Bỏ chọn để ẩn, chọn để hiện lại. **Chỉ xem 3D** ẩn tất cả, khung 3D giãn ra toàn bộ chiều rộng. Mỗi bảng cũng có nút × ở góc tiêu đề. Trình duyệt nhớ lựa chọn cho lần mở sau.
 
 Bảng bị ẩn mà bạn bấm liên kết tới nó (ví dụ "Kết quả gió & tải ↓", nút "Xem kết quả" khi bay thử xong) thì bảng tự hiện lại.
 
@@ -55,11 +56,33 @@ Drone mang một camera gimbal treo dưới mũi. Người điều khiển xem �
 - **Gimbal ▲ ▼** chỉnh góc ngẩng/chúc từ +20° đến −90°, mỗi lần 10°. **Nhìn xuống** chúc thẳng −90° để canh bãi thả hàng. **Mặc định** về −15°, hướng theo mũi, zoom 1×.
 - **Zoom 1× 2× 4×**. Ở chế độ toàn khung còn có thể cuộn chuột hoặc chụm 2 ngón (1× đến 6×). Kéo chuột để xoay gimbal: kéo dọc để ngẩng/chúc, kéo ngang để quay trái/phải tới ±120°. Nhấp đúp để về mặc định.
 - **Ổn định gimbal**: bật thì hình luôn cân bằng, chỉ quay theo hướng mũi. Tắt thì camera gắn cứng vào khung, hình nghiêng theo drone; khi gió mạnh sẽ thấy rõ drone phải nghiêng vào gió.
+- **Tự động theo nhiệm vụ**: camera tự quét hai bên khi tuần tra, nhìn vào mục tiêu khi bay vòng, chúc thẳng xuống khi quét vùng và khi tới gần bãi thả hàng, hoặc bám người/xe bạn chọn. Chỉnh gimbal bằng tay thì chế độ này tự tắt.
 - **AR tuyến bay**: vẽ tuyến bay, điểm giao hàng và vệt bay chồng lên hình camera.
 
 Hình camera không có tia Lidar, vùng đệm hay thân drone. Tòa nhà luôn hiện đặc trong hình camera, kể cả khi đang được làm mờ ở góc nhìn ngoài.
 
 ![Góc nhìn camera trên drone với OSD và bản đồ thu nhỏ](docs/camera.png)
+
+## Nhiệm vụ giám sát
+
+Chọn nhiệm vụ ở phần **Nhiệm vụ giám sát** (bảng Điều hành), chỉnh tham số rồi bấm **Bắt đầu**. Drone tự cất cánh nếu đang ở dưới đất, leo thẳng lên độ cao nhiệm vụ rồi mới bay ra, để không phải luồn giữa các xưởng. Xong nhiệm vụ thì drone làm theo lựa chọn "Khi xong" (mặc định RTL về Nhà máy). **Gọi về (RTL)** dừng nhiệm vụ bất cứ lúc nào.
+
+| Nhiệm vụ | Cách bay | Camera |
+|---|---|---|
+| **Tuần tra** | Bay theo tuyến dọc các trục phố: Hàng rào Nhà máy, Trục phố trung tâm, Vòng ngoài khu đô thị, hoặc tự vẽ bằng cách click mặt đất. Chọn 1, 2, 3 vòng hoặc lặp liên tục tới khi gọi về. Drone bay xuyên qua các điểm, không dừng. | Chúc −32°, quét qua lại hai bên ±55°. |
+| **Bay vòng** | Chọn một tòa nhà, một trạm Hub hoặc click một điểm trên bản đồ. Drone bay tới vòng, rồi bay tròn quanh mục tiêu theo bán kính, độ cao, tốc độ, chiều và số vòng đã chọn. Nếu vòng bay cắt qua tòa nhà khác thì độ cao vòng tự được nâng lên trên nóc tòa nhà đó 3 m. | Mũi drone luôn hướng vào mục tiêu, gimbal chúc đúng góc để mục tiêu nằm giữa khung hình. |
+| **Quét vùng** | Chọn Khu Nhà máy, Khu phố Bắc, Khu phố Đông hoặc khoanh vùng bằng 2 click. Drone bay zig-zag theo các làn song song với cạnh dài; khoảng cách làn tính từ bề rộng vệt camera ở độ cao quét để hai vệt cạnh nhau chồng 30%. Độ cao mặc định cao hơn nóc nhà cao nhất trong vùng 3 m. | Chúc thẳng xuống. Ô đất được tính là đã quét khi nằm trong khung hình và cách ống kính dưới 45 m; độ phủ của vùng hiện theo %. |
+| **Giao hàng** (phụ) | Như trước: chọn Hub A, B, C hoặc liên trạm, drone dừng ở từng trạm và thả phần hàng của trạm đó. | Chúc thẳng xuống khi cách bãi thả dưới 14 m. |
+
+Trên tuyến tuần tra và vùng quét, drone vẫn mang theo kiện hàng (nếu có) nhưng không thả: chỉ các điểm giao hàng mới thả hàng.
+
+### Nhận diện người và xe
+
+Trong thành phố có 16 người đi bộ trên vỉa hè và 10 xe chạy trên các làn đường. Camera nhận diện một đối tượng khi đủ 3 điều kiện: đối tượng nằm trong khung hình, đủ lớn trên cảm biến 1920 × 1080 (người ít nhất khoảng 11 điểm ảnh, xe 9 điểm ảnh; zoom làm đối tượng lớn hơn nên thấy được xa hơn), và đường nhìn từ ống kính tới đối tượng không bị tòa nhà che. Độ tin cậy tăng theo kích thước trên ảnh.
+
+Đối tượng được nhận diện có khung màu trong hình camera (cả toàn khung lẫn cửa sổ nhỏ) và vòng tròn trên bản đồ giám sát. Mỗi lần một đối tượng xuất hiện lại sau hơn 15 giây vắng mặt được ghi một dòng vào **Nhật ký nhận diện** (thời điểm, loại, mã, vị trí, khoảng cách, độ tin cậy, nhiệm vụ đang bay). Bấm một dòng để camera bám theo đối tượng đó; bấm lại hoặc **Bỏ bám** để thôi.
+
+![Bảng Giám sát sau khi tuần tra và bay vòng](docs/surveillance.png)
 
 ## Kết quả bay thử: gió và tải trọng thay đổi thì drone ra sao
 
@@ -169,7 +192,7 @@ Lõi mô phỏng không phụ thuộc DOM, nên có thể chạy bằng Node:
 node tests/run-scenarios.js
 ```
 
-Bộ kiểm thử bay các tuyến Hub A, B, C và liên trạm, bay ở tốc độ 14 m/s, thử HOLD rồi bay tiếp, mất liên kết, chia hàng, 200 điểm click ngẫu nhiên và bay trên mọi nóc nhà, bay chương trình bay thử rồi kiểm tra xu hướng gió × tải rút ra từ dữ liệu đã ghi, và kiểm tra điều khiển thích nghi: góc nghiêng giữ vị trí khớp lý thuyết, m̂ hội tụ sau mỗi lần thả hàng, giữ vị trí tốt hơn PID cố định. Kết quả là PASS/FAIL cho từng mục; mã thoát khác 0 nếu có mục thất bại.
+Bộ kiểm thử bay 3 tuyến tuần tra (mỗi tuyến 2 vòng), bay vòng quanh cao ốc (bám bán kính, mũi hướng vào mục tiêu, tự nâng độ cao), quét 3 khu vực (các làn phủ kín bề ngang), các tuyến Hub A, B, C và liên trạm, bay ở tốc độ 14 m/s, thử HOLD rồi bay tiếp, mất liên kết, chia hàng, 200 điểm click ngẫu nhiên và bay trên mọi nóc nhà, bay chương trình bay thử rồi kiểm tra xu hướng gió × tải rút ra từ dữ liệu đã ghi, và kiểm tra điều khiển thích nghi: góc nghiêng giữ vị trí khớp lý thuyết, m̂ hội tụ sau mỗi lần thả hàng, giữ vị trí tốt hơn PID cố định. Kết quả là PASS/FAIL cho từng mục; mã thoát khác 0 nếu có mục thất bại.
 
 ## Giới hạn của mô hình
 
@@ -178,13 +201,14 @@ Bộ kiểm thử bay các tuyến Hub A, B, C và liên trạm, bay ở tốc �
 - Gió đồng đều trong không gian, không có hiệu ứng xoáy sau tòa nhà. Khi gió giật vượt giới hạn ở trên, drone bị đẩy lệch khỏi tuyến và có thể va chạm. Đây là giới hạn vật lý của khung, không phải lỗi.
 - Ngưỡng failsafe pin cố định 15%. Với hệ số xả pin rất cao (×15 trở lên), lượng pin dự trữ có thể không đủ để hạ cánh.
 - Lidar lý tưởng, không có nhiễu. Khi hạ cánh khẩn cấp, drone chỉ đáp xuống mặt đất, không đáp lên nóc nhà.
+- Nhận diện người và xe là mô hình hình học (khung hình, kích thước điểm ảnh, đường nhìn bị tòa nhà che), không phải mạng nơ-ron xử lý ảnh. Cây và nhà thấp tầng không che tầm nhìn. Người và xe đi theo đường thẳng trên vỉa hè và làn đường, không rẽ ở giao lộ.
 
 ## Cấu trúc
 
 ```
-index.html               Toàn bộ ứng dụng: HTML, CSS, lõi mô phỏng (script#sim-core) và giao diện
+index.html               Toàn bộ ứng dụng: HTML, CSS, lõi lập nhiệm vụ giám sát (script#surv-core), lõi mô phỏng (script#sim-core) và giao diện
 tests/run-scenarios.js   Kiểm thử lõi mô phỏng bằng Node
-docs/                    Ảnh chụp màn hình (giao diện, camera trên drone, kết quả gió × tải, báo cáo hành trình, điều khiển thích nghi)
+docs/                    Ảnh chụp màn hình (giao diện, camera trên drone, bảng giám sát, kết quả gió × tải, báo cáo hành trình, điều khiển thích nghi)
 ```
 
 ## Giấy phép
