@@ -514,7 +514,9 @@ td.an-bad{color:var(--bad);font-weight:600}
 .sv-pick span{flex:1}
 /* Giám sát panel */
 .sv-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
-.sv-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.sv-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.sv-inc{border-color:var(--bad)}
+.sv-inc b{color:var(--bad)}
 .sv-k{border:1px solid var(--line);border-radius:4px;padding:7px 10px;min-width:0;display:flex;flex-direction:column;gap:1px}
 .sv-k > span{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .sv-k b{font-family:var(--f-mono);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -558,6 +560,24 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
   .sv-main{grid-template-columns:minmax(0,1fr)}
   .sv-map canvas{max-width:420px}
 }
+
+/* camera picture effects: night grain, thermal grain, jammed video */
+.cam-fx{position:absolute;pointer-events:none;overflow:hidden;border-radius:2px}
+.cam-fx::before{content:"";position:absolute;inset:-50%;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.9'/%3E%3C/svg%3E");opacity:0;mix-blend-mode:overlay;animation:grain .45s steps(4) infinite}
+.cam-fx.n-eo{background:rgba(2,6,12,.28)}
+.cam-fx.n-eo::before{opacity:.55}
+.cam-fx.ir::before{opacity:.22}
+.cam-fx.jam{background:#15191d}
+.cam-fx.jam::before{opacity:1;mix-blend-mode:normal;filter:grayscale(1) contrast(1.6)}
+.cam-fx b{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--f-mono);font-weight:700;font-size:13px;letter-spacing:.08em;color:#ffffff;background:rgba(170,30,26,.88);padding:5px 10px;border-radius:3px;white-space:nowrap}
+.cam-fx.small b{font-size:9.5px;padding:2px 6px}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-7%,4%)}50%{transform:translate(5%,-6%)}75%{transform:translate(-3%,7%)}100%{transform:translate(0,0)}}
+
+.chip-bad{background:var(--bad-soft, rgba(196,48,42,.12));color:var(--bad)}
+.mil-rules{margin:0 0 10px;padding-left:18px;font-size:12.5px;line-height:1.5;display:flex;flex-direction:column;gap:3px}
+.mil-rules b{font-weight:600}
+@media (prefers-reduced-motion: reduce){ .cam-fx::before{animation:none} }
+.sens-pal[hidden]{display:none}
 @media (prefers-reduced-motion: reduce){
   *{transition:none!important}
 }
@@ -657,6 +677,17 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
           <div class="sv-pick" id="svPickMsg" hidden><span id="svPickTxt"></span><button class="btn mini" id="svPickCancel">Huỷ</button></div>
         </div>
 
+        <div class="sec" id="milSec">
+          <div class="sec-h"><h3>Khu vực quân sự (cấm bay)</h3><span class="chip chip-bad">NFZ</span></div>
+          <p class="sv-info">Căn cứ quân sự Đông ở phía đông thành phố (E 100…160 m, N −40…40 m), có tường ảo màu đỏ trên cảnh 3D.</p>
+          <ul class="mil-rules">
+            <li><b>Còn 20 m:</b> cảnh báo người điều khiển.</li>
+            <li><b>Vào trong:</b> drone bị chặn ngay ở ranh giới, chỉ bay ra được, không bay sâu hơn.</li>
+            <li><b>Ở quá 10 s:</b> bị phá sóng. Mất liên kết điều khiển, video và GNSS, drone hạ cánh tại chỗ và gửi báo cáo sự cố.</li>
+          </ul>
+          <div class="sv-go"><button class="btn" id="milTry" title="Bay theo trục phố N 14 m vào căn cứ để xem cảnh báo, chặn và phá sóng">Bay thử vào khu quân sự</button></div>
+        </div>
+
         <div class="sec">
           <div class="sec-h"><h3>Chở hàng &amp; né vật cản (A* + APF)</h3><span class="chip chip-avoid" id="avoidBadge">A* ON</span></div>
           <div class="field">
@@ -719,6 +750,7 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
             <span><kbd>W</kbd> <kbd>S</kbd> / <kbd>A</kbd> <kbd>D</kbd></span><span>Tiến lùi / Sang trái phải</span>
             <span><kbd>Q</kbd> <kbd>E</kbd> / <kbd>R</kbd> <kbd>F</kbd></span><span>Xoay mũi / Lên xuống</span>
             <span><kbd>C</kbd> / <kbd>H</kbd></span><span>Camera drone / Ẩn hiện mọi bảng</span>
+            <span><kbd>T</kbd> / <kbd>N</kbd></span><span>Camera nhiệt / Ngày ↔ đêm</span>
           </div>
         </div>
 
@@ -793,6 +825,7 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
         </div>
         <div class="ov ov-banner" id="banner" hidden></div>
         <div class="ov ov-err" id="glErr" hidden>Trình duyệt không khởi tạo được WebGL nên cảnh 3D không hiển thị. Mô phỏng, dashboard và máy trạng thái vẫn chạy bình thường.</div>
+        <div class="cam-fx" id="camFx" hidden aria-hidden="true"><b id="camFxTxt">MẤT TÍN HIỆU VIDEO · BỊ PHÁ SÓNG</b></div>
         <svg class="det-svg" id="detSvg" aria-hidden="true"></svg>
         <button class="pip" id="pip" type="button" aria-label="Camera drone thu nhỏ: bấm để xem toàn khung"><span class="pip-lab" id="pipLab">CAMERA DRONE</span><span class="pip-sw" id="pipSw" aria-hidden="true">⤢ phóng to</span></button>
         <div class="osd" id="osd" hidden aria-hidden="true">
@@ -800,7 +833,7 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
             <line class="sh" id="osdHz1s"/><line class="sh" id="osdHz2s"/><line class="hz" id="osdHz1"/><line class="hz" id="osdHz2"/>
             <g id="osdX"><circle class="sh" r="13"/><path class="sh" d="M-24 0h-10M24 0h10M0 -24v-10M0 24v10"/><circle r="13" stroke-width="1.5"/><path d="M-24 0h-10M24 0h10M0 -24v-10M0 24v10" stroke-width="1.5"/><circle r="1.6" fill="currentColor" stroke-width="1"/></g>
           </svg>
-          <div class="osd-top"><span class="osd-c" id="osdRec"></span><span class="osd-c" id="osdState"></span><span class="osd-c" id="osdBat"></span></div>
+          <div class="osd-top"><span class="osd-c" id="osdSens"></span><span class="osd-c" id="osdRec"></span><span class="osd-c" id="osdState"></span><span class="osd-c" id="osdBat"></span></div>
           <div class="osd-sub"><span class="osd-c" id="osdHdg"></span><span class="osd-c" id="osdGim"></span><span class="osd-c" id="osdDet"></span></div>
           <div class="osd-l"><div class="osd-c osd-v"><span>ĐỘ CAO</span><b id="osdAlt"></b></div><div class="osd-c osd-v nar-hide"><span>LÊN/XUỐNG</span><b id="osdVs"></b></div></div>
           <div class="osd-r"><div class="osd-c osd-v"><span>TỐC ĐỘ</span><b id="osdGs"></b></div><div class="osd-c osd-v"><span>CÁCH NHÀ MÁY</span><b id="osdHome"></b></div><div class="osd-c osd-v nar-hide"><span>GIÓ</span><b id="osdWind"></b></div></div>
@@ -817,6 +850,9 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
       </div>
       <div class="cam-foot" role="group" aria-label="Camera drone">
         <span class="cam-t">Camera</span>
+        <div class="seg" role="group" aria-label="Cảm biến camera (phím T)" id="sensSeg"><button data-sens="eo" aria-pressed="true" title="Camera quang học (ảnh màu)">Quang học</button><button data-sens="ir" title="Camera nhiệt hồng ngoại (phím T)">Nhiệt</button></div>
+        <select id="palSel" class="sens-pal" aria-label="Bảng màu ảnh nhiệt" hidden><option value="wh">Trắng nóng</option><option value="iron">Ironbow</option></select>
+        <div class="seg" role="group" aria-label="Thời gian trong ngày (phím N)" id="todSeg"><button data-tod="day" aria-pressed="true">Ngày</button><button data-tod="night" title="Ban đêm (phím N)">Đêm</button></div>
         <label class="chk"><input type="checkbox" id="optPip" checked> Cửa sổ nhỏ</label>
         <span class="cam-g">Gimbal
           <button class="btn mini" data-tilt="up" aria-label="Ngẩng camera lên 10°">▲</button><output id="oGim">−15° · 0°</output><button class="btn mini" data-tilt="down" aria-label="Chúc camera xuống 10°">▼</button>
@@ -941,6 +977,7 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
           <div class="sv-k"><span><i class="sw sw-p" aria-hidden="true"></i>Người</span><b id="svPeople">0</b><em>khác nhau đã nhận diện</em></div>
           <div class="sv-k"><span><i class="sw sw-v" aria-hidden="true"></i>Xe</span><b id="svCars">0</b><em>khác nhau đã nhận diện</em></div>
           <div class="sv-k"><span>Đang thấy</span><b id="svNow">0</b><em id="svNowSub"></em></div>
+          <div class="sv-k sv-inc" id="svInc" hidden><span>Sự cố</span><b>PHÁ SÓNG</b><em id="svIncSub"></em></div>
           <div class="sv-k"><span>Độ phủ</span><b><span id="svCov">0</span><small id="svCovU">m²</small></b><em id="svCovSub"></em></div>
         </div>
         <div class="sv-main">
@@ -951,7 +988,7 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
           <div class="sv-log">
             <div class="sv-log-h"><h3>Nhật ký nhận diện</h3><button class="btn mini" id="svUntrack" hidden>Bỏ bám</button><button class="btn mini" id="svClear" title="Xoá nhật ký và vùng đã quét">Xoá</button></div>
             <div class="an-tw"><table class="an-t sv-t">
-              <thead><tr><th>T+</th><th>Loại</th><th>Mã</th><th>Vị trí E, N</th><th>Cách drone</th><th>Tin cậy</th><th>Nhiệm vụ</th></tr></thead>
+              <thead><tr><th>T+</th><th>Loại</th><th>Mã</th><th>Vị trí E, N</th><th>Cách drone</th><th>Tin cậy</th><th>Nhiệm vụ</th><th>Cảm biến</th></tr></thead>
               <tbody id="svTbody"></tbody></table></div>
             <p class="sv-empty" id="svEmpty">Chưa nhận diện được ai. Camera nhận diện người và xe trong khung hình khi drone đã ARM, nếu đủ gần và không bị tòa nhà che. Bấm một dòng để camera bám theo đối tượng đó.</p>
             <label class="chk"><input type="checkbox" id="svCovShow" checked> Tô vùng camera đã quét trên cảnh 3D</label>
@@ -1323,6 +1360,10 @@ var Sim = (function(){
     { id:'B19',name:'Khu Y Tế Cao Tầng B19',e:-24,  n:-52,  rx:4.5, ry:4.5, h:21, kind:'apart' }
   ];
 
+  // Restricted military area east of the city: entering is blocked, staying JAM_AFTER seconds gets the drone jammed
+  const NFZ = [ { id:'MIL1', name:'Căn cứ quân sự Đông', e0:100, e1:160, n0:-40, n1:40, warn:20 } ];
+  const JAM_AFTER = 10;
+
   // Primary destinations requested by user/presets vs full expanded mission (with A* avoidance waypoints)
   let destinations = [ { e: HUBS.A.e, n: HUBS.A.n, u: 12, label: 'Hub A', role: 'drop' } ];
   const mission = [];
@@ -1363,7 +1404,8 @@ var Sim = (function(){
       ctl:{ aH:[0,0], tiltCmd:0, T:0 },
       minObsDist: 12.0, nearObsName: '', hitObs: null, lidarRays: [], lidarT: -1, apfVec: [0,0], cargoDelivered: false,
       destDone: 0, legFrom: null, dwell: 0, rtlVer: 0, windWarnT: -99,
-      lap: 1, orbPhase: 'approach', orbTrav: 0, orbPrev: 0
+      lap: 1, orbPhase: 'approach', orbTrav: 0, orbPrev: 0,
+      nfzIn: null, nfzT: 0, nfzDist: 999, nfzNear: null, nfzWarned: false, nfzMark: 0, jammed: false, jam: null
     };
   }
   S = fresh();
@@ -1600,6 +1642,8 @@ var Sim = (function(){
         const hit = segmentHitsObstacle(prev.e, prev.n, prev.u, target.e, target.n, target.u, 1.5);
         if (hit) blockedSegments.push({ from:[prev.e, prev.n, prev.u], to:[target.e, target.n, target.u], hitName: hit.name });
       }
+      const nz = segmentEntersNfz(prev, target);
+      if (nz && !silent) emit({ type:'warn', msg:'Tuyến bay tới ' + target.label + ' đi vào ' + nz.name + ': drone sẽ bị chặn tại ranh giới' });
       mission.push(target);
       prev = target;
     }
@@ -1993,6 +2037,7 @@ var Sim = (function(){
         return { vxy:tr.vxy, z:tr.z, yaw:S.yawSp, vUp:3.2, vDown:2.2 };
       }
       case 'RTL': case 'FAILSAFE': {
+        if (S.jammed){ setState('LANDING', 'bị phá sóng: mất liên kết và GNSS, không bay về được, hạ cánh tại chỗ', 'fail'); return guidance(dt); }
         if (S.soc < 0.06){ setState('LANDING', 'pin cạn, hạ cánh khẩn cấp tại chỗ', 'fail'); return guidance(dt); }
         const dhHome = Math.hypot(p[0], p[1]);
         if (S.rtlPhase === 'climb'){
@@ -2053,6 +2098,10 @@ var Sim = (function(){
     else {
       vd[0] = K.pXY*(g.xy[0] - p[0]) + S.apfVec[0];
       vd[1] = K.pXY*(g.xy[1] - p[1]) + S.apfVec[1];
+    }
+    if (S.nfzIn && !S.jammed){
+      const no = nfzOut(S.nfzIn, p[0], p[1]), dot = vd[0]*no[0] + vd[1]*no[1];
+      if (dot < 0){ vd[0] -= dot*no[0]; vd[1] -= dot*no[1]; }
     }
     const vh = Math.hypot(vd[0], vd[1]); if (vh > params.vMax){ vd[0] *= params.vMax/vh; vd[1] *= params.vMax/vh; }
     if (g.vz != null) vd[2] = g.vz; else vd[2] = clamp(K.pZ*(g.z - p[2]), -(g.vDown || 2.2), g.vUp || 3.2);
@@ -2159,6 +2208,48 @@ var Sim = (function(){
     }
   }
 
+  /* ===== Military no-fly zone ===== */
+  const nfzAt = (e, n) => NFZ.find(z => e > z.e0 && e < z.e1 && n > z.n0 && n < z.n1) || null;
+  const nfzGap = (z, e, n) => Math.hypot(Math.max(z.e0 - e, 0, e - z.e1), Math.max(z.n0 - n, 0, n - z.n1));
+  // unit vector pointing out of the zone through its nearest edge
+  function nfzOut(z, e, n){
+    const d = [e - z.e0, z.e1 - e, n - z.n0, z.n1 - n], k = d.indexOf(Math.min(...d));
+    return [[-1, 0], [1, 0], [0, -1], [0, 1]][k];
+  }
+  function segmentEntersNfz(a, b){
+    const L = Math.hypot(b.e - a.e, b.n - a.n), steps = Math.max(2, Math.ceil(L / 2));
+    for (let i = 1; i <= steps; i++){ const t = i / steps, z = nfzAt(a.e + (b.e - a.e) * t, a.n + (b.n - a.n) * t); if (z) return z; }
+    return null;
+  }
+  function nfzUpdate(dt){
+    const p = S.pos, air = !S.grounded && p[2] > 0.5;
+    let near = null, gap = 999;
+    NFZ.forEach(z => { const g = nfzGap(z, p[0], p[1]); if (g < gap){ gap = g; near = z; } });
+    S.nfzDist = gap; S.nfzNear = near && gap < near.warn ? near : null;
+    const z = nfzAt(p[0], p[1]);
+    if (!z){
+      if (S.nfzIn){ emit({ type:'nfz', level:'exit', zone:S.nfzIn.name, msg:'Đã rời ' + S.nfzIn.name + ' sau ' + S.nfzT.toFixed(1) + ' s' }); S.nfzIn = null; S.nfzT = 0; }
+      if (S.nfzNear && air && !S.nfzWarned){ S.nfzWarned = true; emit({ type:'nfz', level:'near', zone:near.name, msg:'Cảnh báo: còn ' + gap.toFixed(0) + ' m tới ' + near.name + ' (vùng cấm bay)' }); }
+      if (!S.nfzNear) S.nfzWarned = false;
+      return;
+    }
+    if (!S.nfzIn){
+      S.nfzIn = z; S.nfzT = 0; S.nfzMark = 0;
+      emit({ type:'nfz', level:'enter', zone:z.name, pos:[p[0], p[1], p[2]], msg:'Xâm nhập ' + z.name + ': drone bị chặn tại ranh giới, không bay sâu hơn được. Rời khu vực trong ' + JAM_AFTER + ' s, nếu không sẽ bị phá sóng.' });
+      if (S.state === 'MISSION' || S.state === 'TAKEOFF') setState('HOVER', 'chạm ranh giới ' + z.name, 'fail');
+    }
+    if (!air || S.jammed) return;
+    S.nfzT += dt;
+    const left = JAM_AFTER - S.nfzT;
+    if (S.nfzMark === 0 && left <= 5){ S.nfzMark = 1; emit({ type:'nfz', level:'count', zone:z.name, msg:'Còn 5 s trước khi bị phá sóng: hãy rời ' + z.name }); }
+    if (left <= 0){
+      S.jammed = true;
+      S.jam = { t:S.t, zone:z.name, pos:[p[0], p[1], p[2]], state:S.state, inside:S.nfzT, soc:S.soc };
+      emit({ type:'jam', zone:z.name, jam:S.jam, msg:'BỊ PHÁ SÓNG trong ' + z.name + ' sau ' + JAM_AFTER + ' s: mất liên kết điều khiển, video và GNSS' });
+      setLink(true);
+    }
+  }
+
   function step(dt){
     S.t += dt; S.stateT += dt;
     if (S.state !== 'DISARMED') S.armT += dt;
@@ -2170,11 +2261,13 @@ var Sim = (function(){
     physics(dt);
     estimate(dt);
     battery(dt);
+    nfzUpdate(dt);
     checks();
   }
 
   function setLink(lost){
     if (params.linkLost === lost) return;
+    if (!lost && S.jammed){ emit({ type:'reject', msg:'Không khôi phục được liên kết: drone đang bị phá sóng. Dùng "Đặt lại" để đưa drone về Nhà máy.' }); return; }
     params.linkLost = lost;
     emit({ type: lost ? 'warn' : 'info', msg: lost ? 'Mất liên kết RC/telemetry' : 'Đã khôi phục liên kết' });
     if (lost){
@@ -2214,7 +2307,7 @@ var Sim = (function(){
   return {
     P, K, MOT, AIR, CMDS, HUBS, obstacles, params, mission, blockedSegments, sticks,
     on, step, command, check, setLink, reset, syncMass,
-    rebuildTrajectory, setDestinations, addDestination, removeDestination, sanitizePoint, setOrbit, pointInObs,
+    rebuildTrajectory, setDestinations, addDestination, removeDestination, sanitizePoint, setOrbit, pointInObs, NFZ, JAM_AFTER, nfzAt,
     planSegmentAStar, clearanceAt, windLimit, EST,
     get destinations(){ return destinations; },
     get missionStart(){ return missionStart; },
@@ -2648,7 +2741,7 @@ $('#wpMode').addEventListener('change', e => {
 function addWaypointAt(e, n){
   if (SV.task === 'orbit' || SV.task === 'scan'){ addLog('rej', 'Đang ở nhiệm vụ ' + TASK_LABEL[SV.task], 'chuyển sang Tuần tra (tự vẽ) hoặc Giao hàng để thêm điểm bằng click', Sim.S.t); return; }
   if (Sim.destinations.length >= 10){ addLog('rej', 'Tối đa 10 điểm trên tuyến', '', Sim.S.t); return; }
-  e = clamp(Math.round(e*2)/2, -80, 80);
+  e = clamp(Math.round(e*2)/2, -80, 165);
   n = clamp(Math.round(n*2)/2, -80, 80);
   if (SV.task === 'patrol'){
     if (SV.patrol !== 'custom'){ SV.patrol = 'custom'; $('#svPatrol').value = 'custom'; Sim.setDestinations([], true); }
@@ -3048,7 +3141,10 @@ function updateDom(){
 
   // banner
   let msg = '', cls = 'warn';
-  if (P.linkLost) { msg = 'Mất liên kết: drone tự né cao ốc về Nhà Máy'; cls = 'bad'; }
+  if (S.jammed) { msg = 'BỊ PHÁ SÓNG: mất liên kết, video, GNSS · ' + (S.grounded ? 'đã hạ cánh tại chỗ' : 'đang hạ cánh tại chỗ'); cls = 'bad'; }
+  else if (S.nfzIn) { msg = 'VÙNG CẤM BAY: bị chặn · phá sóng sau ' + Math.max(0, Sim.JAM_AFTER - S.nfzT).toFixed(1) + ' s'; cls = 'bad'; }
+  else if (P.linkLost) { msg = 'Mất liên kết: drone tự né cao ốc về Nhà Máy'; cls = 'bad'; }
+  else if (S.nfzNear && !S.grounded) { msg = 'Gần ' + S.nfzNear.name + ': còn ' + S.nfzDist.toFixed(0) + ' m tới vùng cấm bay'; cls = 'warn'; }
   else if (S.state === 'EMERGENCY') { msg = 'Khẩn cấp: Động cơ đã ngắt'; cls = 'bad'; }
   else if (deliveryBannerText) { msg = deliveryBannerText; cls = 'good'; }
   else if (S.state === 'FAILSAFE') msg = 'Failsafe: ' + S.fsReason + ', đang về Nhà Máy';
@@ -3678,6 +3774,74 @@ function init3D(){
     });
   }
 
+
+  /* ---------- military base east of the city (no-fly zone) ---------- */
+  const milGroup = new THREE.Group(); scene.add(milGroup);
+  const fenceGroup = new THREE.Group(); scene.add(fenceGroup);   // virtual geofence: not part of the camera picture
+  const MIL = { walls:null, hatch:null, dish:null, beacon:null };
+  (function buildBase(){
+    const Z = Sim.NFZ[0], cxE = (Z.e0 + Z.e1) / 2, cxN = (Z.n0 + Z.n1) / 2, W = Z.e1 - Z.e0, D = Z.n1 - Z.n0;
+    const olive = new THREE.MeshLambertMaterial({ color:0x5d6b45 }), sand = new THREE.MeshLambertMaterial({ color:0xb3a27a });
+    const concrete = new THREE.MeshLambertMaterial({ color:0x8b9196 }), steel = new THREE.MeshLambertMaterial({ color:0x4a5158 });
+    const add = (mesh, e, n, u, temp) => { mesh.position.copy(toV(e, n, u)); if (temp != null) mesh.userData.temp = temp; milGroup.add(mesh); return mesh; };
+    // access road from the city to the gate, apron inside
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(Z.e0 - 84 + 6, 7.5), roadMat); road.rotation.x = -Math.PI / 2; road.position.copy(toV((84 + Z.e0) / 2, 14, 0.015)); milGroup.add(road);
+    const apron = new THREE.Mesh(new THREE.PlaneGeometry(W - 6, D - 6), concrete); apron.rotation.x = -Math.PI / 2; apron.position.copy(toV(cxE, cxN, 0.012)); milGroup.add(apron);
+    // perimeter fence: posts + top rail, gate on the access road
+    const post = new THREE.BoxGeometry(0.18, 2.6, 0.18);
+    for (let e = Z.e0; e <= Z.e1; e += 5){ add(new THREE.Mesh(post, steel), e, Z.n0, 1.3); add(new THREE.Mesh(post, steel), e, Z.n1, 1.3); }
+    for (let n = Z.n0; n <= Z.n1; n += 5){ if (Math.abs(n - 14) > 5) add(new THREE.Mesh(post, steel), Z.e0, n, 1.3); add(new THREE.Mesh(post, steel), Z.e1, n, 1.3); }
+    const rail = new THREE.LineBasicMaterial({ color:0x9aa3ab });
+    const ring = [[Z.e0, 19], [Z.e0, Z.n1], [Z.e1, Z.n1], [Z.e1, Z.n0], [Z.e0, Z.n0], [Z.e0, 9]].map(p => toV(p[0], p[1], 2.5));
+    milGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ring), rail));
+    add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 9.6), new THREE.MeshBasicMaterial({ color:0xc4302a })), Z.e0, 14, 1.1);
+    add(new THREE.Mesh(new THREE.BoxGeometry(2.4, 3, 2.4), olive), Z.e0 + 1.5, 20.5, 1.5, 0.4);
+    // hangar (half cylinder), barracks, command building, control tower
+    const hang = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 22, 20, 1, false, 0, Math.PI), olive); hang.rotation.z = Math.PI / 2; hang.rotation.y = Math.PI / 2;
+    add(hang, 140, 22, 0, 0.36);
+    [-26, -18, -10].forEach(n => add(new THREE.Mesh(new THREE.BoxGeometry(14, 4, 6), sand), 118, n, 2, 0.34));
+    add(new THREE.Mesh(new THREE.BoxGeometry(12, 7, 10), concrete), 147, -2, 3.5, 0.32);
+    add(new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.8, 13, 10), concrete), 116, 30, 6.5);
+    add(new THREE.Mesh(new THREE.BoxGeometry(4.6, 2.6, 4.6), new THREE.MeshLambertMaterial({ color:0x2d3e4c })), 116, 30, 14.2, 0.4);
+    // radar: mast + rotating dish
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.6, 12, 8), steel), 150, -28, 6);
+    MIL.dish = new THREE.Group(); MIL.dish.position.copy(toV(150, -28, 12.6)); milGroup.add(MIL.dish);
+    const dish = new THREE.Mesh(new THREE.BoxGeometry(7, 1.6, 0.4), new THREE.MeshLambertMaterial({ color:0xd8dcdf })); dish.rotation.x = -0.35; MIL.dish.add(dish);
+    // jamming station: lattice tower with antenna panels and a red beacon
+    const leg = new THREE.BoxGeometry(0.25, 24, 0.25);
+    [[-1.4, -1.4], [1.4, -1.4], [1.4, 1.4], [-1.4, 1.4]].forEach(([a, b]) => add(new THREE.Mesh(leg, steel), 130 + a, -4 + b, 12));
+    for (let u = 3; u < 24; u += 4) add(new THREE.Mesh(new THREE.BoxGeometry(3, 0.15, 3), steel), 130, -4, u);
+    [[0, 1.7], [0, -1.7], [1.7, 0], [-1.7, 0]].forEach(([a, b]) => { const p = new THREE.Mesh(new THREE.BoxGeometry(a ? 0.25 : 1.6, 3.2, a ? 1.6 : 0.25), new THREE.MeshLambertMaterial({ color:0xe9ecef })); add(p, 130 + a, -4 + b, 20.5, 0.78); });
+    add(new THREE.Mesh(new THREE.BoxGeometry(3, 2.2, 2.2), olive), 126, -8, 1.1, 0.8);   // generator shelter (warm)
+    MIL.beacon = add(new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 8), new THREE.MeshBasicMaterial({ color:0xff2a1f })), 130, -4, 24.5, 0.9);
+    // helipad and parked trucks
+    const pad = new THREE.Mesh(new THREE.CircleGeometry(6, 28), new THREE.MeshLambertMaterial({ color:0x3c444b })); pad.rotation.x = -Math.PI / 2; pad.position.copy(toV(112, 8, 0.03)); milGroup.add(pad);
+    const hS = textSprite('H', '#ffffff', '#3c444b', 0.05); hS.position.copy(toV(112, 8, 0.6)); milGroup.add(hS);
+    [[132, 26], [137, 26], [142, 26], [124, 4]].forEach(([e, n]) => add(new THREE.Mesh(new THREE.BoxGeometry(6, 2.6, 2.4), olive), e, n, 1.3, 0.5));
+    // signs
+    const sign = textSprite('KHU VỰC QUÂN SỰ · CẤM BAY', '#ffffff', '#b8261f', 0.06); sign.position.copy(toV(Z.e0 - 2, 22, 7)); milGroup.add(sign);
+    const sign2 = textSprite('CĂN CỨ QUÂN SỰ ĐÔNG', '#ffffff', '#b8261f', 0.05); sign2.position.copy(toV(cxE, cxN, 34)); fenceGroup.add(sign2);
+    // geofence: translucent red walls up to the fence altitude, hatched ground
+    const wallMat = new THREE.MeshBasicMaterial({ color:0xd8322a, transparent:true, opacity:0.08, side:THREE.DoubleSide, depthWrite:false });
+    MIL.walls = wallMat;
+    const H = 60;
+    [[cxE, Z.n0, W, 0], [cxE, Z.n1, W, 0], [Z.e0, cxN, D, Math.PI / 2], [Z.e1, cxN, D, Math.PI / 2]].forEach(([e, n, len, rot]) => {
+      const w = new THREE.Mesh(new THREE.PlaneGeometry(len, H), wallMat); w.position.copy(toV(e, n, H / 2)); w.rotation.y = rot; fenceGroup.add(w);
+    });
+    const edge = new THREE.LineBasicMaterial({ color:0xd8322a, transparent:true, opacity:0.75 });
+    [0.2, H].forEach(u => fenceGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([[Z.e0, Z.n0], [Z.e1, Z.n0], [Z.e1, Z.n1], [Z.e0, Z.n1], [Z.e0, Z.n0]].map(p => toV(p[0], p[1], u))), edge)));
+    [[Z.e0, Z.n0], [Z.e1, Z.n0], [Z.e1, Z.n1], [Z.e0, Z.n1]].forEach(p => fenceGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([toV(p[0], p[1], 0), toV(p[0], p[1], H)]), edge)));
+    const hatchTex = canvasTex(128, (x, sz) => { x.clearRect(0, 0, sz, sz); x.strokeStyle = 'rgba(216,50,42,0.32)'; x.lineWidth = 8; for (let k = -sz; k < sz * 2; k += 32){ x.beginPath(); x.moveTo(k, 0); x.lineTo(k + sz, sz); x.stroke(); } });
+    hatchTex.wrapS = hatchTex.wrapT = THREE.RepeatWrapping; hatchTex.repeat.set(W / 8, D / 8);
+    MIL.hatch = new THREE.Mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshBasicMaterial({ map:hatchTex, transparent:true, depthWrite:false }));
+    MIL.hatch.rotation.x = -Math.PI / 2; MIL.hatch.position.copy(toV(cxE, cxN, 0.05)); fenceGroup.add(MIL.hatch);
+  })();
+  function milTick(){
+    const S = Sim.S, t = performance.now() / 1000;
+    MIL.dish.rotation.y = t * 1.2;
+    MIL.beacon.visible = S.jammed ? (t * 6 % 1) < 0.6 : (t % 1.2) < 0.25;
+    MIL.walls.opacity = S.nfzIn ? 0.07 + 0.07 * Math.abs(Math.sin(t * 5)) : S.nfzNear ? 0.1 : 0.06;
+  }
   function applyTheme(){
     readTokens();
     rtlVerDrawn = -1;
@@ -3689,6 +3853,7 @@ function init3D(){
     hemi.intensity = TK.dark ? 0.65 : 0.9; sun.intensity = TK.dark ? 0.58 : 0.78;
     cityMeshes.forEach(c => { if (c.kind === 'building'){ c.mat.map = TK.dark ? winTexDark : winTexLight; c.mat.needsUpdate = true; } });
     trailMat.color.set(TK.tele); spMat.color.set(TK.accent);
+    applyNight();
     rebuildMission();
   }
 
@@ -3916,6 +4081,7 @@ function init3D(){
   const D2R = Math.PI / 180;
   const GB = { tilt:-15, pan:0, tiltT:-15, panT:0, zoom:1, zoom0:1, stab:true, ar:true, pip:true, ext:'orbit', auto:true, aimFn:null, viewFn:null };
   const camHide = [];   // AR objects never drawn in the camera picture (coverage tint, map-only marks)
+  camHide.push(fenceGroup);
   const CAM_V = 56 * D2R, CAM_H = 2 * Math.atan(Math.tan(CAM_V / 2) * 16 / 9);
   const droneCam = new THREE.PerspectiveCamera(56, 16/9, 0.05, 800);
   const mapCam = new THREE.PerspectiveCamera(50, 16/9, 1, 900);
@@ -3950,15 +4116,106 @@ function init3D(){
     drone.children.forEach(c => { if (c !== cargoGroup) hide(c); });
     hide(lidarGroup); hide(bufferGroup); hide(spMark); camHide.forEach(hide);
     if (!GB.ar){ hide(wpGroup); hide(rtlGroup); hide(trail); }
-    else wpGroup.children.forEach(o => { if (o.isMesh && o.position.distanceTo(lensAt) < 4) hide(o); });
+    else [wpGroup, rtlGroup].forEach(g => g.children.forEach(o => { if (o.isMesh && o.position.distanceTo(lensAt) < 4) hide(o); }));
     const solid = [];
     faded.forEach((f, i) => { if (f) (obsGroups[i] || []).forEach(m => { if (m.material){ solid.push(m.material); m.material.opacity = 1; m.material.depthWrite = true; } }); });
-    draw();
+    if (GB.sensor === 'ir') thermalDraw(draw); else draw();
     solid.forEach(m => { m.opacity = 0.16; m.depthWrite = false; });
     off.forEach(o => { o.visible = true; });
   }
   // heading marker drawn only in the small map
   const mapArrow = new THREE.Group(); mapArrow.visible = false; scene.add(mapArrow);
+  /* ---------- night scene + thermal camera ---------- */
+  const ENV = { night:false };
+  GB.sensor = 'eo'; GB.pal = 'wh';
+  const arRoots = [wpGroup, rtlGroup, trail, mapArrow];   // AR graphics keep their own colours in the thermal picture
+  const winTexGlow = canvasTex(256, (x, s) => {
+    x.fillStyle = '#000000'; x.fillRect(0, 0, s, s);
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 4; c++){ if ((r*3 + c*5) % 4 === 0){ x.fillStyle = '#d9a650'; x.fillRect(14 + c*58, 10 + r*30, 38, 18); } }
+  });
+  winTexGlow.wrapS = winTexGlow.wrapT = THREE.RepeatWrapping;
+  const poolOpacity = poolMat.opacity;
+  function applyNight(){
+    const on = ENV.night;
+    if (on){
+      const sky = new THREE.Color('#060b15');
+      renderer.setClearColor(sky); scene.fog.color.copy(sky);
+      groundMat.color.set('#161c22');
+      hemi.intensity = 0.34; sun.intensity = 0.22; sun.color.set('#9fb3ff');
+    } else {
+      sun.color.set('#ffffff');
+    }
+    cityMeshes.forEach(c => {
+      if (c.kind !== 'building') return;
+      c.mat.map = (on || TK.dark) ? winTexDark : winTexLight;
+      c.mat.emissive.set(on ? 0xffffff : 0x000000); c.mat.emissiveMap = on ? winTexGlow : null; c.mat.needsUpdate = true;
+    });
+    poolMat.opacity = on ? 1 : poolOpacity;
+    if (grid){ grid.material.transparent = true; grid.material.opacity = on ? 0.18 : 1; }
+  }
+  function setNight(on){
+    ENV.night = on; applyTheme();
+    $$('#todSeg button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.tod === 'night') === on)));
+  }
+  function setSensor(k){
+    GB.sensor = k;
+    $$('#sensSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sens === k)));
+    $('#palSel').hidden = k !== 'ir';
+    camModeChanged();
+  }
+  $$('#todSeg button').forEach(b => b.addEventListener('click', () => setNight(b.dataset.tod === 'night')));
+  $$('#sensSeg button').forEach(b => b.addEventListener('click', () => setSensor(b.dataset.sens)));
+  $('#palSel').addEventListener('change', e => { GB.pal = e.target.value; thermCache.clear(); });
+  addEventListener('keydown', e => {
+    if (e.target.closest && e.target.closest('input,select,textarea')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === 'KeyT') setSensor(GB.sensor === 'ir' ? 'eo' : 'ir');
+    else if (e.code === 'KeyN') setNight(!ENV.night);
+  });
+  // ironbow-like ramp: cold black → violet → magenta → orange → yellow → white
+  const IRON = [[0, '#000004'], [0.22, '#2c0b5c'], [0.42, '#7b1c7a'], [0.58, '#c4344f'], [0.72, '#f0682a'], [0.86, '#fbb52b'], [1, '#fffbe6']].map(([t, c]) => [t, new THREE.Color(c)]);
+  function thermCol(t){
+    t = clamp(t, 0, 1);
+    if (GB.pal === 'wh'){ const g = Math.pow(t, 1.1); return new THREE.Color(g, g, g); }
+    for (let i = 1; i < IRON.length; i++) if (t <= IRON[i][0]){ const a = IRON[i - 1], b = IRON[i]; return a[1].clone().lerp(b[1], (t - a[0]) / (b[0] - a[0])); }
+    return IRON[IRON.length - 1][1].clone();
+  }
+  const thermCache = new Map();
+  function thermMat(t){
+    const k = Math.round(clamp(t, 0, 1) * 63);
+    let m = thermCache.get(k);
+    if (!m){ m = new THREE.MeshBasicMaterial({ color: thermCol(k / 63) }); thermCache.set(k, m); }
+    return m;
+  }
+  // apparent temperature 0 (cold sky) … 1 (body / engine heat); surfaces warmed by the sun read hotter by day
+  function tempOf(o, m){
+    if (o.userData.temp != null) return o.userData.temp;
+    const sunBoost = ENV.night ? 0 : 0.12;
+    if (m === bulbMat) return 0.82;
+    if (m === groundMat) return ENV.night ? 0.2 : 0.36;
+    if (m === roadMat) return ENV.night ? 0.34 : 0.52;   // asphalt keeps the day's heat
+    if (m.map && m.map !== poolMat.map) return (ENV.night ? 0.15 : 0.3) + ((o.id * 37) % 9) / 100;
+    const c = m.color || { r:0.5, g:0.5, b:0.5 }, L = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+    return 0.08 + 0.2 * (1 - L) + sunBoost;
+  }
+  function thermalDraw(draw){
+    const swaps = [], hid = [], skip = new Set(arRoots.concat(camHide));
+    scene.children.forEach(root => {
+      if (skip.has(root) || !root.visible) return;
+      root.traverse(o => {
+        if (!o.isMesh || !o.visible || skip.has(o)) return;
+        const m = o.material; if (!m || Array.isArray(m)) return;
+        if (m.transparent && m.opacity < 0.7 && o.userData.temp == null){ o.visible = false; hid.push(o); return; }
+        swaps.push([o, m]); o.material = thermMat(tempOf(o, m));
+      });
+    });
+    const cc = new THREE.Color(); renderer.getClearColor(cc); const fc = scene.fog.color.clone();
+    const cold = thermCol(0.03); renderer.setClearColor(cold); scene.fog.color.copy(cold);
+    draw();
+    renderer.setClearColor(cc); scene.fog.color.copy(fc);
+    swaps.forEach(([o, m]) => { o.material = m; }); hid.forEach(o => { o.visible = true; });
+  }
+
   const arrowShape = new THREE.Shape(); arrowShape.moveTo(2.6, 0); arrowShape.lineTo(-1.4, 1.5); arrowShape.lineTo(-0.6, 0); arrowShape.lineTo(-1.4, -1.5); arrowShape.closePath();
   const arrowMat = new THREE.MeshBasicMaterial({ color:0xe2891a, depthTest:false, transparent:true, opacity:0.95 });
   const arrowMesh = new THREE.Mesh(new THREE.ShapeGeometry(arrowShape), arrowMat); arrowMesh.rotation.x = -Math.PI / 2; arrowMesh.renderOrder = 30; mapArrow.add(arrowMesh);
@@ -3967,7 +4224,7 @@ function init3D(){
   function camModeChanged(){
     const fpv = cam.mode === 'fpv';
     stage.classList.toggle('fpv', fpv); osdEl.hidden = !fpv; $('#camHelp').hidden = !fpv;
-    $('#pipLab').innerHTML = fpv ? 'BẢN ĐỒ<span class="wide-only"> · BẮC LÊN TRÊN</span>' : 'CAMERA DRONE';
+    $('#pipLab').innerHTML = fpv ? 'BẢN ĐỒ<span class="wide-only"> · BẮC LÊN TRÊN</span>' : 'CAMERA ' + (GB.sensor === 'ir' ? 'NHIỆT' : 'DRONE');
     $('#pipSw').textContent = fpv ? '⤢ góc ngoài' : '⤢ phóng to';
     pipEl.setAttribute('aria-label', fpv ? 'Bản đồ thu nhỏ: bấm để quay lại góc nhìn ngoài' : 'Camera drone thu nhỏ: bấm để xem toàn khung');
   }
@@ -4016,6 +4273,7 @@ function init3D(){
     const rec = REC.cur ? '● REC ' + mmss(S.t - REC.cur.t0) : '○ CHỜ GHI';
     osdSet('osdRec', rec, REC.cur ? 'osd-rec' : '');
     osdSet('osdState', S.state);
+    osdSet('osdSens', (GB.sensor === 'ir' ? 'NHIỆT · ' + (GB.pal === 'wh' ? 'TRẮNG NÓNG' : 'IRONBOW') : 'QUANG HỌC') + (ENV.night ? ' · ĐÊM' : ''));
     osdSet('osdBat', 'PIN ' + Math.round(soc) + '%', soc < 25 ? 'osd-warn' : '');
     const hd = bearing(S.att[2]), cb = bearing(S.att[2] + GB.pan * D2R);
     osdSet('osdHdg', 'MŨI ' + pad3(Math.round(hd) % 360) + '° ' + dirVN(hd) + (Math.abs(GB.pan) > 0.5 ? ' · CAMERA ' + pad3(Math.round(cb) % 360) + '°' : ''));
@@ -4045,6 +4303,7 @@ function init3D(){
   }
   let gimShown = '';
   function camRender(dt){
+    milTick();
     gimbalPose(dt);
     updateCamera(dt);
     renderer.getSize(sizeV);
@@ -4078,7 +4337,7 @@ function init3D(){
 
   applyTheme();
   return { render, rebuildMission, clearTrail, applyTheme,
-    cam: { scene, toV, droneCam, GB, camFov, camHide, camera, mode: () => cam.mode, setCam } };
+    cam: { scene, toV, droneCam, GB, camFov, camHide, camera, mode: () => cam.mode, setCam, ENV, arRoots, setNight, setSensor } };
 }
 try { R3 = init3D(); }
 catch (err){ R3 = null; $('#glErr').hidden = false; $('#gl').style.display = 'none'; console.warn(err); }
@@ -5028,6 +5287,9 @@ function svBuildMeshes(C){
       const head = new T.Mesh(new T.SphereGeometry(0.13, 10, 8), new T.MeshLambertMaterial({ color:0xd9a77e })); head.position.y = 1.6;
       g.add(legs, torso, head);
     }
+    // apparent temperatures for the thermal camera: skin and clothes ~34–37 °C, engine bay and tyres hot
+    g.children.forEach((m, i) => { m.userData.temp = a.type === 'p' ? [0.84, 0.9, 0.97][i] : i === 0 ? 0.62 : i === 1 ? 0.48 : 0.74; });
+    a.tC = a.type === 'p' ? 34 + (a.id.charCodeAt(2) % 4) : 48 + (a.id.charCodeAt(2) % 7) * 3;
     a.mesh = g; C.scene.add(g);
   });
 }
@@ -5115,7 +5377,11 @@ const svM4 = () => new THREE.Matrix4();
 function svDetect(C){
   const S = Sim.S, GBx = C.GB;
   if (!svDetCam){ svDetCam = new THREE.PerspectiveCamera(56, 16 / 9, 0.05, 800); svFrustum = new THREE.Frustum(); }
-  const on = S.state !== 'DISARMED' && S.state !== 'EMERGENCY';
+  const on = S.state !== 'DISARMED' && S.state !== 'EMERGENCY' && !S.jammed;
+  // sensor: optical 1920×1080, thermal 640×512; at night the optical camera needs a much bigger target and is less sure
+  const ir = GBx.sensor === 'ir', night = SV.ctx.ENV.night, rows = ir ? 512 : 1080;
+  const need = ir ? (night ? { p:4, v:3.5 } : { p:5.5, v:4.5 }) : night ? { p:26, v:20 } : { p:11, v:9 };
+  const confK = ir ? 1 : night ? 0.62 : 1;
   SV.agents.forEach(a => { a.vis = false; });
   SV.foot = null;
   if (!on) return;
@@ -5127,15 +5393,16 @@ function svDetect(C){
   SV.agents.forEach(a => {
     v.copy(C.toV(a.e, a.n, a.h * 0.55));
     if (!svFrustum.containsPoint(v)) return;
-    const d = v.distanceTo(cp), px = 1080 * 2 * Math.atan(a.size / 2 / d) / fovR;
-    if (px < (a.type === 'p' ? 11 : 9)) return;
+    const d = v.distanceTo(cp), px = rows * 2 * Math.atan(a.size / 2 / d) / fovR;
+    const th = need[a.type];
+    if (px < th) return;
     if (svBlocked(cam, [a.e, a.n, a.h * 0.6])) return;
     a.vis = true; a.dist = d; a.px = px;
-    a.conf = clamp(0.42 + (px - 10) / 55 + 0.04 * Math.sin(S.t * 3.1 + a.e), 0.42, 0.97);
+    a.conf = clamp((0.42 + (px - th) / (th * 5) + 0.04 * Math.sin(S.t * 3.1 + a.e)) * confK, 0.3, 0.97);
     a.type === 'p' ? nowP++ : nowV++;
     const seen = SV.seen[a.id];
     if (!seen || S.t - seen.last > 15){
-      SV.dets.unshift({ id:a.id, type:a.type, t:S.t, e:a.e, n:a.n, conf:a.conf, dist:d, task:Sim.params.task, flight: (typeof REC !== 'undefined' && REC.cur) ? REC.cur.id : null });
+      SV.dets.unshift({ id:a.id, type:a.type, t:S.t, e:a.e, n:a.n, conf:a.conf, dist:d, task:Sim.params.task, sens: ir ? 'IR' : night ? 'EO đêm' : 'EO', flight: (typeof REC !== 'undefined' && REC.cur) ? REC.cur.id : null });
       if (SV.dets.length > 200) SV.dets.length = 200;
       SV.uniq[a.type].add(a.id);
       SV.logDirty = true;
@@ -5158,6 +5425,16 @@ function svDetect(C){
 /* --- detection boxes over the camera picture (full view and/or picture-in-picture) --- */
 function svDrawBoxes(views){
   const svg = $('#detSvg'); if (!svg) return;
+  // picture effects over the camera view (only one view is a camera picture at a time)
+  const fx = $('#camFx'), S = Sim.S, cv = views[0];
+  const mode = !cv ? '' : S.jammed ? 'jam' : SV.ctx.GB.sensor === 'ir' ? 'ir' : SV.ctx.ENV.night ? 'n-eo' : '';
+  if (!mode){ if (!fx.hidden) fx.hidden = true; }
+  else {
+    fx.hidden = false; fx.className = 'cam-fx ' + mode + (cv.full ? '' : ' small');
+    fx.style.left = cv.x + 'px'; fx.style.top = cv.y + 'px'; fx.style.width = cv.w + 'px'; fx.style.height = cv.h + 'px';
+    $('#camFxTxt').hidden = mode !== 'jam';
+  }
+  if (S.jammed) views = [];
   let html = '';
   const v = new THREE.Vector3();
   views.forEach(view => {
@@ -5179,7 +5456,7 @@ function svDrawBoxes(views){
       const cls = 'db ' + (a.type === 'p' ? 'db-p' : 'db-v') + (tr ? ' db-tr' : '');
       html += '<rect class="' + cls + '" x="' + (x0 - pad).toFixed(1) + '" y="' + (y0 - pad).toFixed(1) + '" width="' + (x1 - x0 + 2 * pad).toFixed(1) + '" height="' + (y1 - y0 + 2 * pad).toFixed(1) + '"/>';
       if (view.full || view.w > 220){
-        const lab = (a.type === 'p' ? 'NGƯỜI ' : 'XE ') + a.id + ' ' + Math.round(a.conf * 100) + '%' + (tr ? ' · BÁM' : '');
+        const lab = (a.type === 'p' ? 'NGƯỜI ' : 'XE ') + a.id + ' ' + Math.round(a.conf * 100) + '%' + (SV.ctx.GB.sensor === 'ir' ? ' · ' + a.tC + '°C' : '') + (tr ? ' · BÁM' : '');
         html += '<text class="dl ' + (a.type === 'p' ? 'dl-p' : 'dl-v') + '" x="' + (x0 - pad).toFixed(1) + '" y="' + (y0 - pad - 3).toFixed(1) + '">' + lab + '</text>';
       }
     });
@@ -5290,7 +5567,7 @@ function svPick(kind){
 }
 function svGroundClick(e, n){
   if (!SV.pick) return false;
-  e = clamp(Math.round(e), -90, 90); n = clamp(Math.round(n), -90, 90);
+  e = clamp(Math.round(e), -90, 165); n = clamp(Math.round(n), -90, 90);
   if (SV.pick === 'orbit'){
     SV.orbitPick = { e, n }; SV.orbit.target = 'pick'; $('#svTarget').value = 'pick';
     svPick(null); svApply(false);
@@ -5309,7 +5586,7 @@ function svGroundClick(e, n){
 /* --- 3D overlays: orbit circle, scan rectangle, pick marker --- */
 function svDraw3D(){
   const C = SV.ctx; if (!C) return;
-  if (!SV.g3){ SV.g3 = new THREE.Group(); C.scene.add(SV.g3); }
+  if (!SV.g3){ SV.g3 = new THREE.Group(); C.scene.add(SV.g3); C.arRoots.push(SV.g3); }
   const g = SV.g3;
   while (g.children.length){ const o = g.children.pop(); if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }
   const acc = new THREE.Color(TK.accent);
@@ -5440,12 +5717,14 @@ function svRenderPanel(){
   $('#svCovU').textContent = cov == null ? 'm²' : '%';
   $('#svCovSub').textContent = cov == null ? 'mặt đất camera đã thấy' : 'của ' + A.name;
   $('#svUntrack').hidden = !SV.track;
+  $('#svInc').hidden = !SV.incident;
+  if (SV.incident) $('#svIncSub').textContent = 'T+' + mmss(SV.incident.t) + ' · ' + SV.incident.zone;
   if (SV.logDirty){
     SV.logDirty = false;
     const rows = SV.dets.slice(0, 80).map(d => '<tr data-id="' + d.id + '"' + (SV.track === d.id ? ' class="on"' : '') + ' tabindex="0" title="Bấm để camera bám ' + d.id + '">'
       + '<td>' + mmss(d.t) + '</td><td><span class="dk dk-' + d.type + '">' + (d.type === 'p' ? 'Người' : 'Xe') + '</span></td><td class="mono">' + d.id + '</td>'
       + '<td class="mono">' + fx(d.e, 0) + ', ' + fx(d.n, 0) + '</td><td class="mono">' + d.dist.toFixed(0) + ' m</td><td class="mono">' + Math.round(d.conf * 100) + '%</td>'
-      + '<td>' + TASK_LABEL[d.task] + '</td></tr>').join('');
+      + '<td>' + TASK_LABEL[d.task] + '</td><td>' + d.sens + '</td></tr>').join('');
     $('#svTbody').innerHTML = rows;
     $('#svEmpty').hidden = SV.dets.length > 0;
   }
@@ -5454,13 +5733,14 @@ function svRenderPanel(){
 function svDrawMap(){
   const c = $('#svMap'); if (!c || !c.clientWidth || !c.clientHeight) return;
   const [ctx, w, h] = fitCanvas(c), S = Sim.S, P_ = Sim.params;
-  const R = 82, sc = Math.min(w, h) / (2 * R), cx = w / 2, cy = h / 2;
+  const R = 92, E0 = 38, sc = Math.min(w, h) / (2 * R * 1.4), cx = w / 2 - E0 * sc * 1, cy = h / 2;
   const X = e => cx + e * sc, Y = n => cy - n * sc;
   ctx.fillStyle = TK['panel-2']; ctx.fillRect(0, 0, w, h);
   // streets
   ctx.strokeStyle = TK.line; ctx.lineWidth = 7.5 * sc;
-  ROAD_EW.forEach(n => { ctx.beginPath(); ctx.moveTo(X(-R), Y(n)); ctx.lineTo(X(R), Y(n)); ctx.stroke(); });
-  ROAD_NS.forEach(e => { ctx.beginPath(); ctx.moveTo(X(e), Y(-R)); ctx.lineTo(X(e), Y(R)); ctx.stroke(); });
+  ROAD_EW.forEach(n => { ctx.beginPath(); ctx.moveTo(X(-84), Y(n)); ctx.lineTo(X(84), Y(n)); ctx.stroke(); });
+  ctx.beginPath(); ctx.moveTo(X(84), Y(14)); ctx.lineTo(X(100), Y(14)); ctx.stroke();
+  ROAD_NS.forEach(e => { ctx.beginPath(); ctx.moveTo(X(e), Y(-84)); ctx.lineTo(X(e), Y(84)); ctx.stroke(); });
   // coverage
   if (SV.cov){
     ctx.fillStyle = TK.accent; ctx.globalAlpha = 0.2;
@@ -5471,6 +5751,13 @@ function svDrawMap(){
     }
     ctx.globalAlpha = 1;
   }
+  // military no-fly zone
+  Sim.NFZ.forEach(z => {
+    ctx.fillStyle = TK.bad; ctx.globalAlpha = 0.12; ctx.fillRect(X(z.e0), Y(z.n1), (z.e1 - z.e0) * sc, (z.n1 - z.n0) * sc); ctx.globalAlpha = 1;
+    ctx.strokeStyle = TK.bad; ctx.lineWidth = 1.5; ctx.strokeRect(X(z.e0), Y(z.n1), (z.e1 - z.e0) * sc, (z.n1 - z.n0) * sc);
+    ctx.fillStyle = TK.bad; ctx.font = '600 10px ' + getComputedStyle(document.body).getPropertyValue('--f-mono'); ctx.fillText('CẤM BAY', X(z.e0) + 4, Y(z.n1) + 12);
+  });
+  if (SV.incident){ const p = SV.incident.pos; ctx.strokeStyle = TK.bad; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(p[0]) - 6, Y(p[1]) - 6); ctx.lineTo(X(p[0]) + 6, Y(p[1]) + 6); ctx.moveTo(X(p[0]) + 6, Y(p[1]) - 6); ctx.lineTo(X(p[0]) - 6, Y(p[1]) + 6); ctx.stroke(); }
   // buildings
   Sim.obstacles.forEach(o => { ctx.fillStyle = TK['line-2']; ctx.fillRect(X(o.e - o.rx), Y(o.n + o.ry), 2 * o.rx * sc, 2 * o.ry * sc); });
   // task geometry
@@ -5537,6 +5824,32 @@ function svFrame(){
 
 svBindForm();
 svSetTask('patrol', { silent:true });
+
+/* ---------- military no-fly zone: operator side ---------- */
+$('#milTry').addEventListener('click', () => {
+  SV.patrol = 'custom'; $('#svPatrol').value = 'custom'; SV.loops = 1;
+  svSetTask('patrol', { noApply:true });
+  Sim.setDestinations([{ e:125, n:14, u:SV.pu, label:'Điểm trong căn cứ', role:'pass' }], false);
+  renderMission();
+  svStart();
+});
+function milReport(j){
+  const p = j.pos;
+  return 'Báo cáo sự cố: drone bị phá sóng lúc T+' + mmss(j.t) + ' trong ' + j.zone + ' tại E ' + p[0].toFixed(0) + ' m, N ' + p[1].toFixed(0) + ' m, cao ' + p[2].toFixed(0) + ' m, sau '
+    + j.inside.toFixed(0) + ' s trong vùng cấm (pin ' + Math.round(j.soc * 100) + '%). Mất liên kết điều khiển, video và GNSS: drone hạ cánh tại chỗ. Bấm "Đặt lại" để đưa drone về Nhà máy.';
+}
+Sim.on(ev => {
+  if (ev.type === 'nfz'){
+    addLog(ev.level === 'exit' ? 'info' : ev.level === 'near' ? 'warn' : 'fail', ev.msg, ev.level === 'enter' ? 'geofence: chỉ cho phép bay ra' : '', ev.t);
+    if (ev.level === 'enter') showToast(ev.msg, 'surv', 'Xem bảng Giám sát');
+  } else if (ev.type === 'jam'){
+    SV.launch.on = false; demo.on = false;
+    addLog('fail', ev.msg, 'drone hạ cánh tại chỗ; mọi lệnh tiếp theo bị chặn', ev.t);
+    SV.incident = ev.jam;
+    showToast(milReport(ev.jam), 'surv', 'Xem bảng Giám sát');
+    syncLinkBtn();
+  } else if (ev.type === 'reset'){ SV.incident = null; syncLinkBtn(); }
+});
 
 /* ---------- panel visibility: every dashboard can be hidden, the 3D view always stays ---------- */
 const LAY_KEYS = ['fn', 'dash', 'sv', 'sm', 'an', 'rp'];
@@ -5614,7 +5927,7 @@ document.addEventListener('click', e => {
   const el = document.querySelector(a.getAttribute('href'));
   const k = el && LAY_KEYS.find(x => el.classList.contains(x)); if (k) showPanel(k);
 }, true);
-$('#rpToastGo').addEventListener('click', () => { const t = $('#rpToastGo').dataset.target || 'report'; showPanel(t === 'analysis' ? 'an' : 'rp'); }, true);
+$('#rpToastGo').addEventListener('click', () => { const t = $('#rpToastGo').dataset.target || 'report'; showPanel({ analysis:'an', report:'rp', surv:'sv' }[t] || 'rp'); }, true);
 mqMid.addEventListener('change', layApply); mqNarrow.addEventListener('change', layApply);
 layApply();
 

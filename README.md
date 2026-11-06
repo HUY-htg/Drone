@@ -37,6 +37,8 @@ Hai phím sau dùng được ở mọi trạng thái:
 |---|---|
 | `C` | Bật / tắt góc nhìn camera trên drone |
 | `H` | Ẩn mọi bảng dashboard để chỉ xem 3D; bấm lại để hiện lại |
+| `T` | Camera quang học ↔ camera nhiệt |
+| `N` | Ngày ↔ đêm |
 
 ### Ẩn và hiện các bảng
 
@@ -83,6 +85,46 @@ Trong thành phố có 16 người đi bộ trên vỉa hè và 10 xe chạy tr�
 Đối tượng được nhận diện có khung màu trong hình camera (cả toàn khung lẫn cửa sổ nhỏ) và vòng tròn trên bản đồ giám sát. Mỗi lần một đối tượng xuất hiện lại sau hơn 15 giây vắng mặt được ghi một dòng vào **Nhật ký nhận diện** (thời điểm, loại, mã, vị trí, khoảng cách, độ tin cậy, nhiệm vụ đang bay). Bấm một dòng để camera bám theo đối tượng đó; bấm lại hoặc **Bỏ bám** để thôi.
 
 ![Bảng Giám sát sau khi tuần tra và bay vòng](docs/surveillance.png)
+
+### Ban đêm và camera nhiệt (hồng ngoại)
+
+Ở hàng **Camera** dưới khung 3D:
+
+- **Ngày / Đêm** (phím `N`): ban đêm trời tối, cửa sổ và đèn đường sáng.
+- **Quang học / Nhiệt** (phím `T`): đổi giữa camera quang học (ảnh màu) và camera nhiệt.
+  - Camera nhiệt có hai bảng màu: **Trắng nóng** (vật càng nóng càng trắng) và **Ironbow** (lạnh tím đen → nóng vàng trắng).
+  - Người (34–37 °C) và xe có động cơ, lốp nóng nổi bật trên nền tòa nhà và mặt đất nguội. Ban ngày mặt đường và tường bị nắng hâm nóng nên tương phản kém hơn ban đêm.
+  - Khung nhận diện ghi kèm nhiệt độ ước lượng.
+
+Cảm biến ảnh hưởng tới nhận diện:
+
+| Cảm biến | Độ phân giải | Ngưỡng nhận diện (người / xe) | Ghi chú |
+|---|---|---|---|
+| Quang học, ban ngày | 1920 × 1080 | 11 / 9 điểm ảnh | Như trước |
+| Quang học, ban đêm | 1920 × 1080 | 26 / 20 điểm ảnh | Ảnh tối và nhiễu, độ tin cậy giảm còn khoảng 60% |
+| Nhiệt, ban ngày | 640 × 512 | 5,5 / 4,5 điểm ảnh | |
+| Nhiệt, ban đêm | 640 × 512 | 4 / 3,5 điểm ảnh | Thấy xa nhất |
+
+Nhật ký nhận diện có thêm cột **Cảm biến** (EO, EO đêm, IR). OSD ghi rõ đang dùng camera nào.
+
+![Camera nhiệt bảng màu Ironbow ban đêm](docs/thermal.png)
+
+## Khu vực quân sự (vùng cấm bay)
+
+Bản đồ được mở rộng về phía đông với **Căn cứ quân sự Đông** (E 100…160 m, N −40…40 m). Căn cứ có hàng rào, cổng, nhà chứa máy bay, doanh trại, tháp chỉ huy, radar quay, bãi trực thăng và trạm phá sóng có đèn đỏ nhấp nháy. Một con đường dẫn từ trục phố N 14 m tới cổng. Ranh giới vùng cấm là bức tường ảo màu đỏ cao 60 m trên cảnh 3D; bản đồ giám sát cũng vẽ vùng này.
+
+| Tình huống | Drone | Người điều khiển nhận được |
+|---|---|---|
+| Còn 20 m tới ranh giới | Bay tiếp | Cảnh báo vàng trên khung 3D, dòng nhật ký |
+| Vào trong vùng | Bị chặn: đang MISSION thì chuyển HOVER ngay ở ranh giới. Mọi lệnh bay sâu hơn bị cắt, chỉ bay ra được (lái tay, RTL…) | Cảnh báo đỏ đếm ngược tới lúc bị phá sóng, thông báo nổi, nhật ký |
+| Còn 5 s | | Nhắc rời khu vực |
+| Ở quá 10 s | **Bị phá sóng**: mất liên kết điều khiển, video và GNSS. Không định vị được để bay về nên FAILSAFE chuyển sang hạ cánh tại chỗ | **Báo cáo sự cố** (thời điểm, vị trí, độ cao, thời gian trong vùng, pin, hành động của drone). Hình camera chuyển sang nhiễu "MẤT TÍN HIỆU VIDEO". Bảng Giám sát hiện ô Sự cố và đánh dấu × chỗ bị phá sóng. Mọi lệnh sau đó bị từ chối cho tới khi bấm **Đặt lại** |
+
+Nút **Bay thử vào khu quân sự** trong bảng Điều hành cho drone bay theo trục phố vào căn cứ để xem toàn bộ chuỗi trên. Có thể thử rời đi kịp: bấm RTL trong 10 s đầu.
+
+Click mặt đất 3D trong căn cứ vẫn thêm được điểm vào tuyến; khi lập tuyến, nhật ký báo trước rằng drone sẽ bị chặn tại ranh giới.
+
+![Drone bị phá sóng trong khu quân sự](docs/jammed.png)
 
 ## Kết quả bay thử: gió và tải trọng thay đổi thì drone ra sao
 
@@ -192,7 +234,7 @@ Lõi mô phỏng không phụ thuộc DOM, nên có thể chạy bằng Node:
 node tests/run-scenarios.js
 ```
 
-Bộ kiểm thử bay 3 tuyến tuần tra (mỗi tuyến 2 vòng), bay vòng quanh cao ốc (bám bán kính, mũi hướng vào mục tiêu, tự nâng độ cao), quét 3 khu vực (các làn phủ kín bề ngang), các tuyến Hub A, B, C và liên trạm, bay ở tốc độ 14 m/s, thử HOLD rồi bay tiếp, mất liên kết, chia hàng, 200 điểm click ngẫu nhiên và bay trên mọi nóc nhà, bay chương trình bay thử rồi kiểm tra xu hướng gió × tải rút ra từ dữ liệu đã ghi, và kiểm tra điều khiển thích nghi: góc nghiêng giữ vị trí khớp lý thuyết, m̂ hội tụ sau mỗi lần thả hàng, giữ vị trí tốt hơn PID cố định. Kết quả là PASS/FAIL cho từng mục; mã thoát khác 0 nếu có mục thất bại.
+Bộ kiểm thử bay vào khu quân sự (cảnh báo, chặn ở ranh giới, phá sóng đúng 10 s rồi hạ cánh tại chỗ, rời đi kịp thì không bị phá sóng), bay 3 tuyến tuần tra (mỗi tuyến 2 vòng), bay vòng quanh cao ốc (bám bán kính, mũi hướng vào mục tiêu, tự nâng độ cao), quét 3 khu vực (các làn phủ kín bề ngang), các tuyến Hub A, B, C và liên trạm, bay ở tốc độ 14 m/s, thử HOLD rồi bay tiếp, mất liên kết, chia hàng, 200 điểm click ngẫu nhiên và bay trên mọi nóc nhà, bay chương trình bay thử rồi kiểm tra xu hướng gió × tải rút ra từ dữ liệu đã ghi, và kiểm tra điều khiển thích nghi: góc nghiêng giữ vị trí khớp lý thuyết, m̂ hội tụ sau mỗi lần thả hàng, giữ vị trí tốt hơn PID cố định. Kết quả là PASS/FAIL cho từng mục; mã thoát khác 0 nếu có mục thất bại.
 
 ## Giới hạn của mô hình
 
@@ -201,6 +243,8 @@ Bộ kiểm thử bay 3 tuyến tuần tra (mỗi tuyến 2 vòng), bay vòng qu
 - Gió đồng đều trong không gian, không có hiệu ứng xoáy sau tòa nhà. Khi gió giật vượt giới hạn ở trên, drone bị đẩy lệch khỏi tuyến và có thể va chạm. Đây là giới hạn vật lý của khung, không phải lỗi.
 - Ngưỡng failsafe pin cố định 15%. Với hệ số xả pin rất cao (×15 trở lên), lượng pin dự trữ có thể không đủ để hạ cánh.
 - Lidar lý tưởng, không có nhiễu. Khi hạ cánh khẩn cấp, drone chỉ đáp xuống mặt đất, không đáp lên nóc nhà.
+- Ảnh nhiệt gán nhiệt độ theo loại vật thể (người, xe, mặt đường, tường…), không mô phỏng truyền nhiệt hay bức xạ thật.
+- Phá sóng được mô phỏng theo luật: đúng 10 s trong vùng cấm thì mất liên kết. Không mô phỏng công suất phát, khoảng cách hay tần số.
 - Nhận diện người và xe là mô hình hình học (khung hình, kích thước điểm ảnh, đường nhìn bị tòa nhà che), không phải mạng nơ-ron xử lý ảnh. Cây và nhà thấp tầng không che tầm nhìn. Người và xe đi theo đường thẳng trên vỉa hè và làn đường, không rẽ ở giao lộ.
 
 ## Cấu trúc
@@ -208,7 +252,7 @@ Bộ kiểm thử bay 3 tuyến tuần tra (mỗi tuyến 2 vòng), bay vòng qu
 ```
 index.html               Toàn bộ ứng dụng: HTML, CSS, lõi lập nhiệm vụ giám sát (script#surv-core), lõi mô phỏng (script#sim-core) và giao diện
 tests/run-scenarios.js   Kiểm thử lõi mô phỏng bằng Node
-docs/                    Ảnh chụp màn hình (giao diện, camera trên drone, bảng giám sát, kết quả gió × tải, báo cáo hành trình, điều khiển thích nghi)
+docs/                    Ảnh chụp màn hình (giao diện, camera trên drone, camera nhiệt, phá sóng, bảng giám sát, kết quả gió × tải, báo cáo hành trình, điều khiển thích nghi)
 ```
 
 ## Giấy phép

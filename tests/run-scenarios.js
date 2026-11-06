@@ -236,5 +236,27 @@ function hoverSteps(adaptive){
       `${passes}/${L.pts.length} đầu làn · vệt ${L.width.toFixed(0)} m · cách tường gần nhất ${r.minClear.toFixed(2)} m`);
   }
 }
+
+// 11. Military no-fly zone: warned on approach, stopped at the boundary, jammed after 10 s inside
+{
+  const into = Sim => { Sim.params.task = 'patrol'; Sim.setDestinations([{ e: 125, n: 14, u: 16, label: 'Trong căn cứ', role: 'pass' }], true); };
+  let tEnter = null, tJam = null, deepest = 0;
+  let r = flyRoute(into, { maxT: 200, during: (Sim, t) => { const S = Sim.S, z = Sim.NFZ[0];
+    if (S.nfzIn && tEnter == null) tEnter = t; if (S.jammed && tJam == null) tJam = t;
+    if (S.nfzIn) deepest = Math.max(deepest, S.pos[0] - z.e0); } });
+  const ev = r.events, kinds = ev.filter(e => e.type === 'nfz').map(e => e.level);
+  const stopped = ev.some(e => e.type === 'transition' && e.to === 'HOVER' && /ranh giới/.test(e.reason));
+  const landedIn = r.S.grounded && r.Sim.nfzAt(r.S.pos[0], r.S.pos[1]);
+  check('Khu quân sự: cảnh báo khi tới gần, bị chặn tại ranh giới, không bay sâu quá vài mét',
+    kinds[0] === 'near' && kinds.includes('enter') && stopped && deepest < 8, `vào sâu nhất ${deepest.toFixed(1)} m`);
+  check('Khu quân sự: ở quá 10 s thì bị phá sóng, mất liên kết, hạ cánh tại chỗ, lệnh bị chặn',
+    tJam != null && Math.abs(tJam - tEnter - 10) < 0.3 && r.Sim.params.linkLost && landedIn && !r.crashed && !r.Sim.command('ARM'),
+    `phá sóng sau ${(tJam - tEnter).toFixed(2)} s · đáp tại E ${r.S.pos[0].toFixed(1)} m`);
+  // leaving in time: RTL 4 s after the stop → no jamming, back home
+  let sent = false;
+  r = flyRoute(into, { maxT: 300, during: (Sim) => { const S = Sim.S; if (S.nfzIn && !sent && S.nfzT > 4){ sent = Sim.command('RTL'); } } });
+  check('Khu quân sự: rời đi trước 10 s (RTL) thì không bị phá sóng, về Nhà máy an toàn',
+    sent && !r.S.jammed && r.home && !r.crashed && r.events.some(e => e.type === 'nfz' && e.level === 'exit'), `RTL lúc ${sent ? 'đã gửi' : 'chưa gửi'}`);
+}
 console.log(failures ? `\n${failures} kiểm tra thất bại` : '\nTất cả kiểm tra đều đạt');
 process.exit(failures ? 1 : 0);
