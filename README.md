@@ -30,6 +30,29 @@ Cách nhanh nhất để xem toàn bộ chu trình là bấm **Chạy Demo Giao 
 
 Đang HOVER mà chạm cần hoặc phím thì drone tự chuyển sang MANUAL. Buông cần thì drone phanh lại rồi giữ vị trí.
 
+## Kết quả: gió và tải trọng thay đổi thì drone ra sao
+
+Phần **Kết quả** (liên kết "Kết quả gió & tải ↓" ở đầu trang) tự bay 43 chuyến mô phỏng ngắn ngay khi mở trang, mất vài giây. Gồm 25 tổ hợp: 5 mức gió (0, 3, 6, 9, 12 m/s) nhân 5 mức tải (0; 0,75; 1,5; 2,25; 3 kg), cộng 18 phép thử thay đổi đột ngột. Mọi con số đều đo từ chuyến bay, không phải công thức.
+
+![Kết quả gió và tải trọng](docs/results.png)
+
+| Khi… | Drone biểu hiện (số đo trong mô phỏng) |
+|---|---|
+| **Gió mạnh lên** (chở 1,5 kg, gió 0 → 6 → 12 m/s) | Nghiêng vào gió 0° → 7,3° → 18,9° để đứng yên. Lực đẩy chỉ tăng 6%. Thời gian bay 18,5 → 17,1 phút. Lệch vị trí khi gió giật 30%: 0,04 → 0,28 m |
+| **Tải nặng lên** (không gió, 0 → 3 kg) | Lực đẩy 24 → 53 N, ga động cơ 27% → 60%, dòng điện 16 → 53 A, thời gian bay 37 → 11,5 phút. Giới hạn chịu gió tăng 13,6 → 22,7 m/s |
+| **Drone nhẹ gặp gió mạnh** (12 m/s) | Không hàng: nghiêng 29°, chạm giới hạn 34° trong 34% thời gian khi giật, lệch 1,21 m. Chở 3 kg: nghiêng 13,9°, lệch 0,22 m |
+| **Gió tăng vọt 3 → 9 m/s** (1,5 kg) | Góc nghiêng 3,1° → 12,6°. Bị đẩy lệch tối đa 0,13 m (thích nghi), 0,32 m (PID cố định) |
+| **Thả toàn bộ 3 kg hàng** | Vọt lên 0,46 m, về lại trong 0,1 m sau 6,4 s, học xong khối lượng mới sau 4,0 s. PID cố định vọt 0,74 m, cần 10 s |
+
+Bốn biểu đồ (rê chuột để xem giá trị):
+
+- góc nghiêng theo tốc độ gió, mỗi đường một mức tải;
+- thời gian bay theo tải trọng ở 3 mức gió;
+- độ lệch ngang theo thời gian khi gió tăng vọt;
+- độ lệch độ cao theo thời gian khi thả hàng. Biểu đồ này có nút chuyển giữa *điều khiển thích nghi* và *PID cố định*, dùng chung thang đo để so sánh.
+
+Bên dưới là bảng số liệu đủ 25 tổ hợp.
+
 ## Báo cáo hành trình
 
 Mỗi chuyến bay được ghi lại tự động: bắt đầu khi ARM hoặc TAKEOFF, kết thúc khi drone hạ cánh, bị ngắt khẩn cấp hoặc tắt động cơ. Báo cáo nằm ở cuối trang. Nó cập nhật ngay trong lúc bay, và khi chuyến kết thúc thì hiện thông báo **Xem báo cáo**.
@@ -106,7 +129,7 @@ Lõi mô phỏng không phụ thuộc DOM, nên có thể chạy bằng Node:
 node tests/run-scenarios.js
 ```
 
-Bộ kiểm thử bay các tuyến Hub A, B, C và liên trạm, bay ở tốc độ 14 m/s, thử HOLD rồi bay tiếp, mất liên kết, chia hàng, 200 điểm click ngẫu nhiên và bay trên mọi nóc nhà, và kiểm tra điều khiển thích nghi: góc nghiêng giữ vị trí khớp lý thuyết, m̂ hội tụ sau mỗi lần thả hàng, giữ vị trí tốt hơn PID cố định. Kết quả là PASS/FAIL cho từng mục; mã thoát khác 0 nếu có mục thất bại.
+Bộ kiểm thử bay các tuyến Hub A, B, C và liên trạm, bay ở tốc độ 14 m/s, thử HOLD rồi bay tiếp, mất liên kết, chia hàng, 200 điểm click ngẫu nhiên và bay trên mọi nóc nhà, kiểm tra xu hướng gió × tải trong phần Kết quả, và kiểm tra điều khiển thích nghi: góc nghiêng giữ vị trí khớp lý thuyết, m̂ hội tụ sau mỗi lần thả hàng, giữ vị trí tốt hơn PID cố định. Kết quả là PASS/FAIL cho từng mục; mã thoát khác 0 nếu có mục thất bại.
 
 ## Giới hạn của mô hình
 
@@ -121,7 +144,7 @@ Bộ kiểm thử bay các tuyến Hub A, B, C và liên trạm, bay ở tốc �
 ```
 index.html               Toàn bộ ứng dụng: HTML, CSS, lõi mô phỏng (script#sim-core) và giao diện
 tests/run-scenarios.js   Kiểm thử lõi mô phỏng bằng Node
-docs/                    Ảnh chụp màn hình (giao diện, báo cáo hành trình, điều khiển thích nghi)
+docs/                    Ảnh chụp màn hình (giao diện, kết quả gió × tải, báo cáo hành trình, điều khiển thích nghi)
 ```
 
 ## Giấy phép

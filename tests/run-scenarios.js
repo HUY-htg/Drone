@@ -153,5 +153,24 @@ function hoverSteps(adaptive){
     `lệch ngang ${on.drift.toFixed(2)} vs ${off.drift.toFixed(2)} m · lệch cao ${on.alt.toFixed(2)} vs ${off.alt.toFixed(2)} m`);
 }
 
+// 9. Wind × payload sweep (the "Kết quả" panel): the physical trends must hold
+{
+  const sweepSrc = html.match(/<script id="sweep-core">([\s\S]*?)<\/script>/)[1];
+  const { SWEEP, sweepCase, sweepPlan } = new Function(sweepSrc + ';return { SWEEP, sweepCase, sweepPlan };')();
+  const t0 = Date.now();
+  const res = sweepPlan().map(o => sweepCase(makeSim, o));
+  const g = (p, w) => res.find(r => r.kind === 'steady' && r.payload === p && r.wind === w);
+  const incWind = SWEEP.payloads.every(p => SWEEP.winds.every((w, i) => i === 0 || g(p, w).lean > g(p, SWEEP.winds[i - 1]).lean));
+  const decLoad = SWEEP.winds.slice(1).every(w => SWEEP.payloads.every((p, i) => i === 0 || g(p, w).lean < g(SWEEP.payloads[i - 1], w).lean));
+  check('Kết quả: gió mạnh hơn → nghiêng nhiều hơn; tải nặng hơn → nghiêng ít hơn', incWind && decLoad,
+    `1,5 kg: ${SWEEP.winds.map(w => g(1.5, w).lean.toFixed(1)).join(' → ')}° · gió 12: ${SWEEP.payloads.map(p => g(p, 12).lean.toFixed(1)).join(' → ')}°`);
+  const end = SWEEP.payloads.map(p => g(p, 0).endurance);
+  check('Kết quả: tải nặng hơn → thời gian bay ngắn hơn', end.every((v, i) => i === 0 || v < end[i - 1]), end.map(v => v.toFixed(1)).join(' → ') + ' phút');
+  const stepA = res.filter(r => r.kind === 'windStep' && r.adaptive), stepF = res.filter(r => r.kind === 'windStep' && !r.adaptive);
+  const dropA = res.filter(r => r.kind === 'drop' && r.adaptive), dropF = res.filter(r => r.kind === 'drop' && !r.adaptive);
+  check('Kết quả: thích nghi lệch ít hơn PID cố định ở mọi mức tải', stepA.every((r, i) => r.peak < stepF[i].peak) && dropA.every((r, i) => r.peak < dropF[i].peak),
+    `gió tăng vọt ${stepA.map(r => r.peak.toFixed(2)).join('/')} vs ${stepF.map(r => r.peak.toFixed(2)).join('/')} m · thả hàng ${dropA.map(r => r.peak.toFixed(2)).join('/')} vs ${dropF.map(r => r.peak.toFixed(2)).join('/')} m · ${res.length} chuyến trong ${Date.now() - t0} ms`);
+}
+
 console.log(failures ? `\n${failures} kiểm tra thất bại` : '\nTất cả kiểm tra đều đạt');
 process.exit(failures ? 1 : 0);

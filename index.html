@@ -28,6 +28,7 @@ img{max-width:100%}
   --bad:#c4302a; --bad-soft:rgba(196,48,42,.12); --on-bad:#ffffff;
   --ov:rgba(250,251,252,.88);
   --scene-sky:#cfdbe6; --scene-ground:#b5bec4; --scene-grid:#8b969e; --scene-grid2:#a3adb5;
+  --pl-0:#86b6ef; --pl-1:#5598e7; --pl-2:#2a78d6; --pl-3:#1c5cab; --pl-4:#104281; --wd-0:#f2a07a; --wd-1:#e0602c; --wd-2:#9c3d17;
   --st-takeoff:#2a78d6; --st-hover:#eb6834; --st-mission:#1baf7a; --st-rtl:#6250d6; --st-landing:#008300; --st-manual:#e87ba4; --st-ground:#a3adb6; --st-armed:#6c7781;
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -44,6 +45,7 @@ img{max-width:100%}
     --bad:#f0605a; --bad-soft:rgba(240,96,90,.15); --on-bad:#1a0605;
     --ov:rgba(20,28,35,.88);
     --scene-sky:#0d151d; --scene-ground:#161d24; --scene-grid:#2d3b47; --scene-grid2:#1f2933;
+    --pl-0:#1c5cab; --pl-1:#2a78d6; --pl-2:#5598e7; --pl-3:#86b6ef; --pl-4:#b7d3f6; --wd-0:#9c3d17; --wd-1:#d95926; --wd-2:#f2a07a;
     --st-takeoff:#3987e5; --st-hover:#d95926; --st-mission:#199e70; --st-rtl:#9085e9; --st-landing:#008300; --st-manual:#d55181; --st-ground:#47525c; --st-armed:#7d8893;
     color-scheme:dark;
   }
@@ -58,6 +60,7 @@ img{max-width:100%}
   --bad:#f0605a; --bad-soft:rgba(240,96,90,.15); --on-bad:#1a0605;
   --ov:rgba(20,28,35,.88);
   --scene-sky:#0d151d; --scene-ground:#161d24; --scene-grid:#2d3b47; --scene-grid2:#1f2933;
+  --pl-0:#1c5cab; --pl-1:#2a78d6; --pl-2:#5598e7; --pl-3:#86b6ef; --pl-4:#b7d3f6; --wd-0:#9c3d17; --wd-1:#d95926; --wd-2:#f2a07a;
   --st-takeoff:#3987e5; --st-hover:#d95926; --st-mission:#199e70; --st-rtl:#9085e9; --st-landing:#008300; --st-manual:#d55181; --st-ground:#47525c; --st-armed:#7d8893;
   color-scheme:dark;
 }
@@ -96,8 +99,8 @@ h1{font-family:var(--f-display);font-weight:700;font-size:23px;letter-spacing:.0
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--panel)}
 
 /* grid */
-.grid{display:grid;gap:12px;grid-template-columns:320px minmax(0,1fr) 340px;grid-template-areas:"fn view dash" "sm sm sm" "rp rp rp"}
-.fn{grid-area:fn}.view{grid-area:view}.dash{grid-area:dash}.sm{grid-area:sm}.rp{grid-area:rp}
+.grid{display:grid;gap:12px;grid-template-columns:320px minmax(0,1fr) 340px;grid-template-areas:"fn view dash" "sm sm sm" "an an an" "rp rp rp"}
+.fn{grid-area:fn}.view{grid-area:view}.dash{grid-area:dash}.sm{grid-area:sm}.rp{grid-area:rp}.an{grid-area:an}
 .fn,.view,.dash{height:clamp(620px,calc(100vh - 110px),900px)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;min-width:0;min-height:0}
 .scroll{overflow-y:auto;flex:1;min-height:0}
@@ -365,8 +368,35 @@ table.rp-trt tbody tr:hover td{background:var(--panel-2)}
 .toast-x:hover{color:var(--fg);background:var(--panel-2)}
 @media (max-width:1240px){ .rp-main{grid-template-columns:minmax(0,1fr)} .rp-map{max-width:620px} }
 @media (max-width:760px){ .rp-cols{grid-template-columns:minmax(0,1fr)} .rp-tl{height:400px} .rp-tools{margin-left:0} }
+
+/* wind × payload results */
+.an-wait{padding:16px 14px;color:var(--muted);font-size:13px}
+.an-body{padding:12px 14px 16px;display:flex;flex-direction:column;gap:16px}
+.an-lead{margin:0;font-size:13px;color:var(--muted);max-width:110ch}
+.an-concl{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.an-c{background:var(--panel);padding:10px 12px}
+.an-c h4{margin:0 0 4px;font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
+.an-c p{margin:0;font-size:13px;line-height:1.5}
+.an-c b{font-family:var(--f-mono);font-weight:600;font-size:12.5px}
+.an-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.an-fig{margin:0;min-width:0}
+.an-fig figcaption{margin:0 0 2px}
+.an-fig figcaption b{display:block;font-family:var(--f-display);font-weight:700;font-size:14px;letter-spacing:.07em;text-transform:uppercase}
+.an-fig figcaption span{font-size:12px;color:var(--muted)}
+.an-cv{width:100%;height:260px;display:block;margin-top:6px;cursor:crosshair}
+.an-sub{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;border-top:1px solid var(--line);padding-top:12px}
+.an-sub h3{margin:0}
+.an-tw{overflow:auto;max-height:340px;border:1px solid var(--line);border-radius:4px}
+table.an-t{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+table.an-t th{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:right;padding:5px 8px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);white-space:nowrap}
+table.an-t th:first-child,table.an-t td:first-child{text-align:left}
+table.an-t td{padding:3px 8px;text-align:right;font-family:var(--f-mono);border-bottom:1px solid var(--line);white-space:nowrap}
+table.an-t tr.an-grp td{border-top:1px solid var(--line-2)}
+table.an-t td:first-child{font-weight:600}
+td.an-bad{color:var(--bad);font-weight:600}
+@media (max-width:980px){ .an-grid{grid-template-columns:minmax(0,1fr)} }
 @media (max-width:1240px){
-  .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"view view" "fn dash" "sm sm" "rp rp"}
+  .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"view view" "fn dash" "sm sm" "an an" "rp rp"}
   .fn,.dash{height:auto}
   .view{height:clamp(460px,65vh,680px)}
   .scroll{overflow:visible}
@@ -376,7 +406,7 @@ table.rp-trt tbody tr:hover td{background:var(--panel-2)}
   .sm-dia{border-right:0;border-bottom:1px solid var(--line)}
 }
 @media (max-width:760px){
-  .grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"view" "fn" "dash" "sm" "rp"}
+  .grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"view" "fn" "dash" "sm" "an" "rp"}
   .view{height:min(76vh,480px)}
   .top-state{min-width:0;flex-basis:100%;order:3}
   .ph-note{margin-left:0;flex-basis:100%}
@@ -417,6 +447,7 @@ table.rp-trt tbody tr:hover td{background:var(--panel-2)}
     </div>
     <div class="top-meta">
       <a class="src-link" href="https://github.com/HUY-htg/Drone" target="_blank" rel="noopener">Mã nguồn ↗</a>
+      <a class="src-link" href="#analysis">Kết quả gió &amp; tải ↓</a>
       <div class="meta"><span>Hàng</span><b id="metaCargo">1.5 kg</b></div>
       <div class="meta"><span>T+</span><b id="metaTime">00:00</b></div>
       <div class="meta"><span>Pin</span><b id="metaBat">100%</b></div>
@@ -715,6 +746,42 @@ table.rp-trt tbody tr:hover td{background:var(--panel-2)}
         </div>
       </div>
     </section>
+
+    <!-- RESULTS: wind × payload -->
+    <section class="panel an" id="analysis" aria-labelledby="hAn">
+      <div class="ph"><span class="code">KQ</span><h2 id="hAn">Kết quả: gió và tải trọng thay đổi thì drone ra sao</h2>
+        <span class="ph-note" id="anStatus">đang chuẩn bị…</span>
+        <button class="btn" id="anRerun">Tính lại</button>
+      </div>
+      <div class="an-wait" id="anWait">Đang bay thử 25 tổ hợp gió × tải trọng và 18 phép thử thay đổi đột ngột trên các bản sao độc lập của mô phỏng (mất vài giây)…</div>
+      <div class="an-body" id="anBody" hidden>
+        <p class="an-lead">Mỗi điểm là một chuyến bay mô phỏng thật: drone treo ở 10 m trên Nhà máy, gió Tây, chở 0 – 3 kg, gió 0 – 12 m/s. Con số đo từ chuyến bay, không phải công thức. Rê chuột lên biểu đồ để xem giá trị.</p>
+        <div class="an-concl" id="anConcl"></div>
+        <div class="an-grid">
+          <figure class="an-fig"><figcaption><b>Gió càng mạnh, drone càng phải nghiêng</b><span>Góc nghiêng để đứng yên theo tốc độ gió, mỗi đường một mức tải. Đường chạm 34° là drone hết khả năng chống gió.</span></figcaption>
+            <canvas id="anLean" class="an-cv" role="img" aria-label="Góc nghiêng giữ vị trí theo tốc độ gió cho 5 mức tải"></canvas></figure>
+          <figure class="an-fig"><figcaption><b>Tải càng nặng, bay càng ngắn</b><span>Thời gian treo tối đa (từ 100% pin đến ngưỡng failsafe 15%) theo tải trọng, ở 3 mức gió.</span></figcaption>
+            <canvas id="anEnd" class="an-cv" role="img" aria-label="Thời gian bay treo theo tải trọng ở gió 0, 6 và 12 m/s"></canvas></figure>
+        </div>
+        <div class="an-sub"><h3>Khi điều kiện thay đổi đột ngột</h3>
+          <div class="seg" role="group" aria-label="Chọn bộ điều khiển" id="anMode"><button data-mode="adapt" aria-pressed="true">Điều khiển thích nghi</button><button data-mode="fixed">PID cố định</button></div>
+        </div>
+        <div class="an-grid">
+          <figure class="an-fig"><figcaption><b>Gió tăng vọt 3 → 9 m/s</b><span>Drone bị đẩy lệch khỏi điểm treo bao xa và bao lâu thì về lại, theo từng mức tải. Hai chế độ dùng chung thang đo để so sánh.</span></figcaption>
+            <canvas id="anStep" class="an-cv" role="img" aria-label="Độ lệch ngang theo thời gian sau khi gió tăng đột ngột"></canvas></figure>
+          <figure class="an-fig"><figcaption><b>Thả toàn bộ hàng cùng lúc</b><span>Drone nhẹ đi đột ngột nên vọt lên; đường cho thấy lệch độ cao theo thời gian cho tới khi bộ điều khiển bù lại.</span></figcaption>
+            <canvas id="anDrop" class="an-cv" role="img" aria-label="Độ lệch độ cao theo thời gian sau khi thả toàn bộ hàng"></canvas></figure>
+        </div>
+        <div>
+          <h3>Bảng số liệu đầy đủ</h3>
+          <div class="an-tw"><table class="an-t">
+            <thead><tr><th>Tải</th><th>Gió m/s</th><th>Nghiêng</th><th>Lực đẩy N</th><th>Ga động cơ</th><th>Dòng A</th><th>Bay được (phút)</th><th>Lệch khi giật 30% (m)</th><th>Giới hạn gió m/s</th></tr></thead>
+            <tbody id="anTbl"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </section>
+
     <!-- REPORT -->
     <section class="panel rp" id="report" aria-labelledby="hRp">
       <div class="ph"><span class="code">RPT</span><h2 id="hRp">Báo cáo hành trình</h2>
@@ -776,6 +843,74 @@ table.rp-trt tbody tr:hover td{background:var(--panel-2)}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script id="sweep-core">
+/* ===== Wind × payload analysis: flies many short hover tests on independent sim instances ===== */
+const SWEEP = {
+  payloads: [0, 0.75, 1.5, 2.25, 3],
+  winds: [0, 3, 6, 9, 12],
+  endWinds: [0, 6, 12],
+  stepFrom: 3, stepTo: 9,
+};
+// One hover test. mk() returns a fresh, independent Sim.
+function sweepCase(mk, o){
+  const Sim = mk(), P = Sim.params, DT = 1 / 250;
+  Object.assign(P, { drain: 1, windOn: o.wind > 0, windSpeed: o.wind, windDir: 270, gust: 0, cargoMass: o.payload, adaptive: o.adaptive !== false, takeoffAlt: 10 });
+  Sim.syncMass();
+  const S = () => Sim.S;
+  const run = (sec, cb) => { for (let i = 0; i < sec / DT; i++){ Sim.step(DT); if (cb) cb(Sim.S); } };
+  // start already in the wind: let the gradual-wind filter settle on the pad
+  S().windSpd = P.windOn ? o.wind : 0; S().windDirNow = P.windDir;
+  Sim.command('ARM'); run(0.5); Sim.command('TAKEOFF');
+  for (let i = 0; i < 30 / DT && S().state !== 'HOVER'; i++) Sim.step(DT);
+  run(o.settle || 6);
+  const tiltDeg = s => Math.acos(Math.max(-1, Math.min(1, Math.cos(s.att[0]) * Math.cos(s.att[1])))) * 180 / Math.PI;
+  const out = { kind: o.kind, adaptive: o.adaptive !== false, payload: o.payload, wind: o.wind, mass: Sim.P.m, windLimit: Sim.windLimit() };
+  if (o.kind === 'steady'){
+    let n = 0, lean = 0, T = 0, I = 0, fmax = 0;
+    run(4, s => { n++; lean += tiltDeg(s); T += s.T; I += s.I; fmax = Math.max(fmax, ...s.f); });
+    Object.assign(out, { lean: lean / n, thrust: T / n, current: I / n, motorPct: fmax / Sim.P.fMax * 100 });
+    // usable energy: 100 % → 15 % failsafe reserve
+    out.endurance = 0.85 * Sim.P.capacity / 1000 / out.current * 60;
+    // gust test: 30 % gusts for 20 s
+    P.gust = 0.3;
+    const hold = S().hold.slice();
+    let drift = 0, alt = 0, tmax = 0, sat = 0, m = 0;
+    run(20, s => { m++; const d = Math.hypot(s.pos[0] - hold[0], s.pos[1] - hold[1]); drift = Math.max(drift, d); alt = Math.max(alt, Math.abs(s.pos[2] - hold[2])); const t = tiltDeg(s); tmax = Math.max(tmax, t); if (t > 33) sat++; });
+    Object.assign(out, { gustDrift: drift, gustAlt: alt, gustTiltMax: tmax, satPct: sat / m * 100, holds: drift < 1.5 && S().state === 'HOVER' });
+  } else if (o.kind === 'windStep'){
+    // wind rises suddenly; record horizontal drift for 12 s
+    const hold = S().hold.slice(), tr = [];
+    P.windOn = true; P.windSpeed = SWEEP.stepTo;
+    let t = 0;
+    run(12, s => { t += DT; if (Math.round(t * 250) % 25 === 0) tr.push([t, Math.hypot(s.pos[0] - hold[0], s.pos[1] - hold[1]), tiltDeg(s)]); });
+    out.trace = tr; out.peak = Math.max(...tr.map(r => r[1]));
+    out.leanA = tr[0][2]; out.leanB = tr[tr.length - 1][2];
+  } else if (o.kind === 'drop'){
+    // the whole load is released at once; record altitude deviation for 10 s
+    const hold = S().hold.slice(), tr = [];
+    P.cargoMass = 0;
+    let t = 0;
+    run(10, s => { t += DT; if (Math.round(t * 250) % 25 === 0) tr.push([t, s.pos[2] - hold[2], s.est.mHat, s.T]); });
+    out.trace = tr; out.peak = Math.max(...tr.map(r => Math.abs(r[1])));
+    const conv = tr.findIndex((r, i) => tr.slice(i).every(q => Math.abs(q[2] - Sim.P.m) < 0.05));
+    out.conv = conv < 0 ? null : tr[conv][0];
+    const settle = tr.reduce((acc, r) => Math.abs(r[1]) > 0.1 ? r[0] : acc, 0);
+    out.settle = settle;
+  }
+  return out;
+}
+// The full list of cases, run one by one by the caller
+function sweepPlan(){
+  const plan = [];
+  SWEEP.payloads.forEach(p => SWEEP.winds.forEach(w => plan.push({ kind: 'steady', payload: p, wind: w })));
+  [true, false].forEach(ad => {
+    SWEEP.payloads.forEach(p => plan.push({ kind: 'windStep', payload: p, wind: SWEEP.stepFrom, adaptive: ad }));
+    SWEEP.payloads.filter(p => p > 0).forEach(p => plan.push({ kind: 'drop', payload: p, wind: 0, adaptive: ad }));
+  });
+  return plan;
+}
+</script>
 
 <script id="sim-core">
 /* ===== Urban Cargo Drone Simulation Core:
@@ -1710,7 +1845,8 @@ let cargoLocked = null;
 function readTokens(){
   const cs = getComputedStyle(document.documentElement);
   ['bg','panel','panel-2','line','line-2','fg','muted','faint','accent','accent-ink','tele','good','warn','bad','scene-sky','scene-ground','scene-grid','scene-grid2',
-    'st-takeoff','st-hover','st-mission','st-rtl','st-landing','st-manual','st-ground','st-armed']
+    'st-takeoff','st-hover','st-mission','st-rtl','st-landing','st-manual','st-ground','st-armed',
+    'pl-0','pl-1','pl-2','pl-3','pl-4','wd-0','wd-1','wd-2']
     .forEach(k => { TK[k] = cs.getPropertyValue('--' + k).trim() || '#888888'; });
   const hex = TK.bg.replace('#',''); const n = parseInt(hex.length === 3 ? hex.split('').map(c => c+c).join('') : hex, 16);
   TK.dark = (((n >> 16) & 255)*0.299 + ((n >> 8) & 255)*0.587 + (n & 255)*0.114) < 110;
@@ -3287,7 +3423,7 @@ catch (err){ R3 = null; $('#glErr').hidden = false; $('#gl').style.display = 'no
 $('#clearTrail').addEventListener('click', () => { if (R3) R3.clearTrail(); });
 
 /* theme changes */
-function onTheme(){ readTokens(); if (R3) R3.applyTheme(); if (REC.sel) rpRender(); }
+function onTheme(){ readTokens(); if (R3) R3.applyTheme(); if (REC.sel) rpRender(); anRender(); }
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', onTheme); } catch (e) {}
 new MutationObserver(onTheme).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme','class'] });
 
@@ -3903,6 +4039,169 @@ $('#rpMap').addEventListener('pointerdown', e => rpPickMap(e.clientX, e.clientY)
 new ResizeObserver(() => { if (REC.sel) rpRender(true); }).observe($('#rpBody'));
 function rpVisible(){ const r = $('#report').getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }
 rpRefreshSelect(); rpRender();
+
+/* ---------- results: how wind and payload change the drone's behaviour ---------- */
+const AN = { out:null, plan:null, i:0, running:false, mode:'adapt', ms:0, hover:{} };
+const mkSweepSim = (() => { const src = document.getElementById('sim-core').textContent; return () => new Function(src + ';return Sim;')(); })();
+const PL_TOK = ['pl-0','pl-1','pl-2','pl-3','pl-4'], WD_TOK = ['wd-0','wd-1','wd-2'];
+const kgTxt = v => String(parseFloat(v.toFixed(2))).replace('.', ',') + ' kg';
+const nv = (v, d) => v.toFixed(d).replace('.', ',');
+
+function anStatus(){
+  const el = $('#anStatus');
+  if (AN.running) el.textContent = 'đang bay thử ' + AN.i + '/' + AN.plan.length + ' tổ hợp…';
+  else if (AN.out) el.textContent = AN.plan.length + ' chuyến bay mô phỏng · tính trong ' + nv(AN.ms / 1000, 1) + ' s';
+}
+function anRun(){
+  if (AN.running) return;
+  AN.plan = sweepPlan(); AN.out = []; AN.i = 0; AN.running = true;
+  const t0 = performance.now();
+  anStatus();
+  const tick = () => {
+    const ts = performance.now();
+    while (AN.i < AN.plan.length && performance.now() - ts < 35) AN.out.push(sweepCase(mkSweepSim, AN.plan[AN.i++]));
+    anStatus();
+    if (AN.i < AN.plan.length) setTimeout(tick, 0);
+    else { AN.running = false; AN.ms = performance.now() - t0; anStatus(); anRender(); }
+  };
+  setTimeout(tick, 0);
+}
+function anGet(kind, p, w, ad){
+  return AN.out.find(r => r.kind === kind && r.payload === p && (w == null || r.wind === w) && (ad == null || r.adaptive === ad));
+}
+
+/* generic line chart with direct end labels and a hover crosshair */
+function lineChart(id, spec){
+  const c = $('#' + id), [ctx, w, h] = fitCanvas(c);
+  ctx.clearRect(0, 0, w, h);
+  const padL = 40, padR = spec.endW || 66, padT = 12, padB = 34;
+  const xs = spec.series.flatMap(s => s.pts.map(p => p[0])), ys = spec.series.flatMap(s => s.pts.map(p => p[1]));
+  let x0 = spec.xMin != null ? spec.xMin : Math.min(...xs), x1 = spec.xMax != null ? spec.xMax : Math.max(...xs);
+  let y0 = spec.yMin != null ? spec.yMin : Math.min(0, ...ys), y1 = spec.yMax != null ? spec.yMax : Math.max(...ys, ...(spec.refs || []).map(r => r.y));
+  if (y1 - y0 < 1e-6) y1 = y0 + 1;
+  const yt = niceTicks(y0, y1, 4); y0 = Math.min(y0, yt.ticks[0]); y1 = Math.max(y1, yt.ticks[yt.ticks.length - 1]);
+  const X = v => padL + (v - x0) / (x1 - x0) * (w - padL - padR), Y = v => padT + (1 - (v - y0) / (y1 - y0)) * (h - padT - padB);
+  ctx.textBaseline = 'middle'; ctx.font = '10px "JetBrains Mono", monospace';
+  yt.ticks.forEach(v => {
+    const y = Math.round(Y(v)) + 0.5;
+    ctx.strokeStyle = TK.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+    ctx.fillStyle = TK.muted; ctx.textAlign = 'right'; ctx.fillText(spec.yFmt ? spec.yFmt(v) : fx(v, yt.step < 1 ? 1 : 0), padL - 6, y);
+  });
+  const xt = spec.xTicks || niceTicks(x0, x1, 5).ticks;
+  ctx.textAlign = 'center';
+  xt.forEach(v => { ctx.fillStyle = TK.muted; ctx.fillText(spec.xFmt ? spec.xFmt(v) : String(v), X(v), h - padB + 12); });
+  ctx.fillStyle = TK.muted; ctx.font = '600 10.5px "Barlow Condensed", Arial, sans-serif';
+  ctx.fillText(spec.xTitle.toUpperCase(), padL + (w - padL - padR) / 2, h - 7);
+  (spec.refs || []).forEach(r => {
+    const y = Y(r.y); ctx.setLineDash([4, 3]); ctx.strokeStyle = TK.warn; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = TK.muted; ctx.textAlign = 'left'; ctx.font = '10px "JetBrains Mono", monospace'; ctx.fillText(r.label, padL + 4, y - 7);
+  });
+  // lines, then markers with a surface ring
+  spec.series.forEach(s => {
+    ctx.strokeStyle = TK[s.tok]; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.setLineDash(s.dash ? [5, 3] : []);
+    ctx.beginPath(); s.pts.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))); ctx.stroke(); ctx.setLineDash([]);
+    if (spec.markers) s.pts.forEach(p => { ctx.beginPath(); ctx.arc(X(p[0]), Y(p[1]), 4, 0, Math.PI*2); ctx.fillStyle = TK[s.tok]; ctx.fill(); ctx.strokeStyle = TK.panel; ctx.lineWidth = 2; ctx.stroke(); });
+  });
+  // direct labels at line ends, nudged apart
+  const labs = spec.series.map(s => ({ s, y: Y(s.pts[s.pts.length - 1][1]) })).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < labs.length; i++) if (labs[i].y - labs[i - 1].y < 12) labs[i].y = labs[i - 1].y + 12;
+  const over = labs.length ? labs[labs.length - 1].y - (h - padB - 4) : 0;
+  if (over > 0) labs.forEach(l => { l.y -= over; });
+  ctx.font = '600 10.5px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
+  labs.forEach(l => {
+    const last = l.s.pts[l.s.pts.length - 1];
+    ctx.strokeStyle = TK[l.s.tok]; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(last[0]) + 5, l.y); ctx.lineTo(X(last[0]) + 11, l.y); ctx.stroke();
+    ctx.fillStyle = TK.fg; ctx.fillText(l.s.name, X(last[0]) + 14, l.y);
+  });
+  // hover: nearest x across all series
+  const hx = AN.hover[id];
+  if (hx != null){
+    const cand = [...new Set(xs)]; let bx = cand[0];
+    cand.forEach(v => { if (Math.abs(X(v) - hx) < Math.abs(X(bx) - hx)) bx = v; });
+    const xp = Math.round(X(bx)) + 0.5;
+    ctx.strokeStyle = TK.fg; ctx.globalAlpha = 0.5; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(xp, padT); ctx.lineTo(xp, h - padB); ctx.stroke(); ctx.globalAlpha = 1;
+    const rows = [];
+    spec.series.forEach(s => {
+      const p = s.pts.reduce((a, q) => Math.abs(q[0] - bx) < Math.abs(a[0] - bx) ? q : a, s.pts[0]);
+      if (Math.abs(p[0] - bx) > 1e-6 && !spec.continuous) return;
+      ctx.beginPath(); ctx.arc(X(p[0]), Y(p[1]), 5, 0, Math.PI*2); ctx.fillStyle = TK[s.tok]; ctx.fill(); ctx.strokeStyle = TK.panel; ctx.lineWidth = 2; ctx.stroke();
+      rows.push([s, p[1]]);
+    });
+    const head = (spec.xFmtTip || spec.xFmt || String)(bx);
+    ctx.font = '11px "JetBrains Mono", monospace';
+    const lines = [head].concat(rows.map(r => r[0].name + ': ' + spec.tip(r[1])));
+    const bw = Math.max(...lines.map(t => ctx.measureText(t).width)) + 26, bh = lines.length * 15 + 8;
+    let bxp = xp + 10; if (bxp + bw > w - 4) bxp = xp - 10 - bw;
+    const byp = padT + 2;
+    ctx.fillStyle = TK.panel; ctx.strokeStyle = TK['line-2']; ctx.lineWidth = 1;
+    ctx.fillRect(bxp, byp, bw, bh); ctx.strokeRect(bxp + 0.5, byp + 0.5, bw - 1, bh - 1);
+    ctx.textAlign = 'left';
+    lines.forEach((t, i) => {
+      const y = byp + 11 + i * 15;
+      if (i){ ctx.fillStyle = TK[rows[i - 1][0].tok]; ctx.fillRect(bxp + 8, y - 4, 9, 9); }
+      ctx.fillStyle = i ? TK.fg : TK.muted; ctx.font = (i ? '' : '600 ') + '11px "JetBrains Mono", monospace';
+      ctx.fillText(t, bxp + (i ? 22 : 8), y);
+    });
+  }
+}
+
+function anSpecs(){
+  const P = SWEEP.payloads, W = SWEEP.winds, ad = AN.mode === 'adapt';
+  const step = P.map((p, i) => ({ r: anGet('windStep', p, null, ad), i }));
+  const drop = P.map((p, i) => ({ r: anGet('drop', p, null, ad), i })).filter(o => o.r);
+  // shared y-scale across controller modes so switching the toggle compares like with like
+  const stepMax = Math.max(...AN.out.filter(r => r.kind === 'windStep').map(r => r.peak));
+  const dropMax = Math.max(...AN.out.filter(r => r.kind === 'drop').map(r => r.peak));
+  return {
+    anLean: { xTitle:'tốc độ gió (m/s)', xTicks:W, markers:true, yMin:0, yMax:36, xFmtTip: v => 'gió ' + v + ' m/s',
+      refs:[{ y:34, label:'giới hạn nghiêng 34°' }], tip: v => nv(v, 1) + '°', yFmt: v => v + '°',
+      series: P.map((p, i) => ({ name: kgTxt(p), tok: PL_TOK[i], pts: W.map(w => [w, anGet('steady', p, w).lean]) })) },
+    anEnd: { xTitle:'tải trọng (kg)', xTicks:P, markers:true, yMin:0, xFmt: v => String(v).replace('.', ','), xFmtTip: v => 'tải ' + kgTxt(v), tip: v => nv(v, 1) + ' phút', yFmt: v => v + ' ph',
+      series: SWEEP.endWinds.map((w, i) => ({ name: 'gió ' + w, tok: WD_TOK[i], pts: P.map(p => [p, anGet('steady', p, w).endurance]) })) },
+    anStep: { xTitle:'giây sau khi gió tăng 3 → 9 m/s', yMin:0, yMax: stepMax * 1.08, continuous:true, endW:66, xFmtTip: v => 't = ' + nv(v, 1) + ' s', tip: v => nv(v, 2) + ' m', yFmt: v => nv(v, 1), xTicks:[0, 2, 4, 6, 8, 10, 12], xMin:0,
+      series: step.map(o => ({ name: kgTxt(P[o.i]), tok: PL_TOK[o.i], pts: o.r.trace.map(r => [r[0], r[1]]) })) },
+    anDrop: { xTitle:'giây sau khi thả toàn bộ hàng', yMin: Math.min(0, ...AN.out.filter(r => r.kind === 'drop').flatMap(r => r.trace.map(q => q[1]))), yMax: dropMax * 1.08, continuous:true, xFmtTip: v => 't = ' + nv(v, 1) + ' s', tip: v => (v >= 0 ? '+' : '') + nv(v, 2) + ' m', yFmt: v => nv(v, 1), xTicks:[0, 2, 4, 6, 8, 10], xMin:0,
+      series: drop.map(o => ({ name: kgTxt(P[o.i]), tok: PL_TOK[o.i], pts: o.r.trace.map(r => [r[0], r[1]]) })) },
+  };
+}
+function anRender(){
+  if (!AN.out || AN.running) return;
+  $('#anBody').hidden = false; $('#anWait').hidden = true;
+  const sp = anSpecs();
+  Object.keys(sp).forEach(id => lineChart(id, sp[id]));
+  anConclusions(); anTable();
+}
+function anConclusions(){
+  const g = (p, w) => anGet('steady', p, w);
+  const a15 = [g(1.5, 0), g(1.5, 6), g(1.5, 12)], e12 = g(0, 12), h12 = g(3, 12), z0 = g(0, 0), z3 = g(3, 0);
+  const sA = anGet('windStep', 1.5, null, true), sF = anGet('windStep', 1.5, null, false);
+  const dA = anGet('drop', 3, null, true), dF = anGet('drop', 3, null, false);
+  const item = (t, body) => '<div class="an-c"><h4>' + t + '</h4><p>' + body + '</p></div>';
+  $('#anConcl').innerHTML =
+    item('Gió mạnh lên', 'Drone nghiêng vào gió để đứng yên. Chở 1,5 kg: gió 0 → 6 → 12 m/s thì nghiêng <b>' + nv(a15[0].lean, 0) + '° → ' + nv(a15[1].lean, 1) + '° → ' + nv(a15[2].lean, 1) + '°</b>. Lực đẩy chỉ tăng ' + Math.round((a15[2].thrust / a15[0].thrust - 1) * 100) + '% và thời gian bay giảm ' + nv(a15[0].endurance, 1) + ' → ' + nv(a15[2].endurance, 1) + ' phút. Khi gió giật 30%, lệch khỏi vị trí tăng ' + nv(a15[0].gustDrift, 2) + ' → ' + nv(a15[2].gustDrift, 2) + ' m.') +
+    item('Tải nặng lên', 'Không gió, tải 0 → 3 kg: lực đẩy <b>' + nv(z0.thrust, 0) + ' → ' + nv(z3.thrust, 0) + ' N</b> (ga động cơ ' + Math.round(z0.motorPct) + '% → ' + Math.round(z3.motorPct) + '%), dòng điện ' + nv(z0.current, 0) + ' → ' + nv(z3.current, 0) + ' A, thời gian bay <b>' + nv(z0.endurance, 0) + ' → ' + nv(z3.endurance, 1) + ' phút</b>. Đổi lại drone nặng đứng vững hơn trong gió: giới hạn gió ' + nv(z0.windLimit, 1) + ' → ' + nv(z3.windLimit, 1) + ' m/s.') +
+    item('Drone nhẹ chịu gió kém hơn', 'Cùng gió 12 m/s: không hàng phải nghiêng <b>' + nv(e12.lean, 0) + '°</b>, sát giới hạn 34°, chạm giới hạn ' + Math.round(e12.satPct) + '% thời gian khi gió giật và lệch tới <b>' + nv(e12.gustDrift, 2) + ' m</b>. Chở 3 kg chỉ nghiêng ' + nv(h12.lean, 1) + '° và lệch ' + nv(h12.gustDrift, 2) + ' m. Lực cản như nhau, nhưng trọng lượng lớn hơn: tan(nghiêng) = lực cản / (m·g).') +
+    item('Thay đổi đột ngột', 'Gió tăng vọt 3 → 9 m/s (chở 1,5 kg): góc nghiêng ' + nv(sA.leanA, 1) + '° → ' + nv(sA.leanB, 1) + '°, drone bị đẩy lệch tối đa <b>' + nv(sA.peak, 2) + ' m</b> với điều khiển thích nghi, ' + nv(sF.peak, 2) + ' m với PID cố định. Thả hết 3 kg hàng: drone vọt lên <b>' + nv(dA.peak, 2) + ' m</b>, về lại trong 0,1 m sau ' + nv(dA.settle, 1) + ' s và học xong khối lượng mới sau ' + nv(dA.conv, 1) + ' s; PID cố định vọt ' + nv(dF.peak, 2) + ' m, cần ' + nv(dF.settle, 1) + ' s.');
+}
+function anTable(){
+  $('#anTbl').innerHTML = SWEEP.payloads.map(p => SWEEP.winds.map((w, j) => {
+    const r = anGet('steady', p, w);
+    const sat = r.satPct > 0.5 ? ' · chạm giới hạn ' + Math.round(r.satPct) + '%' : '';
+    return '<tr' + (j === 0 ? ' class="an-grp"' : '') + '><td>' + (j === 0 ? kgTxt(p) : '') + '</td><td>' + w + '</td><td>' + nv(r.lean, 1) + '°</td><td>' + nv(r.thrust, 1) + '</td><td>' + Math.round(r.motorPct) + '%</td><td>' + nv(r.current, 1) + '</td><td>' + nv(r.endurance, 1) + '</td><td' + (r.gustDrift > 1 ? ' class="an-bad"' : '') + '>' + nv(r.gustDrift, 2) + sat + '</td><td>' + nv(r.windLimit, 1) + '</td></tr>';
+  }).join('')).join('');
+}
+['anLean','anEnd','anStep','anDrop'].forEach(id => {
+  const c = $('#' + id);
+  c.addEventListener('pointermove', e => { AN.hover[id] = e.clientX - c.getBoundingClientRect().left; if (AN.out && !AN.running) lineChart(id, anSpecs()[id]); });
+  c.addEventListener('pointerleave', () => { AN.hover[id] = null; if (AN.out && !AN.running) lineChart(id, anSpecs()[id]); });
+});
+$$('#anMode button').forEach(b => b.addEventListener('click', () => {
+  AN.mode = b.dataset.mode; $$('#anMode button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); anRender();
+}));
+$('#anRerun').addEventListener('click', anRun);
+new ResizeObserver(() => anRender()).observe($('#anBody'));
+setTimeout(anRun, 600);
 
 /* ---------- main loop ---------- */
 updateCargoSpecUI();
