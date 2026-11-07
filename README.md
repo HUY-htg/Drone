@@ -130,30 +130,30 @@ Click mặt đất 3D trong căn cứ vẫn thêm được điểm vào tuyến;
 
 ## Yêu cầu của các bên liên quan (SCV)
 
-Bảng **Yêu cầu bên liên quan** có một cột cho mỗi năng lực của dòng Surveillance Drone (Dòng Trinh sát; đã bỏ biến thể ném bom V2). Dưới mỗi năng lực là các Need ID và Title. Trong lúc vận hành, need nào đang được dùng thì dòng đó in đậm, nền cam, có vạch cam; need chưa dùng thì chữ nhạt. Tiêu đề năng lực đậm lên khi có ít nhất một need của nó đang dùng.
+Bảng **Yêu cầu bên liên quan** có một cột cho mỗi năng lực của dòng Surveillance Drone (Dòng Trinh sát; đã bỏ biến thể ném bom V2). Dưới mỗi năng lực là các mã need (Need ID) và tên need bằng tiếng Việt. Trong lúc vận hành, need nào đang được dùng thì dòng đó in đậm, nền cam, có vạch cam; need chưa dùng thì chữ nhạt. Tiêu đề năng lực đậm lên khi có ít nhất một need của nó đang dùng.
 
-| Need ID | Title | Đang áp dụng khi |
+| Need ID | Tên | Đang áp dụng khi |
 |---|---|---|
-| CC1_N01 | Vertical Take-off and Landing | TAKEOFF hoặc LANDING |
-| CC1_N02 | Fixed Position Hold | Đang treo (HOVER, hoặc dừng ở điểm giao) |
-| CC1_N03 | Flight Control Response | Bay theo lệnh: MANUAL, MISSION, RTL, FAILSAFE |
-| CC1_N04 | Position Hold in Wind Gusts | Đang treo khi có gió |
-| CC1_N05 | Take-off Weight Limit | Cất cánh, hoặc đang bay có chở hàng |
-| CC1_N06 | Flight Speed Capability | Tốc độ ngang trên 1 m/s |
-| CC1_N07 | Flight Altitude Capability | Đang bay trên 5 m |
-| CC2_N01 | Obstacle Detection | Lidar thấy vật cản trong 15 m |
-| CC2_N02 | Stop Before Obstacle | Lực đẩy APF đang tác động, hoặc đang bay qua điểm né A* |
-| CC3_N01 | Ground Control Link | Còn liên kết (không mất liên kết, không bị phá sóng) |
-| CC3_N02 | Command Transmission | Trong 3 s sau khi gửi lệnh |
-| CC3_N03 | Command Execution Status | Trong 8 s sau khi lệnh được chấp nhận hoặc từ chối |
-| CC3_N04 | Baseline Still Images | Trong 8 s sau khi chụp ảnh |
-| CC4_N01–N03 | Position / Altitude / Battery Status Telemetry | Khi còn liên kết |
-| V1_VC1_N01 | Daylight Image Capture | Camera bật, ban ngày |
-| V1_VC1_N02 | Night Image Capture | Camera bật, ban đêm |
-| V1_VC1_N03 | High-Resolution Still Images | Trong 8 s sau khi chụp ảnh 20MP |
-| V1_VC1_N04 | Live Video Stream | Đang xem hình camera (toàn khung hoặc cửa sổ nhỏ) |
-| V1_VC1_N05 | Target Magnification | Zoom lớn hơn 1× |
-| V1_VC1_N06 | Surveillance Flight Endurance | Đang bay nhiệm vụ giám sát |
+| CC1_N01 | Cất cánh và hạ cánh thẳng đứng | TAKEOFF hoặc LANDING |
+| CC1_N02 | Giữ vị trí cố định | Đang treo (HOVER, hoặc dừng ở điểm giao) |
+| CC1_N03 | Đáp ứng lệnh điều khiển bay | Bay theo lệnh: MANUAL, MISSION, RTL, FAILSAFE |
+| CC1_N04 | Giữ vị trí khi có gió giật | Đang treo khi có gió |
+| CC1_N05 | Giới hạn khối lượng cất cánh | Cất cánh, hoặc đang bay có chở hàng |
+| CC1_N06 | Khả năng tốc độ bay | Tốc độ ngang trên 1 m/s |
+| CC1_N07 | Khả năng độ cao bay | Đang bay trên 5 m |
+| CC2_N01 | Phát hiện vật cản | Lidar thấy vật cản trong 15 m |
+| CC2_N02 | Dừng trước vật cản | Lực đẩy APF đang tác động, hoặc đang bay qua điểm né A* |
+| CC3_N01 | Liên kết với trạm mặt đất | Còn liên kết (không mất liên kết, không bị phá sóng) |
+| CC3_N02 | Truyền lệnh | Trong 3 s sau khi gửi lệnh |
+| CC3_N03 | Trạng thái thực thi lệnh | Trong 8 s sau khi lệnh được chấp nhận hoặc từ chối |
+| CC3_N04 | Ảnh tĩnh cơ bản | Trong 8 s sau khi chụp ảnh |
+| CC4_N01–N03 | Truyền dữ liệu vị trí / độ cao / trạng thái pin | Khi còn liên kết |
+| V1_VC1_N01 | Chụp ảnh ban ngày | Camera bật, ban ngày |
+| V1_VC1_N02 | Chụp ảnh ban đêm | Camera bật, ban đêm |
+| V1_VC1_N03 | Ảnh tĩnh độ phân giải cao | Trong 8 s sau khi chụp ảnh 20MP |
+| V1_VC1_N04 | Truyền video trực tiếp | Đang xem hình camera (toàn khung hoặc cửa sổ nhỏ) |
+| V1_VC1_N05 | Phóng to mục tiêu | Zoom lớn hơn 1× |
+| V1_VC1_N06 | Thời gian bay giám sát | Đang bay nhiệm vụ giám sát |
 
 Ảnh chụp có dải thông tin (thời gian, GPS, độ cao, cảm biến, zoom) và nằm trong mục **Ảnh chụp** của bảng Giám sát. Bấm một ảnh để xem lớn và tải bản xem trước 1920 × 1280.
 

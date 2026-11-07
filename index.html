@@ -5930,16 +5930,16 @@ const fmtGps = (e, n) => { const g = gpsOf(e, n); return g.lat.toFixed(5) + '°N
 // Operational capabilities of the Surveillance Drone line (the strike variant is out of scope) and their stakeholder needs
 const SCV = [
   { id:'OC1', type:'Core', name:'Perform Controlled Flight', vi:'Thực hiện bay có điều khiển', needs:[
-    ['CC1_N01', 'Vertical Take-off and Landing'], ['CC1_N02', 'Fixed Position Hold'], ['CC1_N03', 'Flight Control Response'],
-    ['CC1_N04', 'Position Hold in Wind Gusts'], ['CC1_N05', 'Take-off Weight Limit'], ['CC1_N06', 'Flight Speed Capability'], ['CC1_N07', 'Flight Altitude Capability'] ] },
-  { id:'OC2', type:'Core', name:'Obstacle Avoidance', vi:'Tránh chướng ngại vật', needs:[ ['CC2_N01', 'Obstacle Detection'], ['CC2_N02', 'Stop Before Obstacle'] ] },
-  { id:'OC3', type:'Core', name:'Remote Control via Ground Station', vi:'Điều khiển từ xa qua Trạm mặt đất (GCS)', needs:[
-    ['CC3_N01', 'Ground Control Link'], ['CC3_N02', 'Command Transmission'], ['CC3_N03', 'Command Execution Status'], ['CC3_N04', 'Baseline Still Images'] ] },
+    ['CC1_N01', 'Cất cánh và hạ cánh thẳng đứng'], ['CC1_N02', 'Giữ vị trí cố định'], ['CC1_N03', 'Đáp ứng lệnh điều khiển bay'],
+    ['CC1_N04', 'Giữ vị trí khi có gió giật'], ['CC1_N05', 'Giới hạn khối lượng cất cánh'], ['CC1_N06', 'Khả năng tốc độ bay'], ['CC1_N07', 'Khả năng độ cao bay'] ] },
+  { id:'OC2', type:'Core', name:'Obstacle Avoidance', vi:'Tránh chướng ngại vật', needs:[ ['CC2_N01', 'Phát hiện vật cản'], ['CC2_N02', 'Dừng trước vật cản'] ] },
+  { id:'OC3', type:'Core', name:'Remote Control via Ground Station', vi:'Điều khiển từ xa qua Trạm mặt đất', needs:[
+    ['CC3_N01', 'Liên kết với trạm mặt đất'], ['CC3_N02', 'Truyền lệnh'], ['CC3_N03', 'Trạng thái thực thi lệnh'], ['CC3_N04', 'Ảnh tĩnh cơ bản'] ] },
   { id:'OC4', type:'Core', name:'Real-time Data Transmission', vi:'Truyền dữ liệu thời gian thực', needs:[
-    ['CC4_N01', 'Position Telemetry'], ['CC4_N02', 'Altitude Telemetry'], ['CC4_N03', 'Battery Status Telemetry'] ] },
-  { id:'V1_VC1', type:'Variant (V1)', name:'Provide Situational Awareness', vi:'Cung cấp nhận thức tình huống (Trinh sát)', needs:[
-    ['V1_VC1_N01', 'Daylight Image Capture'], ['V1_VC1_N02', 'Night Image Capture'], ['V1_VC1_N03', 'High-Resolution Still Images'],
-    ['V1_VC1_N04', 'Live Video Stream'], ['V1_VC1_N05', 'Target Magnification'], ['V1_VC1_N06', 'Surveillance Flight Endurance'] ] }
+    ['CC4_N01', 'Truyền dữ liệu vị trí'], ['CC4_N02', 'Truyền dữ liệu độ cao'], ['CC4_N03', 'Truyền dữ liệu trạng thái pin'] ] },
+  { id:'V1_VC1', type:'Variant (V1)', name:'Provide Situational Awareness', vi:'Cung cấp nhận thức tình huống', needs:[
+    ['V1_VC1_N01', 'Chụp ảnh ban ngày'], ['V1_VC1_N02', 'Chụp ảnh ban đêm'], ['V1_VC1_N03', 'Ảnh tĩnh độ phân giải cao'],
+    ['V1_VC1_N04', 'Truyền video trực tiếp'], ['V1_VC1_N05', 'Phóng to mục tiêu'], ['V1_VC1_N06', 'Thời gian bay giám sát'] ] }
 ];
 const RQ = { lastCmd:null, fps:60, tPrev:0, tDraw:0, photos:[], built:false };
 Sim.on(ev => {
@@ -5988,7 +5988,7 @@ function rqEval(){
   };
 }
 function rqBuild(){
-  $('#rqGrid').innerHTML = SCV.map(c => '<li class="rqc" id="rq-' + c.id + '"><div class="rq-cap"><span class="rq-id">' + c.id + '</span><span class="rq-name">' + c.name + '</span></div>'
+  $('#rqGrid').innerHTML = SCV.map(c => '<li class="rqc" id="rq-' + c.id + '"><div class="rq-cap"><span class="rq-id">' + c.id + '</span><span class="rq-name">' + c.vi + '</span></div>'
     + '<ul class="rq-needs">' + c.needs.map(([id, t]) => '<li class="rqn" id="rqn-' + id + '"><span class="rq-nid">' + id + '</span><span>' + t + '</span></li>').join('') + '</ul></li>').join('');
   RQ.built = true;
 }
@@ -6007,7 +6007,7 @@ function rqRender(){
     if (any) caps++;
     $('#rq-' + c.id).classList.toggle('on', any);
   });
-  $('#rqSum').textContent = caps + '/' + SCV.length + ' năng lực · ' + needs + '/' + total + ' need đang áp dụng';
+  $('#rqSum').textContent = caps + '/' + SCV.length + ' năng lực · ' + needs + '/' + total + ' nhu cầu đang áp dụng';
 }
 function rqFrame(){
   const now = performance.now();
