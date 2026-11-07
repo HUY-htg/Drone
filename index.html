@@ -589,14 +589,21 @@ table.sv-t th:nth-child(5),table.sv-t td:nth-child(5),table.sv-t th:nth-child(6)
 .ph-fold{order:98;margin-left:4px;white-space:nowrap}
 @media (max-width:760px){ .ph-fold{order:0} }
 
-/* stakeholder requirement list: bold when in use, faded when not */
+/* stakeholder requirements: capability columns, need rows bold when in use, faded when not */
 .rq{grid-area:rq}
-.rq-list2{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
-.rqr{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);font-size:14px;color:var(--faint);transition:color .3s,background-color .3s,box-shadow .3s}
-.rqr .rq-id{font-family:var(--f-mono);font-weight:600;font-size:11px;color:var(--faint);min-width:52px}
-.rqr.on{color:var(--fg);font-weight:700;background:var(--accent-soft);box-shadow:inset 4px 0 0 var(--accent)}
-.rqr.on .rq-id{color:var(--accent-ink)}
-@media (prefers-reduced-motion: reduce){ .rqr{transition:none} }
+.rq-list2{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.rqc{border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:0}
+.rq-cap{display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line);color:var(--faint);transition:color .3s,background-color .3s}
+.rq-cap .rq-id{font-family:var(--f-mono);font-weight:700;font-size:11.5px}
+.rq-cap .rq-name{font-weight:700;font-size:13.5px}
+.rqc.on .rq-cap{color:var(--fg);background:var(--accent-soft)}
+.rqc.on .rq-cap .rq-id{color:var(--accent-ink)}
+.rq-needs{list-style:none;margin:0;padding:4px 0}
+.rqn{display:grid;grid-template-columns:86px minmax(0,1fr);gap:8px;padding:4px 12px 4px 9px;border-left:3px solid transparent;font-size:12.5px;color:var(--faint);transition:color .3s,background-color .3s,border-color .3s}
+.rq-nid{font-family:var(--f-mono);font-size:11px;padding-top:1px}
+.rqn.on{color:var(--fg);font-weight:700;border-left-color:var(--accent);background:var(--accent-soft)}
+.rqn.on .rq-nid{color:var(--accent-ink)}
+@media (prefers-reduced-motion: reduce){ .rq-cap,.rqn{transition:none} }
 /* photos */
 .sv-ph{display:flex;flex-direction:column;gap:6px}
 .ph-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
@@ -5920,17 +5927,19 @@ Sim.on(ev => {
 const GPS0 = { lat: 10.80000, lon: 106.65000 };   // assumed geodetic position of the factory pad (0,0)
 const gpsOf = (e, n) => ({ lat: GPS0.lat + n / 111320, lon: GPS0.lon + e / (111320 * Math.cos(GPS0.lat * Math.PI / 180)) });
 const fmtGps = (e, n) => { const g = gpsOf(e, n); return g.lat.toFixed(5) + '°N · ' + g.lon.toFixed(5) + '°E'; };
+// Operational capabilities of the Surveillance Drone line (the strike variant is out of scope) and their stakeholder needs
 const SCV = [
-  { id:'CC1', type:'Core', who:'Người vận hành / Phi công (Drone Operator)', vi:'Thực hiện bay có điều khiển', en:'Perform Controlled Flight',
-    need:'Cất cánh thẳng đứng và hạ cánh an toàn, bay treo ổn định ở độ cao xác định, phản hồi chính xác với lệnh điều khiển hướng/tốc độ/độ cao, tự cân bằng trước gió giật hoặc nhiễu động không khí.' },
-  { id:'CC2', type:'Core', who:'Người vận hành / Tổ An toàn Bay (Safety Officer)', vi:'Tránh chướng ngại vật', en:'Obstacle Avoidance',
-    need:'Tự động phát hiện vật cản xung quanh và ngăn ngừa va chạm trong suốt quá trình bay ở các địa hình phức tạp.' },
-  { id:'CC3', type:'Core', who:'Người vận hành Trạm mặt đất (GCS Operator)', vi:'Điều khiển từ xa qua Trạm mặt đất (GCS)', en:'Remote control via Ground Station',
-    need:'Kết nối truyền thông hai chiều ổn định với GCS để gửi lệnh từ xa, nhận phản hồi trạng thái và quan sát hình ảnh cơ bản (tối thiểu 12MP).' },
-  { id:'CC4', type:'Core', who:'Trạm điều khiển & Giám sát (GCS / Mission Control)', vi:'Truyền dữ liệu thời gian thực', en:'Real-time data transmission',
-    need:'Truyền dữ liệu đo xa theo thời gian thực (tọa độ GPS, độ cao, dung lượng pin, thông số cảm biến) về GCS để giám sát tiến độ nhiệm vụ và an toàn bay.' },
-  { id:'V1_VC1', type:'Variant (V1)', who:'Đơn vị Tình báo & Trinh sát (ISR / Reconnaissance Unit)', vi:'Cung cấp nhận thức tình huống (Trinh sát)', en:'Provide situational awareness',
-    need:'Hoạt động cả ngày lẫn đêm, chụp ảnh tĩnh độ nét cao (≥ 20MP), truyền video trực tiếp 1080p@30fps, thu phóng (zoom) để kiểm tra cận cảnh mục tiêu, nhiệm vụ kéo dài tối thiểu 60 phút.' }
+  { id:'OC1', type:'Core', name:'Perform Controlled Flight', vi:'Thực hiện bay có điều khiển', needs:[
+    ['CC1_N01', 'Vertical Take-off and Landing'], ['CC1_N02', 'Fixed Position Hold'], ['CC1_N03', 'Flight Control Response'],
+    ['CC1_N04', 'Position Hold in Wind Gusts'], ['CC1_N05', 'Take-off Weight Limit'], ['CC1_N06', 'Flight Speed Capability'], ['CC1_N07', 'Flight Altitude Capability'] ] },
+  { id:'OC2', type:'Core', name:'Obstacle Avoidance', vi:'Tránh chướng ngại vật', needs:[ ['CC2_N01', 'Obstacle Detection'], ['CC2_N02', 'Stop Before Obstacle'] ] },
+  { id:'OC3', type:'Core', name:'Remote Control via Ground Station', vi:'Điều khiển từ xa qua Trạm mặt đất (GCS)', needs:[
+    ['CC3_N01', 'Ground Control Link'], ['CC3_N02', 'Command Transmission'], ['CC3_N03', 'Command Execution Status'], ['CC3_N04', 'Baseline Still Images'] ] },
+  { id:'OC4', type:'Core', name:'Real-time Data Transmission', vi:'Truyền dữ liệu thời gian thực', needs:[
+    ['CC4_N01', 'Position Telemetry'], ['CC4_N02', 'Altitude Telemetry'], ['CC4_N03', 'Battery Status Telemetry'] ] },
+  { id:'V1_VC1', type:'Variant (V1)', name:'Provide Situational Awareness', vi:'Cung cấp nhận thức tình huống (Trinh sát)', needs:[
+    ['V1_VC1_N01', 'Daylight Image Capture'], ['V1_VC1_N02', 'Night Image Capture'], ['V1_VC1_N03', 'High-Resolution Still Images'],
+    ['V1_VC1_N04', 'Live Video Stream'], ['V1_VC1_N05', 'Target Magnification'], ['V1_VC1_N06', 'Surveillance Flight Endurance'] ] }
 ];
 const RQ = { lastCmd:null, fps:60, tPrev:0, tDraw:0, photos:[], built:false };
 Sim.on(ev => {
@@ -5942,65 +5951,63 @@ function rqEndurance(){
   const P_ = Sim.P, f = P_.m * P_.g / 4, I = 0.9 + 4 * 28 * Math.pow(f / P_.fMax, 1.5);
   return 0.85 * P_.capacity / 1000 / I * 60;
 }
+// Which needs are being exercised right now
 function rqEval(){
   const S = Sim.S, P_ = Sim.params, C = R3 && R3.cam, GB_ = C ? C.GB : {}, ENV_ = C ? C.ENV : {};
-  const air = !S.grounded && ['TAKEOFF','HOVER','MANUAL','MISSION','RTL','LANDING','FAILSAFE'].includes(S.state);
-  const armed = S.state !== 'DISARMED';
-  const link = !P_.linkLost, jam = S.jammed;
-  const wind = Math.hypot(S.windNow[0], S.windNow[1]);
-  const avoidLeg = (S.state === 'MISSION' && Sim.mission[S.wpIdx] && Sim.mission[S.wpIdx].kind === 'avoid') || ((S.state === 'RTL' || S.state === 'FAILSAFE') && Sim.rtlPath.length > 1);
+  const st = S.state, air = !S.grounded && ['TAKEOFF','HOVER','MANUAL','MISSION','RTL','LANDING','FAILSAFE'].includes(st);
+  const armed = st !== 'DISARMED', link = !P_.linkLost && !S.jammed;
+  const wind = Math.hypot(S.windNow[0], S.windNow[1]), gs = Math.hypot(S.vel[0], S.vel[1]);
   const apf = Math.hypot(S.apfVec[0], S.apfVec[1]);
-  const streamFps = Math.min(30, Math.round(RQ.fps));
-  const endu = rqEndurance();
-  const verr = S.sp && S.sp.z != null ? Math.abs(S.pos[2] - S.sp.z) : null;
-  const cam = armed && link && !jam;
+  const avoidLeg = st === 'MISSION' && Sim.mission[S.wpIdx] && Sim.mission[S.wpIdx].kind === 'avoid';
+  const cmdAge = RQ.lastCmd ? S.t - RQ.lastCmd.t : 99, photoAge = RQ.photos.length ? S.t - RQ.photos[0].t : 99;
+  const cam = armed && link;
+  const video = cam && ((C && C.mode() === 'fpv') || (GB_.pip && !$('#pip').hidden));
   return {
-    CC1: [
-      { txt:'Cất cánh thẳng đứng, hạ cánh an toàn', ok:true, on: S.state === 'TAKEOFF' || S.state === 'LANDING', live: S.state === 'TAKEOFF' ? 'đang cất cánh · ' + S.pos[2].toFixed(1) + ' m' : S.state === 'LANDING' ? 'đang hạ cánh · ' + S.pos[2].toFixed(1) + ' m' : '' },
-      { txt:'Bay treo ổn định ở độ cao xác định', ok:true, on: S.state === 'HOVER' && air, live: S.state === 'HOVER' && verr != null ? 'sai số độ cao ' + verr.toFixed(2) + ' m' : '' },
-      { txt:'Phản hồi lệnh hướng / tốc độ / độ cao', ok:true, on: air && ['MANUAL','MISSION','RTL'].includes(S.state), live: air ? 'GS ' + Math.hypot(S.vel[0], S.vel[1]).toFixed(1) + ' m/s · HDG ' + String(Math.round(((90 - S.att[2] * 180 / Math.PI) % 360 + 360) % 360)).padStart(3, '0') + '°' : '' },
-      { txt:'Tự cân bằng trước gió giật, nhiễu động', ok:true, on: air && wind > 0.5, live: air && wind > 0.5 ? 'gió ' + wind.toFixed(1) + ' m/s · ' + (P_.adaptive ? 'điều khiển thích nghi' : 'PID cố định') : '' }
-    ],
-    CC2: [
-      { txt:'Lidar 360° phát hiện vật cản xung quanh', ok:true, on: air, live: air ? 'vật cản gần nhất ' + (S.minObsDist > 40 ? '> 40' : S.minObsDist.toFixed(1)) + ' m' + (S.nearObsName && S.minObsDist < 12 ? ' (' + S.nearObsName + ')' : '') : '' },
-      { txt:'Lập quỹ đạo A* vòng tránh cao ốc', ok:true, on: air && avoidLeg, live: avoidLeg ? 'đang bay qua điểm né' : '' },
-      { txt:'Lực đẩy APF tránh va chạm tức thời', ok:true, on: air && apf > 0.05, live: apf > 0.05 ? 'lực đẩy ' + apf.toFixed(2) + ' m/s' : '' }
-    ],
-    CC3: [
-      { txt:'Liên kết hai chiều với GCS', ok:true, on: link && armed, live: jam ? 'bị phá sóng' : link ? 'liên kết tốt' : 'mất liên kết' },
-      { txt:'Gửi lệnh từ xa, nhận phản hồi trạng thái', ok:true, on: link && !!RQ.lastCmd && Sim.S.t - RQ.lastCmd.t < 8, live: RQ.lastCmd ? (RQ.lastCmd.ok ? 'chấp nhận: ' : 'từ chối: ') + RQ.lastCmd.txt : '' },
-      { txt:'Quan sát hình ảnh cơ bản ≥ 12MP', ok:true, on: cam, live: 'ảnh tĩnh 20MP (5472 × 3648)' }
-    ],
-    CC4: [
-      { txt:'Tọa độ GPS', ok:true, on: link && !jam, live: jam ? 'mất GNSS' : fmtGps(S.pos[0], S.pos[1]) },
-      { txt:'Độ cao, tốc độ', ok:true, on: link, live: S.pos[2].toFixed(1) + ' m · V/S ' + S.vel[2].toFixed(1) + ' m/s' },
-      { txt:'Dung lượng pin', ok:true, on: link, live: Math.round(S.soc * 100) + '% · ' + S.V.toFixed(1) + ' V · ' + S.I.toFixed(1) + ' A' },
-      { txt:'Thông số cảm biến (Lidar, IMU, gió ước lượng)', ok:true, on: link && armed, live: 'Lidar ' + (S.minObsDist > 40 ? '> 40' : S.minObsDist.toFixed(1)) + ' m · roll ' + (S.att[0] * 180 / Math.PI).toFixed(1) + '°' }
-    ],
-    V1_VC1: [
-      { txt:'Hoạt động ngày và đêm', ok:true, on: cam, live: (ENV_.night ? 'ban đêm' : 'ban ngày') + ' · ' + (GB_.sensor === 'ir' ? 'camera nhiệt' : 'camera quang học') },
-      { txt:'Chụp ảnh tĩnh ≥ 20MP', ok:true, on: cam && RQ.photos.length > 0 && Sim.S.t - RQ.photos[0].t < 10, live: RQ.photos.length + ' ảnh đã chụp' },
-      { txt:'Video trực tiếp 1080p @ 30fps', ok: streamFps >= 30, on: cam, live: '1920 × 1080 · ' + streamFps + ' fps' + (streamFps < 30 ? ' (máy đang chậm)' : '') },
-      { txt:'Zoom kiểm tra cận cảnh', ok:true, on: cam && GB_.zoom > 1.05, live: 'zoom ' + (GB_.zoom || 1).toFixed(1).replace('.0', '') + '× (1–6×)' },
-      { txt:'Nhiệm vụ kéo dài ≥ 60 phút', ok: endu >= 60, on: air, live: 'ước tính ' + endu.toFixed(0) + ' phút ở ' + Sim.P.m.toFixed(1) + ' kg' }
-    ]
+    CC1_N01: st === 'TAKEOFF' || st === 'LANDING',
+    CC1_N02: air && (st === 'HOVER' || S.dwell > 0),
+    CC1_N03: air && ['MANUAL','MISSION','RTL','FAILSAFE'].includes(st),
+    CC1_N04: air && wind > 0.5 && (st === 'HOVER' || S.dwell > 0),
+    CC1_N05: st === 'TAKEOFF' || (air && P_.cargoMass > 0.001),
+    CC1_N06: air && gs > 1,
+    CC1_N07: air && S.pos[2] > 5,
+    CC2_N01: air && S.minObsDist < 15,
+    CC2_N02: air && (apf > 0.05 || avoidLeg),
+    CC3_N01: link,
+    CC3_N02: link && cmdAge < 3,
+    CC3_N03: link && cmdAge < 8,
+    CC3_N04: cam && photoAge < 8,
+    CC4_N01: link,
+    CC4_N02: link,
+    CC4_N03: link,
+    V1_VC1_N01: cam && !ENV_.night,
+    V1_VC1_N02: cam && !!ENV_.night,
+    V1_VC1_N03: cam && photoAge < 8,
+    V1_VC1_N04: video,
+    V1_VC1_N05: cam && GB_.zoom > 1.05,
+    V1_VC1_N06: air && P_.task !== 'delivery'
   };
 }
 function rqBuild(){
-  $('#rqGrid').innerHTML = SCV.map(r => '<li class="rqr" id="rq-' + r.id + '"><span class="rq-id">' + r.id + '</span><span class="rq-name">' + r.vi + '</span></li>').join('');
+  $('#rqGrid').innerHTML = SCV.map(c => '<li class="rqc" id="rq-' + c.id + '"><div class="rq-cap"><span class="rq-id">' + c.id + '</span><span class="rq-name">' + c.name + '</span></div>'
+    + '<ul class="rq-needs">' + c.needs.map(([id, t]) => '<li class="rqn" id="rqn-' + id + '"><span class="rq-nid">' + id + '</span><span>' + t + '</span></li>').join('') + '</ul></li>').join('');
   RQ.built = true;
 }
 function rqRender(){
   const panel = $('#reqs'); if (!panel || panel.hidden) return;
   if (!RQ.built) rqBuild();
   const E = rqEval();
-  let active = 0;
-  SCV.forEach(r => {
-    const on = E[r.id].some(i => i.on); if (on) active++;
-    const row = $('#rq-' + r.id);
-    if (row.classList.contains('on') !== on){ row.classList.toggle('on', on); row.setAttribute('aria-label', r.vi + (on ? ': đang áp dụng' : ': chưa áp dụng')); }
+  let caps = 0, needs = 0, total = 0;
+  SCV.forEach(c => {
+    let any = false;
+    c.needs.forEach(([id, t]) => {
+      const on = !!E[id]; total++; if (on){ needs++; any = true; }
+      const el = $('#rqn-' + id);
+      if (el.classList.contains('on') !== on){ el.classList.toggle('on', on); el.setAttribute('aria-label', id + ' ' + t + (on ? ': đang áp dụng' : ': chưa áp dụng')); }
+    });
+    if (any) caps++;
+    $('#rq-' + c.id).classList.toggle('on', any);
   });
-  $('#rqSum').textContent = active + '/' + SCV.length + ' đang áp dụng';
+  $('#rqSum').textContent = caps + '/' + SCV.length + ' năng lực · ' + needs + '/' + total + ' need đang áp dụng';
 }
 function rqFrame(){
   const now = performance.now();
